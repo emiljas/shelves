@@ -1,13 +1,22 @@
 {
+  "compileOnSave": false,
+  "buildOnSave": false,
   "compilerOptions": {
     "target": "es5",
     "sourceMap": true
   },
   "filesGlob": [
-    "src/*.ts"
+    "src/**/*.ts",
+    "test/**/*.ts"
   ],
   "files": [
-    "src/debug.ts",
-    "src/main.ts"
+    "src/AnimationLoop.ts",
+    "src/draw.ts",
+    "src/enableDebug.ts",
+    "src/FpsMeasurer.ts",
+    "src/main.ts",
+    "src/repository/SegmentRepository.ts",
+    "src/ShelvesGlobals.ts",
+    "test/test.ts"
   ]
 }
