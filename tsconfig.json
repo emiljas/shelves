@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "target": "es5",
+    "sourceMap": true
+  },
+  "filesGlob": [
+    "src/*.ts"
+  ],
+  "files": [
+    "src/debug.ts",
+    "src/main.ts"
+  ]
+}

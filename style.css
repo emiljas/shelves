@@ -1,0 +1,30 @@
+#shelvesCanvas {
+  border: 1px solid black;
+}
+
+button {
+  height: 50px;
+  font-size: 30px;
+}
+
+.debugContainer {
+  position: absolute;
+  bottom: 0;
+}
+
+.debugContainer.left {
+  left: 0;
+  font-size: 50px;
+}
+
+.debugContainer.right {
+  right: 0;
+}
+
+.debugContainer .green {
+  color: green;
+}
+
+.debugContainer .red{
+  color: red;
+}
