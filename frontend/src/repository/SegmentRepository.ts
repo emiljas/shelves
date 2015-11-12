@@ -12,10 +12,6 @@ export default class SegmentRepository {
 
       return this.segments[position - 1];
     });
-
-    // return new Promise((resolve, reject) => {
-    //   // resolve(this.segments[position - 1]);
-    // });
   }
 
   public injectSegments(segments) {
