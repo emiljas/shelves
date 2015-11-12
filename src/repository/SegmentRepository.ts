@@ -5,14 +5,20 @@
 export default class SegmentRepository {
   private segments = [];
 
-  constructor() {
+  public getByPosition(position: number) {
+    return Promise.resolve().then(() => {
+      if(this.segments.length == 0)
+        throw new Error('no data');
+
+      return this.segments[position - 1];
+    });
+
+    // return new Promise((resolve, reject) => {
+    //   // resolve(this.segments[position - 1]);
+    // });
   }
 
-  public getByPosition(position: number) {
-    return new Promise(function(resolve, reject) {
-      reject('a');
-      // if(this.segments.length == 0)
-      //   throw new Error('no data');
-    });
+  public injectSegments(segments) {
+    this.segments = segments;
   }
 }

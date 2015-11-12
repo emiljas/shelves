@@ -3,18 +3,19 @@
 var assert = chai.assert;
 import SegmentRepository from '../src/repository/SegmentRepository';
 
-describe('t', function() {
+describe('SegmentRepository', () => {
+  describe('getByPosition', () => {
+    it('throws Error when no data', function() {
+      var segmentRepository = new SegmentRepository();
+      var promise = segmentRepository.getByPosition(1);
+      return assert.isRejected(promise, /no data/);
+    });
 
-  it('t1', function() {
-    var segmentRepository = new SegmentRepository();
-    var promise = segmentRepository.getByPosition(1);
-    return assert.isRejected(promise, Error, 'no f data');
+    it('', () => {
+      var segmentRepository = new SegmentRepository();
+      segmentRepository.injectSegments([1, 2, 3])
+      var promise = segmentRepository.getByPosition(1);
+      return assert.eventually.equal(promise, 1);
+    });
   });
-
-  it('t2', function() {
-    var segmentRepository = new SegmentRepository();
-    var promise = segmentRepository.getByPosition(1);
-    return assert.isFulfilled(promise);
-  });
-
 });
