@@ -1,10 +1,12 @@
 backend/node_modules
 backend/src/**/*.js
 backend/test/**/*.js
+backend/typings
 
 frontend/node_modules
 frontend/src/**/*.js.map
 frontend/src/**/*.js
 frontend/test/**/*.js
+frontend/test/**/*.js.map
 frontend/dist/**/*.map
 frontend/typings

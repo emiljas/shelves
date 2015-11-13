@@ -3,18 +3,16 @@
 'use strict';
 
 export default class SegmentRepository {
-  private segments = [];
 
   public getByPosition(position: number) {
-    return Promise.resolve().then(() => {
-      if(this.segments.length == 0)
-        throw new Error('no data');
-
-      return this.segments[position - 1];
+    return new Promise((resolve, reject) => {
+      var req = new XMLHttpRequest();
+      req.addEventListener("load", (e) => {
+        resolve(JSON.parse(req.responseText));
+      });
+      req.open("GET", "http://localhost:3000/getSegment?position=" + position);
+      req.send();
     });
   }
 
-  public injectSegments(segments) {
-    this.segments = segments;
-  }
 }

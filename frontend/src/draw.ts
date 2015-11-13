@@ -1,23 +1,46 @@
 'use strict';
 
 import SG from './ShelvesGlobals';
+import SegmentRepository from './repository/SegmentRepository';
 
-var segmentsData = [
-  { width: 200, color: 'rgb(100, 100, 100)' },
-  { width: 200, color: 'rgb(30, 150, 0)' },
-  { width: 200, color: 'rgb(140, 10, 200)' },
-  { width: 100, color: 'rgb(10, 100, 100)' },
-  { width: 200, color: 'rgb(30, 10, 0)' },
-  { width: 200, color: 'rgb(140, 255, 200)' },
+let segmentsData = [
 ];
 
+let segmentRepository = new SegmentRepository();
+let promises = [];
+for (let position = 1; position < 4; position++) {
+    promises.push(segmentRepository.getByPosition(position));
+}
+
+Promise.all(promises).then((data) => {
+    segmentsData = data;
+
+    for (let d of data) {
+        let img = new Image();
+        img.src = d.spriteImgUrl;
+        loadImg(img, d);
+    }
+});
+
+function loadImg(img, d) {
+    img.addEventListener('load', () => {
+        d.img = img;
+    }, false);
+}
+
+var x = 0;
 export default function draw() {
-  var x = 0;
+    x = 0;
+    for (let data of segmentsData) {
+        drawSegment(data);
+    }
+}
 
-  for(var data of segmentsData) {
-    SG.ctx.fillStyle = data.color;
-    SG.ctx.fillRect(x, 0, data.width, 100);
-
-    x += data.width;
-  }
+function drawSegment(data) {
+    if (data.img) {
+        for (let c of data.coords) {
+            SG.ctx.drawImage(data.img, c.x, c.y, c.width, c.height, c.destinationX + x, c.destinationY, c.width, c.height);
+        }
+        x += 200;
+    }
 }
