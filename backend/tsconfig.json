@@ -1,6 +1,6 @@
 {
   "compileOnSave": true,
-  "buildOnSave": true,
+  "buildOnSave": false,
   "compilerOptions": {
     "target": "es5",
     "module": "commonjs",
@@ -8,11 +8,18 @@
   },
   "filesGlob": [
     "src/**/*.ts",
-    "test/**/*.ts"
+    "test/**/*.ts",
+    "typings/tsd.d.ts"
   ],
   "files": [
     "src/app.ts",
+    "src/Coords.ts",
     "src/parseSegmentHtmlResponse.ts",
-    "test/parseSegmentHtmlResponseTests.ts"
+    "src/randomProductPositionsOnSegment.ts",
+    "src/SegmentHtmlResponseData.ts",
+    "test/parseSegmentHtmlResponseTests.ts",
+    "test/randomProductPositionsOnSegmentTests.ts",
+    "test/UnitTestUtils.ts",
+    "typings/tsd.d.ts"
   ]
 }

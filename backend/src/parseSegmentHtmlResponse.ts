@@ -4,7 +4,7 @@ const SPRITE_IMG_URL_REGEX = /http:\/\/www\.ros\.net\.pl\/RossmannV4_Shelves_Spr
 const COORDS_STYLE_REGEX = /\.[a-z0-9]+ { width: \d+px; height: \d+px; background-position: [-]?\d+px [-]?\d+px; margin-left: \d+px; }/g;
 const COORDS_VALUES_REGEX = /[-]?\d+/g;
 
-export default function parseSegmentHtmlResponse(response: string): any {
+export default function parseSegmentHtmlResponse(response: string): SegmentHtmlResponseData {
       let spriteImgUrl = response.match(SPRITE_IMG_URL_REGEX)[0];
 
       let coords = [];
@@ -33,6 +33,6 @@ export default function parseSegmentHtmlResponse(response: string): any {
 
       return {
         spriteImgUrl: spriteImgUrl,
-        coords: coords
+        coordsList: coords
       };
 }

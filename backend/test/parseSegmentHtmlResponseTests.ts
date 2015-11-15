@@ -1,10 +1,5 @@
-/// <reference path="../typings/tsd.d.ts" />
-
-import * as chai from 'chai';
-import * as chaiAsPromised from 'chai-as-promised';
-chai.use(chaiAsPromised);
+import ut from './UnitTestUtils';
 import * as Promise from 'bluebird';
-const assert = chai.assert;
 const fs = <any>Promise.promisifyAll(require('fs'));
 import parseSegmentHtmlResponse from '../src/parseSegmentHtmlResponse';
 
@@ -15,7 +10,7 @@ describe('parseSegmentHtmlResponse', () => {
     var spriteImgUrl = parseResponse().then((result) => {
       return result.spriteImgUrl;
     });
-    return assert.eventually.equal(spriteImgUrl, expectedSpriteImgUrl);
+    return ut.assert.eventually.equal(spriteImgUrl, expectedSpriteImgUrl);
   });
 
   it("extracts product's coords", (done) => {
@@ -25,17 +20,17 @@ describe('parseSegmentHtmlResponse', () => {
       { width: 108, height: 212, x: 220, y: 255 }
     ];
     parseResponse().then((result) => {
-      return result.coords;
-    }).then((coords) => {
-      assert.deepEqual(coords[0], expectedCoords[0]);
-      assert.deepEqual(coords[1], expectedCoords[1]);
-      assert.deepEqual(coords[2], expectedCoords[2]);
+      return result.coordsList;
+    }).then((coordsList) => {
+      ut.assert.deepEqual(coordsList[0], expectedCoords[0]);
+      ut.assert.deepEqual(coordsList[1], expectedCoords[1]);
+      ut.assert.deepEqual(coordsList[2], expectedCoords[2]);
     })
     .then(done)
     .catch(done);
   });
 
-  function parseResponse(): Promise<any> {
+  function parseResponse(): Promise<SegmentHtmlResponseData> {
     return getTestResponse().then((response) => {
       var result = parseSegmentHtmlResponse(response);
       return result;
