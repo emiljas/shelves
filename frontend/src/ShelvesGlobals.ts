@@ -10,6 +10,8 @@ export default class SG {
   static lastTimestamp: number;
   static animationTimestamp: number;
 
+  static scale = 0.33;
+
   static init(): void {
     SG.canvas = <HTMLCanvasElement>document.getElementById('shelvesCanvas');
     SG.ctx = SG.canvas.getContext('2d');

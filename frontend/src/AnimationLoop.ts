@@ -24,7 +24,7 @@ export default class AnimcationLoop {
 
     SG.ctx.save();
     SG.ctx.translate(SG.moveDistance, 0);
-    SG.ctx.scale(0.33, 0.33);
+    SG.ctx.scale(SG.scale, SG.scale);
     draw();
     SG.ctx.restore();
 

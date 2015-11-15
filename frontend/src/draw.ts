@@ -3,6 +3,11 @@
 import SG from './ShelvesGlobals';
 import SegmentRepository from './repository/SegmentRepository';
 
+let segmentRepository = new SegmentRepository();
+let segments = new Array<Segment>();
+
+let x = 0;
+
 class Segment {
     private data: SegmentModel;
     private spriteImg: HTMLImageElement;
@@ -31,14 +36,9 @@ class Segment {
     }
 }
 
-let segments = new Array<Segment>();
-
-let segmentRepository = new SegmentRepository();
 for (let position = 1; position < 8; position++) {
     Segment.loadByPosition(position);
 }
-
-let x = 0;
 
 export default function draw() {
     x = 0;
