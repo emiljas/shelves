@@ -15,9 +15,9 @@ describe('parseSegmentHtmlResponse', () => {
 
   it("extracts product's coords", (done) => {
     var expectedCoords = [
-      { width: 131, height: 198, x: 0, y: 90 },
-      { width: 125, height: 185, x: 0, y: 290 },
-      { width: 108, height: 212, x: 220, y: 255 }
+      { width: 1, height: 2, x: 3, y: 4 },
+      { width: 5, height: 6, x: 7, y: 8 },
+      { width: 9, height: 10, x: 11, y: 12 }
     ];
     parseResponse().then((result) => {
       return result.coordsList;

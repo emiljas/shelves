@@ -28,17 +28,17 @@ export default function enableDebug() {
   featuresDiv.classList.add('right');
 
   checkFeature('canvas');
-  checkFeature('requestanimationframe');
+  checkFeature('requestanimationframe', 'raf');
   checkFeature('xhr2');
   checkFeature('webworkers');
   checkFeature('transferables');
   checkFeature('touchevents');
   checkFeature('eventlistener');
 
-  function checkFeature(featureName) {
+  function checkFeature(featureName: string, friendlyName?: string) {
     var p = document.createElement('p');
-    p.textContent = featureName;
-    if(window['Modernizr'][featureName])
+    p.textContent = friendlyName || featureName;
+    if((<any>Modernizr)[featureName])
       p.classList.add('green');
     else
       p.classList.add('red');

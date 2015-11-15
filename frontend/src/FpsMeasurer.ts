@@ -10,9 +10,9 @@ export default class FpsMeasurer {
   }
 
   private elapsed = 0;
-  private last = null;
+  private last: number = null;
 
-  public tick(now) {
+  public tick(now: number) {
     this.elapsed = (now - (this.last || now)) / 1000;
     this.last = now;
   }

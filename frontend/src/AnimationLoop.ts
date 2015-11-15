@@ -11,10 +11,8 @@ export default class AnimcationLoop {
 
   private static loop(timestamp: number) {
     SG.timestamp = timestamp;
-    var ctx = SG.ctx;
 
-    ctx.save();
-    ctx.clearRect(0, 0, SG.canvas.width, SG.canvas.height);
+    SG.ctx.clearRect(0, 0, SG.canvas.width, SG.canvas.height);
 
     if(!isNearZeroPx(SG.distanceToMove)) {
       var secondsFromAnimationStart = (SG.timestamp - SG.animationTimestamp) / 1000;
@@ -24,9 +22,11 @@ export default class AnimcationLoop {
       SG.distanceToMove -= d;
     }
 
-    ctx.translate(SG.moveDistance, 0);
+    SG.ctx.save();
+    SG.ctx.translate(SG.moveDistance, 0);
+    SG.ctx.scale(0.33, 0.33);
     draw();
-    ctx.restore();
+    SG.ctx.restore();
 
     SG.lastTimestamp = timestamp;
     window.requestAnimationFrame(AnimcationLoop.loop);
@@ -35,6 +35,6 @@ export default class AnimcationLoop {
 }
 
 var DIFF = 0.5;
-function isNearZeroPx(value) {
+function isNearZeroPx(value: number) {
   return Math.abs(value) < DIFF;
 }

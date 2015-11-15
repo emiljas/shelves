@@ -8,10 +8,52 @@ SG.init();
 AnimcationLoop.start();
 enableDebug();
 
-SG.canvas.addEventListener("touchstart", handleStart, false);
-SG.canvas.addEventListener("touchend", handleEnd, false);
-SG.canvas.addEventListener("touchcancel", handleCancel, false);
-SG.canvas.addEventListener("touchmove", handleMove, false);
+var RESIZE_DEBOUNCED_WAIT = 500;
+window.addEventListener('resize', _.debounce(function(event: UIEvent){
+  resizeCanvas();
+}, RESIZE_DEBOUNCED_WAIT));
+resizeCanvas();
+
+function resizeCanvas() {
+  var shelvesCanvasContainer = document.getElementById('shelvesCanvasContainer');
+  var height = window.innerHeight
+            || document.documentElement.clientHeight
+            || document.body.clientHeight;
+
+  SG.canvas.width = shelvesCanvasContainer.offsetWidth;
+  SG.canvas.height = height;
+}
+
+SG.canvas.addEventListener("pointerdown", (e: PointerEvent) => {
+  e.preventDefault();
+  isCanvasTouched = true;
+}, false);
+
+SG.canvas.addEventListener("pointerup", () => {
+  isCanvasTouched = false;
+  lastMoveX = null;
+}, false);
+
+SG.canvas.addEventListener("pointerout", () => {
+  isCanvasTouched = false;
+  lastMoveX = null;
+}, false);
+
+SG.canvas.addEventListener("pointercancel", () => {
+  isCanvasTouched = false;
+  lastMoveX = null;
+}, false);
+
+SG.canvas.addEventListener("pointermove", (e: PointerEvent) => {
+  if(isCanvasTouched) {
+    var touch = {pageX: e.pageX, pageY: e.pageY};
+
+    if(lastMoveX != null) {
+      SG.moveDistance += touch.pageX - lastMoveX;
+    }
+    lastMoveX = touch.pageX;
+  }
+}, false);
 
 
 var backBtn = document.getElementById('backBtn');
@@ -27,29 +69,4 @@ nextBtn.addEventListener('click', function() {
 }, false);
 
 var isCanvasTouched = false;
-var lastMoveX;
-
-function handleStart(e) {
-  e.preventDefault();
-  isCanvasTouched = true;
-}
-
-function handleEnd() {
-  isCanvasTouched = false;
-  lastMoveX = null;
-}
-
-function handleCancel() {
-  isCanvasTouched = false;
-  lastMoveX = null;
-}
-
-function handleMove(evt) {
-  isCanvasTouched = true;
-  var touch = evt.touches[0];
-
-  if(lastMoveX != null) {
-    SG.moveDistance += touch.pageX - lastMoveX;
-  }
-  lastMoveX = touch.pageX;
-}
+var lastMoveX: number;

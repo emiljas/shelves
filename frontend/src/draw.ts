@@ -3,44 +3,59 @@
 import SG from './ShelvesGlobals';
 import SegmentRepository from './repository/SegmentRepository';
 
-let segmentsData = [
-];
+class Segment {
+    private data: SegmentModel;
+    private spriteImg: HTMLImageElement;
+
+    public static loadByPosition(position: number) {
+        let segment = new Segment();
+        segmentRepository.getByPosition(position).then(function(data) {
+            segment.data = data;
+            segments.push(segment);
+            return loadImage(data.spriteImgUrl);
+        })
+        .then(function(img) {
+          segment.spriteImg = img;
+        });
+    }
+
+    public draw() {
+      let spriteImg = this.spriteImg;
+      if(spriteImg) {
+        let positions = this.data.productPositions;
+        for (let p of positions) {
+            SG.ctx.drawImage(spriteImg, p.sx, p.sy, p.w, p.h, p.dx + x, p.dy, p.w, p.h);
+        }
+      }
+      x += 350 * 3;
+    }
+}
+
+let segments = new Array<Segment>();
 
 let segmentRepository = new SegmentRepository();
-let promises = [];
-for (let position = 1; position < 4; position++) {
-    promises.push(segmentRepository.getByPosition(position));
+for (let position = 1; position < 8; position++) {
+    Segment.loadByPosition(position);
 }
 
-Promise.all(promises).then((data) => {
-    segmentsData = data;
+let x = 0;
 
-    for (let d of data) {
-        let img = new Image();
-        img.src = d.spriteImgUrl;
-        loadImg(img, d);
-    }
-});
-
-function loadImg(img, d) {
-    img.addEventListener('load', () => {
-        d.img = img;
-    }, false);
-}
-
-var x = 0;
 export default function draw() {
     x = 0;
-    for (let data of segmentsData) {
-        drawSegment(data);
+    for (let segment of segments) {
+        segment.draw();
     }
 }
 
-function drawSegment(data) {
-    if (data.img) {
-        for (let c of data.coords) {
-            SG.ctx.drawImage(data.img, c.x, c.y, c.width, c.height, c.destinationX + x, c.destinationY, c.width, c.height);
-        }
-        x += 200;
-    }
+function loadImage(url: string) {
+    return new Promise<HTMLImageElement>(function(resolve, reject) {
+      let img = new Image();
+      img.src = url;
+      img.addEventListener('load', function() {
+        resolve(img);
+      });
+      img.addEventListener('error', function(e: ErrorEvent) {
+        reject(e);
+      });
+    });
 }

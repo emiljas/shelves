@@ -7,21 +7,12 @@ interface RandomPositionsArgs {
     limit?: number;
 }
 
-interface ProductPosition {
-    sx: number; //source x
-    sy: number; //source y
-    w: number; //width
-    h: number; //height
-    dx: number; //destination x
-    dy: number; //destincation y
-}
-
 export default function randomProductPositionsOnSegment(args: RandomPositionsArgs) {
     var finder = new PositionFinder(args);
     return finder.find();
 }
 
-const POSITION_FINDER_LIMIT = 100;
+const POSITION_FINDER_LIMIT = 10000;
 
 class PositionFinder {
     private coordsList: Array<Coords>;
@@ -37,7 +28,7 @@ class PositionFinder {
         this.limit = args.limit || POSITION_FINDER_LIMIT;
     }
 
-    find(): Array<ProductPosition> {
+    find(): Array<ProductPositionModel> {
         for (let coords of this.coordsList) {
             var position = this.seekForFreePlace(coords);
             this.productPositions.push(position);
@@ -47,7 +38,7 @@ class PositionFinder {
 
     seekForFreePlace(coords: Coords) {
         var i = 0;
-        var position: ProductPosition;
+        var position: ProductPositionModel;
         do {
             position = this.randomPosition(coords);
         }
@@ -59,7 +50,7 @@ class PositionFinder {
       return i + 1 == this.limit;
     }
 
-    randomPosition(coords: Coords): ProductPosition {
+    randomPosition(coords: Coords): ProductPositionModel {
         var dx = _.random(this.segmentWidth - coords.width);
         var dy = _.random(this.segmentHeight - coords.height);
         return {
@@ -72,14 +63,14 @@ class PositionFinder {
         };
     }
 
-    collisionExists(position: ProductPosition) {
+    collisionExists(position: ProductPositionModel) {
         for (let takenPosition of this.productPositions)
             if (this.isCollision(takenPosition, position))
                 return true;
         return false;
     }
 
-    isCollision(taken: ProductPosition, random: ProductPosition): boolean {
+    isCollision(taken: ProductPositionModel, random: ProductPositionModel): boolean {
       //http://stackoverflow.com/questions/306316/determine-if-two-rectangles-overlap-each-other
         var p1x1 = taken.dx,
             p1y1 = taken.dy,

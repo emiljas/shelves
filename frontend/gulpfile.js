@@ -45,6 +45,12 @@ gulp.task('concatLibs', function() {
   .pipe(webpack({
     output: {
       filename: 'libs.js'
+    },
+
+    module: {
+      loaders: [
+        { test: /\.js$/, loader: 'script-loader' }
+      ]
     }
   }))
   .pipe(gulp.dest('dist'));
