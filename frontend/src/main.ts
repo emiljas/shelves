@@ -16,90 +16,35 @@ resizeCanvas();
 
 function resizeCanvas() {
   var shelvesCanvasContainer = document.getElementById('shelvesCanvasContainer');
-  // var height = window.innerHeight
-  //           || document.documentElement.clientHeight
-  //           || document.body.clientHeight;
-
   SG.canvas.width = shelvesCanvasContainer.offsetWidth;
-  SG.canvas.height = 1200 * SG.scale;
+  SG.canvas.height = 1920 * SG.scale;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-// SG.canvas.addEventListener("pointerdown", (e: PointerEvent) => {
-//   // e.preventDefault();
-//   isCanvasTouched = true;
-// }, false);
-//
-// SG.canvas.addEventListener("pointerup", () => {
-//   isCanvasTouched = false;
-//   lastMoveX = null;
-// }, false);
-//
-// SG.canvas.addEventListener("pointerout", () => {
-//   isCanvasTouched = false;
-//   lastMoveX = null;
-// }, false);
-//
-// SG.canvas.addEventListener("pointercancel", () => {
-//   isCanvasTouched = false;
-//   lastMoveX = null;
-// }, false);
-//
-// SG.canvas.addEventListener("pointermove", (e: PointerEvent) => {
-//   if(isCanvasTouched) {
-//     var touch = {pageX: e.pageX, pageY: e.pageY};
-//
-//     if(lastMoveX != null) {
-//       SG.moveDistance += touch.pageX - lastMoveX;
-//     }
-//     lastMoveX = touch.pageX;
-//   }
-// }, false);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-let hammer = new Hammer(SG.canvas);
+let hammer = new Hammer(SG.canvas, {
+  touchAction: 'none'
+});
+hammer.get('pan').set({ direction: Hammer.DIRECTION_ALL });
+// hammer.get('pinch').set({ enable: true });
+// hammer.get('rotate').set({ enable: true });
 
 let lastDeltaX = 0;
-var moveCallback = _.throttle(function(e: HammerInput) {
-  SG.moveDistance += (e.deltaX - lastDeltaX);
+let lastDeltaY = 0;
+hammer.on("pan", function(e: HammerInput) {
+  console.log("A");
+
+  SG.moveXDistance += e.deltaX - lastDeltaX;
   lastDeltaX = e.deltaX;
-}, 100);
-hammer.on("panleft panright panup pandown tap press", moveCallback);
 
-var endCallback = _.throttle(function(e: HammerInput) {
+  SG.moveYDistance += e.deltaY - lastDeltaY;
+  lastDeltaY = e.deltaY;
+});
+
+hammer.on('panend', function(e: HammerInput) {
   lastDeltaX = 0;
-}, 100);
+  lastDeltaY = 0;
+});
 
-hammer.on('panend', endCallback);
-
-var tapCallback = _.throttle(function() {
+hammer.on('tap', function() {
   if(SG.scale == 0.33) {
     SG.canvas.height *= 3;
     SG.scale = 1;
@@ -108,20 +53,16 @@ var tapCallback = _.throttle(function() {
     SG.canvas.height /= 3;
     SG.scale = 0.33;
   }
-}, 100);
-hammer.on('tap', tapCallback);
+});
 
 var backBtn = document.getElementById('backBtn');
 backBtn.addEventListener('click', function() {
-  SG.distanceToMove = SG.distanceToMove - 250;
+  SG.distanceToMove = SG.distanceToMove + 250;
   SG.animationTimestamp = SG.timestamp;
 }, false);
 
 var nextBtn = document.getElementById('nextBtn');
 nextBtn.addEventListener('click', function() {
-  SG.distanceToMove = SG.distanceToMove + 250;
+  SG.distanceToMove = SG.distanceToMove - 250;
   SG.animationTimestamp = SG.timestamp;
 }, false);
-
-var isCanvasTouched = false;
-var lastMoveX: number;

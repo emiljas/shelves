@@ -5,7 +5,9 @@ export default class SG {
   static ctx: CanvasRenderingContext2D;
   static timestamp: number;
 
-  static moveDistance: number;
+  static moveXDistance: number;
+  static moveYDistance: number;
+
   static distanceToMove: number;
   static lastTimestamp: number;
   static animationTimestamp: number;
@@ -17,7 +19,9 @@ export default class SG {
     SG.ctx = SG.canvas.getContext('2d');
     SG.timestamp = 0;
 
-    SG.moveDistance = 0;
+    SG.moveXDistance = 0;
+    SG.moveYDistance = 0;
+
     SG.distanceToMove = 0;
   }
 }

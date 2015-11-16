@@ -20,8 +20,8 @@ app.get('/getSegment', function (req, res) {
     var segmentHtmlResponse = parseSegmentHtmlResponse(body);
     var productPositions = randomProductPositionsOnSegment({
       coordsList: segmentHtmlResponse.coordsList,
-      segmentWidth: 310 * 3,
-      segmentHeight: 640 * 3
+      segmentWidth: 930,
+      segmentHeight:1920
     });
 
     var response: SegmentModel = {

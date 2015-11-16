@@ -18,12 +18,12 @@ export default class AnimcationLoop {
       var secondsFromAnimationStart = (SG.timestamp - SG.animationTimestamp) / 1000;
       var d = Math.sin(secondsFromAnimationStart) * SG.distanceToMove;
 
-      SG.moveDistance += d;
+      SG.moveXDistance += d;
       SG.distanceToMove -= d;
     }
 
     SG.ctx.save();
-    SG.ctx.translate(SG.moveDistance, 0);
+    SG.ctx.translate(SG.moveXDistance, SG.moveYDistance);
     SG.ctx.scale(SG.scale, SG.scale);
     draw();
     SG.ctx.restore();
