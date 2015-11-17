@@ -10,6 +10,7 @@ body {
 
 #shelvesCanvas {
   background-color: white;
+  cursor: move;
 }
 
 button {

@@ -16,15 +16,18 @@ app.get('/getSegment', function (req, res) {
   var position = req.query.position;
   var url = 'http://www.rossmann.pl/DesktopModules/RossmannV4Modules/Shelves/GetSegmentHtml.ashx?json=%7B%22SegmentId%22%3A32301%2C%22Move%22%3A' + position + '%7D';
   request(url, (err, result, body) => {
-
     var segmentHtmlResponse = parseSegmentHtmlResponse(body);
+    var segmentWidth = (position % 3 == 0) ? 400 : 930;
+    var segmentHeight = 1920;
     var productPositions = randomProductPositionsOnSegment({
       coordsList: segmentHtmlResponse.coordsList,
-      segmentWidth: 930,
-      segmentHeight:1920
+      segmentWidth: segmentWidth,
+      segmentHeight: segmentHeight
     });
 
     var response: SegmentModel = {
+      width: segmentWidth,
+      height: segmentHeight,
       spriteImgUrl: segmentHtmlResponse.spriteImgUrl,
       productPositions: productPositions
     };

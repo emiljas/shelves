@@ -4,7 +4,7 @@ export default class SegmentRepository {
 
   public getByPosition(position: number): Promise<SegmentModel> {
     return new Promise<SegmentModel>((resolve, reject) => {
-      var req = new XMLHttpRequest();
+      let req = new XMLHttpRequest();
       req.addEventListener("load", (e) => {
         resolve(JSON.parse(req.responseText));
       });

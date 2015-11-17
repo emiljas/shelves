@@ -9,30 +9,42 @@ let segments = new Array<Segment>();
 let x = 0;
 
 class Segment {
+    private isLoaded = false;
     private data: SegmentModel;
     private spriteImg: HTMLImageElement;
 
     public static loadByPosition(position: number) {
         let segment = new Segment();
+        segments.push(segment);
+
         segmentRepository.getByPosition(position).then(function(data) {
             segment.data = data;
-            segments.push(segment);
             return loadImage(data.spriteImgUrl);
         })
-        .then(function(img) {
-          segment.spriteImg = img;
-        });
+            .then(function(img) {
+                segment.spriteImg = img;
+                segment.isLoaded = true;
+            });
     }
 
     public draw() {
-      let spriteImg = this.spriteImg;
-      if(spriteImg) {
-        let positions = this.data.productPositions;
-        for (let p of positions) {
-            SG.ctx.drawImage(spriteImg, p.sx, p.sy, p.w, p.h, p.dx + x, p.dy, p.w, p.h);
+        if (this.isLoaded) {
+                SG.ctx.beginPath();
+                SG.ctx.lineWidth = 6;
+                SG.ctx.moveTo(x, 0);
+                SG.ctx.lineTo(x + this.data.width, 0);
+                SG.ctx.lineTo(x + this.data.width, this.data.height);
+                SG.ctx.lineTo(x, this.data.height);
+                SG.ctx.lineTo(x, 0);
+                SG.ctx.stroke();
+
+            let spriteImg = this.spriteImg;
+            let positions = this.data.productPositions;
+            for (let p of positions) {
+                SG.ctx.drawImage(spriteImg, p.sx, p.sy, p.w, p.h, p.dx + x, p.dy, p.w, p.h);
+            }
+            x += this.data.width + 50;
         }
-      }
-      x += 350 * 3;
     }
 }
 
@@ -49,13 +61,13 @@ export default function draw() {
 
 function loadImage(url: string) {
     return new Promise<HTMLImageElement>(function(resolve, reject) {
-      let img = new Image();
-      img.src = url;
-      img.addEventListener('load', function() {
-        resolve(img);
-      });
-      img.addEventListener('error', function(e: ErrorEvent) {
-        reject(e);
-      });
+        let img = new Image();
+        img.src = url;
+        img.addEventListener('load', function() {
+            resolve(img);
+        });
+        img.addEventListener('error', function(e: ErrorEvent) {
+            reject(e);
+        });
     });
 }

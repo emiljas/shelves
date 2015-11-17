@@ -13,13 +13,15 @@
     "../backend/src/models/**/*.ts"
   ],
   "files": [
-    "src/AnimationLoop.ts",
+    "src/Canvas.ts",
+    "src/debug/enableDebug.ts",
+    "src/debug/FpsMeasurer.ts",
     "src/draw.ts",
-    "src/enableDebug.ts",
-    "src/FpsMeasurer.ts",
     "src/main.ts",
     "src/repository/SegmentRepository.ts",
     "src/ShelvesGlobals.ts",
+    "src/touch.ts",
+    "src/windowResize.ts",
     "test/test.ts",
     "typings/tsd.d.ts",
     "../backend/src/models/ProductPositionModel.ts",
