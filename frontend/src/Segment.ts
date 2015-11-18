@@ -14,6 +14,18 @@ class Segment {
     private static frontPosition = 1;
     private static frontX = 0;
 
+    public static b() {
+      if(SG.xMove * 3 + Segment.backX > 0) {
+        console.log('prepend');
+        Segment.prependSegment();
+      }
+
+      if(SG.xMove * 3 - SG.canvasWidth * 3 + Segment.frontX < 0) {
+        console.log('append');
+        Segment.appendSegment();
+      }
+    }
+
     private isLoaded = false;
     private position: number;
     private x: number;
@@ -21,17 +33,17 @@ class Segment {
     private spriteImg: HTMLImageElement;
 
     public static prependSegment() {
-        let position = Segment.backPosition--;
+        let position = cyclePosition(Segment.backPosition--, 300);
         let segment = new Segment(position);
-        var segmentWidth = SG.segmentWidths[position];
-        Segment.backX -= segmentWidth - SPACE_BETWEEN_SEGMENTS;
+        var segmentWidth = SG.segmentWidths[position - 1];
+        Segment.backX -= segmentWidth + SPACE_BETWEEN_SEGMENTS;
         segment.x = Segment.backX;
 
         segment.load(segment);
     }
 
     public static appendSegment() {
-        let position = Segment.frontPosition++;
+        let position = cyclePosition(Segment.frontPosition++, 300);
         let segment = new Segment(position);
         segment.x = Segment.frontX;
         var segmentWidth = SG.segmentWidths[position - 1];
@@ -41,7 +53,7 @@ class Segment {
     }
 
     constructor(position: number) {
-        this.position = cyclePosition(position, 300);
+        this.position = position;
         SG.segments.push(this);
     }
 
@@ -88,5 +100,9 @@ function loadImage(url: string) {
         });
     });
 }
+
+setInterval(function() {
+  Segment.b();
+}, 100);
 
 export default Segment;

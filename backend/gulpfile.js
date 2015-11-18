@@ -21,7 +21,7 @@ gulp.task('test', function() {
       read: false
     })
     .pipe(mocha({
-      reporter: 'dots'
+      reporter: 'dot'
     }))
     .on('error', gutil.log);
 });
