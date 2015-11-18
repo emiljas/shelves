@@ -1,8 +1,7 @@
-import ut from './UnitTestUtils';
+var assert = chai.assert;
 import cyclePosition from '../src/cyclePosition';
 
 describe('cyclePosition', function() {
-
     it('return first position', function() {
         test({ input: 1, expected: 1, max: 5 });
     });
@@ -41,7 +40,6 @@ describe('cyclePosition', function() {
 
     function test(args: { input: number, expected: number, max: number }) {
         let position = cyclePosition(args.input, args.max);
-        ut.assert.equal(position, args.expected);
+        assert.equal(position, args.expected);
     }
-
 });

@@ -29,17 +29,13 @@ module.exports = function(config) {
     },
 
     webpack: {
-      output: {
-        filename: 'bundle.js',
-      },
-
       resolve: {
-        extensions: ['', '.webpack.js', '.web.js', '.ts', '.tsx', '.js']
+        extensions: ['', '.ts']
       },
 
       module: {
         loaders: [
-          { test: /\.tsx?$/, loader: 'ts-loader' }
+          { test: /\.ts$/, loader: 'ts-loader' }
         ]
       }
     },

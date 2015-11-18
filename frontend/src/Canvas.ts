@@ -44,8 +44,8 @@ export default class Canvas {
     };
 
     public moveX(move: number) {
-      this.animationTimestamp = SG.timestamp;
-      SG.distanceToMove = move;
+        this.animationTimestamp = SG.timestamp;
+        SG.distanceToMove = move;
     }
 }
 

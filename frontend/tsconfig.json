@@ -1,10 +1,10 @@
 {
-  "compileOnSave": true,
-  "buildOnSave": true,
+  "compileOnSave": false,
+  "buildOnSave": false,
   "compilerOptions": {
     "target": "es5",
     "noImplicitAny": true,
-    "sourceMap": true
+    "sourceMap": false
   },
   "filesGlob": [
     "src/**/*.ts",
@@ -14,6 +14,7 @@
   ],
   "files": [
     "src/Canvas.ts",
+    "src/cyclePosition.ts",
     "src/debug/enableDebug.ts",
     "src/debug/FpsMeasurer.ts",
     "src/draw.ts",
@@ -23,7 +24,7 @@
     "src/ShelvesGlobals.ts",
     "src/touch.ts",
     "src/windowResize.ts",
-    "test/test.ts",
+    "test/cyclePositionTests.ts",
     "typings/tsd.d.ts",
     "../backend/src/models/ProductPositionModel.ts",
     "../backend/src/models/SegmentModel.ts"
