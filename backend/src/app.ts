@@ -3,7 +3,6 @@ import * as request from 'request';
 import * as _ from 'lodash';
 import parseSegmentHtmlResponse from './parseSegmentHtmlResponse';
 import randomProductPositionsOnSegment from './randomProductPositionsOnSegment';
-import cyclePosition from './cyclePosition';
 
 var app = express();
 
@@ -32,7 +31,7 @@ app.get('/getSegment', function (req, res) {
   let url = 'http://www.rossmann.pl/DesktopModules/RossmannV4Modules/Shelves/GetSegmentHtml.ashx?json=%7B%22SegmentId%22%3A32301%2C%22Move%22%3A' + position + '%7D';
   request(url, (err, result, body) => {
     let segmentHtmlResponse = parseSegmentHtmlResponse(body);
-    let segmentWidth = segmentWidths[position];
+    let segmentWidth = segmentWidths[position - 1];
     let segmentHeight = 1920;
     let productPositions = randomProductPositionsOnSegment({
       coordsList: segmentHtmlResponse.coordsList,

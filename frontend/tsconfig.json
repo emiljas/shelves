@@ -21,6 +21,7 @@
     "src/main.ts",
     "src/repository/Repository.ts",
     "src/repository/SegmentRepository.ts",
+    "src/Segment.ts",
     "src/ShelvesGlobals.ts",
     "src/touch.ts",
     "src/windowResize.ts",

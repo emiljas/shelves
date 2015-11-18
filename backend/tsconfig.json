@@ -14,13 +14,11 @@
   "files": [
     "src/app.ts",
     "src/Coords.ts",
-    "src/cyclePosition.ts",
     "src/models/ProductPositionModel.ts",
     "src/models/SegmentModel.ts",
     "src/parseSegmentHtmlResponse.ts",
     "src/randomProductPositionsOnSegment.ts",
     "src/SegmentHtmlResponseData.ts",
-    "test/cyclePositionTests.ts",
     "test/parseSegmentHtmlResponseTests.ts",
     "test/randomProductPositionsOnSegmentTests.ts",
     "test/UnitTestUtils.ts",
