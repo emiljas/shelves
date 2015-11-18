@@ -1,16 +1,13 @@
 'use strict';
 
-export default class SegmentRepository {
+import Repository from './Repository';
 
-  public getByPosition(position: number): Promise<SegmentModel> {
-    return new Promise<SegmentModel>((resolve, reject) => {
-      let req = new XMLHttpRequest();
-      req.addEventListener("load", (e) => {
-        resolve(JSON.parse(req.responseText));
-      });
-      req.open("GET", "http://192.168.1.104:3000/getSegment?position=" + position);
-      req.send();
-    });
-  }
+export default class SegmentRepository extends Repository {
+    public getWidths(): Promise<Array<number>> {
+        return this.getJson<Array<number>>('/getSegmentWidths');
+    }
 
+    public getByPosition(position: number): Promise<SegmentModel> {
+        return this.getJson<SegmentModel>('/getSegment?position=' + position)
+    }
 }

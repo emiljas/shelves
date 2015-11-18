@@ -54,7 +54,4 @@ gulp.task('concatLibs', function() {
     }
   }))
   .pipe(gulp.dest('dist'));
-
-  //   .pipe(concat('libs.js'))
-  //   .pipe(gulp.dest('dist'));
 });

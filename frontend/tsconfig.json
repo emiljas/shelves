@@ -18,6 +18,7 @@
     "src/debug/FpsMeasurer.ts",
     "src/draw.ts",
     "src/main.ts",
+    "src/repository/Repository.ts",
     "src/repository/SegmentRepository.ts",
     "src/ShelvesGlobals.ts",
     "src/touch.ts",

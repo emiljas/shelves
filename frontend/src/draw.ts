@@ -6,6 +6,10 @@ import SegmentRepository from './repository/SegmentRepository';
 let segmentRepository = new SegmentRepository();
 let segments = new Array<Segment>();
 
+segmentRepository.getWidths().then(function(segmentWidths) {
+  console.log(segmentWidths);
+});
+
 let x = 0;
 
 class Segment {
@@ -48,7 +52,7 @@ class Segment {
     }
 }
 
-for (let position = 1; position < 8; position++) {
+for (let position = -5; position < 5; position++) {
     Segment.loadByPosition(position);
 }
 
