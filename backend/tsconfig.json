@@ -23,5 +23,8 @@
     "test/randomProductPositionsOnSegmentTests.ts",
     "test/UnitTestUtils.ts",
     "typings/tsd.d.ts"
-  ]
+  ],
+  "atom": {
+    "rewriteTsconfig": true
+  }
 }

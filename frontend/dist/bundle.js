@@ -1,1 +1,426 @@
-!function(t){function e(a){if(n[a])return n[a].exports;var i=n[a]={exports:{},id:a,loaded:!1};return t[a].call(i.exports,i,i.exports,e),i.loaded=!0,i.exports}var n={};return e.m=t,e.c=n,e.p="",e(0)}([function(t,e,n){"use strict";var a=n(1),i=n(4),o=n(7),s=n(8),u=n(9),d=n(11);i["default"].init("#shelvesCanvas1"),a["default"].init().then(function(){console.log(a["default"].segmentWidths),o["default"](),s["default"](),i["default"].instance.start(),_.times(5,function(){u["default"].appendSegment()}),u["default"].prependSegment(),d["default"]()});var r=.7,c=document.getElementById("backBtn");c.addEventListener("click",function(){var t=a["default"].distanceToMove+a["default"].canvasWidth*r;i["default"].instance.moveX(t)},!1);var l=document.getElementById("nextBtn");l.addEventListener("click",function(){var t=a["default"].distanceToMove-a["default"].canvasWidth*r;i["default"].instance.moveX(t)},!1)},function(t,e,n){"use strict";var a=n(2),i=new a["default"],o=function(){function t(){}return Object.defineProperty(t,"segmentWidths",{get:function(){return t._segmentWidths},enumerable:!0,configurable:!0}),Object.defineProperty(t,"SEGMENT_HEIGHT",{get:function(){return 1920},enumerable:!0,configurable:!0}),t.init=function(){return t.canvas=document.getElementById("shelvesCanvas"),t.canvasWidth=t.canvas.width,t.canvasHeight=t.canvas.height,t.ctx=t.canvas.getContext("2d"),t.timestamp=0,t.xMove=0,t.yMove=0,t.distanceToMove=0,i.getWidths().then(function(e){return t._segmentWidths=e,Promise.resolve()})},t.segments=new Array,t.scale=.33,t}();Object.defineProperty(e,"__esModule",{value:!0}),e["default"]=o},function(t,e,n){"use strict";var a=this&&this.__extends||function(t,e){function n(){this.constructor=t}for(var a in e)e.hasOwnProperty(a)&&(t[a]=e[a]);t.prototype=null===e?Object.create(e):(n.prototype=e.prototype,new n)},i=n(3),o=function(t){function e(){t.apply(this,arguments)}return a(e,t),e.prototype.getWidths=function(){return this.getJson("/getSegmentWidths")},e.prototype.getByPosition=function(t){return this.getJson("/getSegment?position="+t)},e}(i["default"]);Object.defineProperty(e,"__esModule",{value:!0}),e["default"]=o},function(t,e){"use strict";var n="http://localhost:3000",a=function(){function t(){}return t.prototype.getJson=function(t){return new Promise(function(e,a){var i=new XMLHttpRequest;i.onload=function(t){200==i.status?e(JSON.parse(i.responseText)):a({status:i.status,message:i.responseText})},i.open("get",n+t,!0),i.send()})},t}();Object.defineProperty(e,"__esModule",{value:!0}),e["default"]=a},function(t,e,n){"use strict";function a(t){return Math.abs(t)<d}var i=n(1),o=n(9),s=n(6),u=function(){function t(){var t=this;this.loop=function(e){if(i["default"].timestamp=e,i["default"].yMove=Math.min(0,i["default"].yMove),i["default"].yMove=Math.max(i["default"].yMove,i["default"].canvasHeight-i["default"].canvasHeight*(i["default"].scale/.33)),i["default"].ctx.clearRect(0,0,i["default"].canvas.width,i["default"].canvas.height),!a(i["default"].distanceToMove)){var n=(i["default"].timestamp-t.animationTimestamp)/1e3,u=Math.sin(n)*i["default"].distanceToMove;i["default"].xMove+=u,i["default"].distanceToMove-=u}i["default"].ctx.save(),i["default"].ctx.translate(i["default"].xMove,i["default"].yMove),i["default"].ctx.scale(i["default"].scale,i["default"].scale);for(var d=0,r=i["default"].segments;d<r.length;d++){var c=r[d];c.draw()}o["default"].preloadSegments(),i["default"].ctx.restore(),i["default"].lastTimestamp=e,s["default"].instance.tick(e),window.requestAnimationFrame(t.loop)}}return Object.defineProperty(t,"instance",{get:function(){return t._instance},enumerable:!0,configurable:!0}),t.init=function(e){return i["default"].canvas=document.getElementById("canvas"),new t},t.prototype.start=function(){window.requestAnimationFrame(this.loop)},t.prototype.moveX=function(t){this.animationTimestamp=i["default"].timestamp,i["default"].distanceToMove=t},t._instance=new t,t}();Object.defineProperty(e,"__esModule",{value:!0}),e["default"]=u;var d=.5},,function(t,e){"use strict";var n=function(){function t(){this.elapsed=0,this.last=null}return Object.defineProperty(t,"instance",{get:function(){return null==this._instance&&(this._instance=new t),this._instance},enumerable:!0,configurable:!0}),t.prototype.tick=function(t){this.elapsed=(t-(this.last||t))/1e3,this.last=t},t.prototype.get=function(){return Math.round(1/this.elapsed)},t}();Object.defineProperty(e,"__esModule",{value:!0}),e["default"]=n},function(t,e,n){"use strict";function a(){var t=document.getElementById("shelvesCanvasContainer");o["default"].canvas.width=t.offsetWidth,o["default"].canvas.height=o["default"].SEGMENT_HEIGHT*o["default"].scale,o["default"].canvasWidth=o["default"].canvas.width,o["default"].canvasHeight=o["default"].canvas.height}function i(){window.addEventListener("resize",_.debounce(function(t){a()},s)),a()}var o=n(1),s=500;Object.defineProperty(e,"__esModule",{value:!0}),e["default"]=i},function(t,e,n){"use strict";function a(){var t=new Hammer(i["default"].canvas,{touchAction:"none"});t.get("pan").set({direction:Hammer.DIRECTION_ALL});var e=0,n=0;t.on("pan",function(t){i["default"].xMove+=t.deltaX-e,e=t.deltaX,i["default"].yMove+=t.deltaY-n,n=t.deltaY}),t.on("panend",function(t){e=0,n=0}),t.on("tap",function(){.33==i["default"].scale?i["default"].scale=1:i["default"].scale=.33})}var i=n(1);Object.defineProperty(e,"__esModule",{value:!0}),e["default"]=a},function(t,e,n){"use strict";function a(t){return new Promise(function(e,n){var a=new Image;a.src=t,a.addEventListener("load",function(){e(a)}),a.addEventListener("error",function(t){n(t)})})}var i=n(1),o=n(2),s=n(10),u=new o["default"],d=50,r=function(){function t(t){this.isLoaded=!1,this.position=t,i["default"].segments.push(this)}return t.preloadSegments=function(){3*i["default"].xMove+t.backX>0&&t.prependSegment(),3*i["default"].xMove-3*i["default"].canvasWidth+t.frontX<0&&t.appendSegment()},t.prependSegment=function(){var e=s["default"](t.backPosition--,300),n=new t(e),a=i["default"].segmentWidths[e-1];t.backX-=a+d,n.x=t.backX,n.load(n)},t.appendSegment=function(){var e=s["default"](t.frontPosition++,300),n=new t(e);n.x=t.frontX;var a=i["default"].segmentWidths[e-1];t.frontX+=a+d,n.load(n)},t.prototype.load=function(t){u.getByPosition(this.position).then(function(e){return t.data=e,a(e.spriteImgUrl)}).then(function(e){t.spriteImg=e,t.isLoaded=!0})},t.prototype.draw=function(){if(this.isLoaded){i["default"].ctx.beginPath(),i["default"].ctx.lineWidth=6,i["default"].ctx.moveTo(this.x,0),i["default"].ctx.lineTo(this.x+this.data.width,0),i["default"].ctx.lineTo(this.x+this.data.width,this.data.height),i["default"].ctx.lineTo(this.x,this.data.height),i["default"].ctx.lineTo(this.x,0),i["default"].ctx.stroke();for(var t=this.spriteImg,e=this.data.productPositions,n=0;n<e.length;n++){var a=e[n];0!==a.h&&i["default"].ctx.drawImage(t,a.sx,a.sy,a.w,a.h,a.dx+this.x,a.dy,a.w,a.h)}}},t.backPosition=0,t.backX=0,t.frontPosition=1,t.frontX=0,t}();Object.defineProperty(e,"__esModule",{value:!0}),e["default"]=r},function(t,e){function n(t,e){return 1>t?e+t%e:t>e?t%e:t}Object.defineProperty(e,"__esModule",{value:!0}),e["default"]=n},function(t,e,n){"use strict";function a(){function t(t,e){var n=document.createElement("p");n.textContent=e||t,Modernizr[t]?n.classList.add("green"):n.classList.add("red"),a.appendChild(n)}var e=document.createElement("div");e.classList.add("debugContainer"),e.classList.add("left");var n={min:0,cur:0,max:0};setInterval(function(){var t=i["default"].instance;n.cur=t.get(),n.min=Math.min(n.min||Number.MAX_VALUE,n.cur),n.max=Math.max(n.max,n.cur),n.max&&(e.textContent="FPS: min."+n.min+" cur."+n.cur+" max."+n.max)},500);var a=document.createElement("div");a.classList.add("debugContainer"),a.classList.add("right"),t("canvas"),t("requestanimationframe","raf"),t("xhr2"),t("webworkers"),t("transferables"),t("touchevents"),t("eventlistener"),document.body.appendChild(e),document.body.appendChild(a)}var i=n(6);Object.defineProperty(e,"__esModule",{value:!0}),e["default"]=a}]);
+/******/ (function(modules) { // webpackBootstrap
+/******/ 	// The module cache
+/******/ 	var installedModules = {};
+
+/******/ 	// The require function
+/******/ 	function __webpack_require__(moduleId) {
+
+/******/ 		// Check if module is in cache
+/******/ 		if(installedModules[moduleId])
+/******/ 			return installedModules[moduleId].exports;
+
+/******/ 		// Create a new module (and put it into the cache)
+/******/ 		var module = installedModules[moduleId] = {
+/******/ 			exports: {},
+/******/ 			id: moduleId,
+/******/ 			loaded: false
+/******/ 		};
+
+/******/ 		// Execute the module function
+/******/ 		modules[moduleId].call(module.exports, module, module.exports, __webpack_require__);
+
+/******/ 		// Flag the module as loaded
+/******/ 		module.loaded = true;
+
+/******/ 		// Return the exports of the module
+/******/ 		return module.exports;
+/******/ 	}
+
+
+/******/ 	// expose the modules object (__webpack_modules__)
+/******/ 	__webpack_require__.m = modules;
+
+/******/ 	// expose the module cache
+/******/ 	__webpack_require__.c = installedModules;
+
+/******/ 	// __webpack_public_path__
+/******/ 	__webpack_require__.p = "";
+
+/******/ 	// Load entry module and return exports
+/******/ 	return __webpack_require__(0);
+/******/ })
+/************************************************************************/
+/******/ ([
+/* 0 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	var Canvas_1 = __webpack_require__(1);
+	var SegmentRepository_1 = __webpack_require__(4);
+	var segmentRepository = new SegmentRepository_1.default();
+	Canvas_1.default.init('#shelvesCanvas1').then(function (_canvas) {
+	    var canvas;
+	    canvas = _canvas;
+	    // windowResize();
+	    // touch();
+	    canvas.start();
+	    _.times(5, function () {
+	        canvas.appendSegment();
+	    });
+	    // Segment.prependSegment(canvas);
+	    // enableDebug();
+	});
+	Canvas_1.default.init('#shelvesCanvas2').then(function (_canvas) {
+	    var canvas = _canvas;
+	    canvas.start();
+	    _.times(5, function () {
+	        canvas.appendSegment();
+	    });
+	});
+	// const SEGMENT_RATIO_MOVE = 0.7;
+	// let backBtn = document.getElementById('backBtn');
+	// backBtn.addEventListener('click', function() {
+	//   let move = canvas.distanceToMove + canvas.canvasWidth * SEGMENT_RATIO_MOVE;
+	//   canvas.moveX(move);
+	// }, false);
+	//
+	// let nextBtn = document.getElementById('nextBtn');
+	// nextBtn.addEventListener('click', function() {
+	//   let move = canvas.distanceToMove - canvas.canvasWidth * SEGMENT_RATIO_MOVE;
+	//   canvas.moveX(move);
+	// }, false);
+
+
+/***/ },
+/* 1 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	var Segments_1 = __webpack_require__(2);
+	var FpsMeasurer_1 = __webpack_require__(7);
+	var SegmentRepository_1 = __webpack_require__(4);
+	var touch_1 = __webpack_require__(8);
+	var segmentRepository = new SegmentRepository_1.default();
+	var Canvas = (function () {
+	    function Canvas() {
+	        var _this = this;
+	        this.scale = 0.33;
+	        this.loop = function (timestamp) {
+	            _this.timestamp = timestamp;
+	            _this.yMove = Math.min(0, _this.yMove);
+	            _this.yMove = Math.max(_this.yMove, _this.canvasHeight - _this.canvasHeight * (_this.scale / 0.33));
+	            _this.ctx.clearRect(0, 0, _this.canvas.width, _this.canvas.height);
+	            if (!isNearZeroPx(_this.distanceToMove)) {
+	                var secondsFromAnimationStart = (_this.timestamp - _this.animationTimestamp) / 1000;
+	                var xMovePerFrame = Math.sin(secondsFromAnimationStart) * _this.distanceToMove;
+	                _this.xMove += xMovePerFrame;
+	                _this.distanceToMove -= xMovePerFrame;
+	            }
+	            _this.ctx.save();
+	            _this.ctx.translate(_this.xMove, _this.yMove);
+	            _this.ctx.scale(_this.scale, _this.scale);
+	            _this.segments.draw();
+	            _this.ctx.restore();
+	            _this.lastTimestamp = timestamp;
+	            FpsMeasurer_1.default.instance.tick(timestamp);
+	            window.requestAnimationFrame(_this.loop);
+	        };
+	    }
+	    Object.defineProperty(Canvas.prototype, "segmentWidths", {
+	        get: function () { return this._segmentWidths; },
+	        enumerable: true,
+	        configurable: true
+	    });
+	    Object.defineProperty(Canvas.prototype, "SEGMENT_HEIGHT", {
+	        get: function () { return 1920; },
+	        enumerable: true,
+	        configurable: true
+	    });
+	    Canvas.init = function (canvasId) {
+	        var canvas = new Canvas();
+	        canvas.canvas = document.querySelector(canvasId);
+	        canvas.canvasWidth = canvas.canvas.width;
+	        canvas.canvasHeight = canvas.canvas.height;
+	        canvas.ctx = canvas.canvas.getContext('2d');
+	        canvas.timestamp = 0;
+	        canvas.xMove = 0;
+	        canvas.yMove = 0;
+	        canvas.distanceToMove = 0;
+	        canvas.segments = new Segments_1.default(canvas);
+	        touch_1.default(canvas);
+	        return segmentRepository.getWidths().then(function (widths) {
+	            canvas._segmentWidths = widths;
+	            return Promise.resolve(canvas);
+	        });
+	    };
+	    Canvas.prototype.start = function () {
+	        window.requestAnimationFrame(this.loop);
+	    };
+	    Canvas.prototype.appendSegment = function () {
+	        this.segments.appendSegment();
+	    };
+	    Canvas.prototype.moveX = function (move) {
+	        this.animationTimestamp = this.timestamp;
+	        this.distanceToMove = move;
+	    };
+	    return Canvas;
+	})();
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.default = Canvas;
+	var DIFF = 0.5;
+	function isNearZeroPx(value) {
+	    return Math.abs(value) < DIFF;
+	}
+
+
+/***/ },
+/* 2 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	var Segment_1 = __webpack_require__(3);
+	var cyclePosition_1 = __webpack_require__(6);
+	var SPACE_BETWEEN_SEGMENTS = 50;
+	var Segments = (function () {
+	    function Segments(canvas) {
+	        this.segments = new Array();
+	        this.backPosition = 0;
+	        this.backX = 0;
+	        this.frontPosition = 1;
+	        this.frontX = 0;
+	        this.canvas = canvas;
+	    }
+	    Segments.prototype.preloadSegments = function () {
+	        if (this.canvas.xMove * 3 + this.backX > 0) {
+	            this.prependSegment();
+	        }
+	        if (this.canvas.xMove * 3 - this.canvas.canvasWidth * 3 + this.frontX < 0) {
+	            this.appendSegment();
+	        }
+	    };
+	    Segments.prototype.prependSegment = function () {
+	        var position = cyclePosition_1.default(this.backPosition--, 300);
+	        var segment = new Segment_1.default(this.canvas, position);
+	        this.segments.push(segment);
+	        var segmentWidth = this.canvas.segmentWidths[position - 1];
+	        this.backX -= segmentWidth + SPACE_BETWEEN_SEGMENTS;
+	        segment.x = this.backX;
+	        segment.load(segment);
+	    };
+	    Segments.prototype.appendSegment = function () {
+	        var position = cyclePosition_1.default(this.frontPosition++, 300);
+	        var segment = new Segment_1.default(this.canvas, position);
+	        this.segments.push(segment);
+	        segment.x = this.frontX;
+	        var segmentWidth = this.canvas.segmentWidths[position - 1];
+	        this.frontX += segmentWidth + SPACE_BETWEEN_SEGMENTS;
+	        segment.load(segment);
+	    };
+	    Segments.prototype.draw = function () {
+	        for (var _i = 0, _a = this.segments; _i < _a.length; _i++) {
+	            var segment = _a[_i];
+	            segment.draw();
+	        }
+	        this.preloadSegments();
+	    };
+	    return Segments;
+	})();
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.default = Segments;
+
+
+/***/ },
+/* 3 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	var SegmentRepository_1 = __webpack_require__(4);
+	var segmentRepository = new SegmentRepository_1.default();
+	var Segment = (function () {
+	    function Segment(canvas, position) {
+	        this.isLoaded = false;
+	        this.position = position;
+	        this.canvas = canvas;
+	    }
+	    Segment.prototype.load = function (segment) {
+	        segmentRepository.getByPosition(this.position).then(function (data) {
+	            segment.data = data;
+	            return loadImage(data.spriteImgUrl);
+	        })
+	            .then(function (img) {
+	            segment.spriteImg = img;
+	            segment.isLoaded = true;
+	        });
+	    };
+	    Segment.prototype.draw = function () {
+	        var ctx = this.canvas.ctx;
+	        if (this.isLoaded) {
+	            ctx.beginPath();
+	            ctx.lineWidth = 6;
+	            ctx.moveTo(this.x, 0);
+	            ctx.lineTo(this.x + this.data.width, 0);
+	            ctx.lineTo(this.x + this.data.width, this.data.height);
+	            ctx.lineTo(this.x, this.data.height);
+	            ctx.lineTo(this.x, 0);
+	            ctx.stroke();
+	            var spriteImg = this.spriteImg;
+	            var positions = this.data.productPositions;
+	            for (var _i = 0; _i < positions.length; _i++) {
+	                var p = positions[_i];
+	                if (p.h !== 0)
+	                    ctx.drawImage(spriteImg, p.sx, p.sy, p.w, p.h, p.dx + this.x, p.dy, p.w, p.h);
+	            }
+	        }
+	    };
+	    return Segment;
+	})();
+	function loadImage(url) {
+	    return new Promise(function (resolve, reject) {
+	        var img = new Image();
+	        img.src = url;
+	        img.addEventListener('load', function () {
+	            resolve(img);
+	        });
+	        img.addEventListener('error', function (e) {
+	            reject(e);
+	        });
+	    });
+	}
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.default = Segment;
+
+
+/***/ },
+/* 4 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	var __extends = (this && this.__extends) || function (d, b) {
+	    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+	    function __() { this.constructor = d; }
+	    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+	};
+	var Repository_1 = __webpack_require__(5);
+	var SegmentRepository = (function (_super) {
+	    __extends(SegmentRepository, _super);
+	    function SegmentRepository() {
+	        _super.apply(this, arguments);
+	    }
+	    SegmentRepository.prototype.getWidths = function () {
+	        return this.getJson('/getSegmentWidths');
+	    };
+	    SegmentRepository.prototype.getByPosition = function (position) {
+	        return this.getJson('/getSegment?position=' + position);
+	    };
+	    return SegmentRepository;
+	})(Repository_1.default);
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.default = SegmentRepository;
+
+
+/***/ },
+/* 5 */
+/***/ function(module, exports) {
+
+	'use strict';
+	var SERVER_URL = 'http://localhost:3000';
+	var Repository = (function () {
+	    function Repository() {
+	    }
+	    Repository.prototype.getJson = function (url) {
+	        return new Promise(function (resolve, reject) {
+	            var req = new XMLHttpRequest();
+	            req.onload = function (e) {
+	                if (req.status == 200)
+	                    resolve(JSON.parse(req.responseText));
+	                else
+	                    reject({
+	                        status: req.status,
+	                        message: req.responseText
+	                    });
+	            };
+	            req.open("get", SERVER_URL + url, true);
+	            req.send();
+	        });
+	    };
+	    return Repository;
+	})();
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.default = Repository;
+
+
+/***/ },
+/* 6 */
+/***/ function(module, exports) {
+
+	function default_1(position, maxPosition) {
+	    if (position < 1)
+	        return maxPosition + position % maxPosition;
+	    if (position > maxPosition)
+	        return position % maxPosition;
+	    return position;
+	}
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.default = default_1;
+	;
+
+
+/***/ },
+/* 7 */
+/***/ function(module, exports) {
+
+	'use strict';
+	var FpsMeasurer = (function () {
+	    function FpsMeasurer() {
+	        this.elapsed = 0;
+	        this.last = null;
+	    }
+	    Object.defineProperty(FpsMeasurer, "instance", {
+	        get: function () {
+	            if (this._instance == null)
+	                this._instance = new FpsMeasurer();
+	            return this._instance;
+	        },
+	        enumerable: true,
+	        configurable: true
+	    });
+	    FpsMeasurer.prototype.tick = function (now) {
+	        this.elapsed = (now - (this.last || now)) / 1000;
+	        this.last = now;
+	    };
+	    FpsMeasurer.prototype.get = function () {
+	        return Math.round(1 / this.elapsed);
+	    };
+	    return FpsMeasurer;
+	})();
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.default = FpsMeasurer;
+
+
+/***/ },
+/* 8 */
+/***/ function(module, exports) {
+
+	'use strict';
+	function default_1(canvas) {
+	    var hammer = new Hammer(canvas.canvas, {
+	        touchAction: 'none'
+	    });
+	    hammer.get('pan').set({ direction: Hammer.DIRECTION_ALL });
+	    var lastDeltaX = 0;
+	    var lastDeltaY = 0;
+	    hammer.on('pan', function (e) {
+	        canvas.xMove += e.deltaX - lastDeltaX;
+	        lastDeltaX = e.deltaX;
+	        canvas.yMove += e.deltaY - lastDeltaY;
+	        lastDeltaY = e.deltaY;
+	    });
+	    hammer.on('panend', function (e) {
+	        lastDeltaX = 0;
+	        lastDeltaY = 0;
+	    });
+	    hammer.on('tap', function () {
+	        if (canvas.scale == 0.33) {
+	            canvas.scale = 1;
+	        }
+	        else {
+	            canvas.scale = 0.33;
+	        }
+	    });
+	}
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.default = default_1;
+
+
+/***/ }
+/******/ ]);

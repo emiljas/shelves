@@ -4,7 +4,7 @@
   "compilerOptions": {
     "target": "es5",
     "noImplicitAny": true,
-    "sourceMap": true
+    "sourceMap": false
   },
   "filesGlob": [
     "src/**/*.ts",
@@ -17,17 +17,19 @@
     "src/cyclePosition.ts",
     "src/debug/enableDebug.ts",
     "src/debug/FpsMeasurer.ts",
-    "src/draw.ts",
     "src/main.ts",
     "src/repository/Repository.ts",
     "src/repository/SegmentRepository.ts",
     "src/Segment.ts",
-    "src/ShelvesGlobals.ts",
+    "src/Segments.ts",
     "src/touch.ts",
     "src/windowResize.ts",
     "test/cyclePositionTests.ts",
     "typings/tsd.d.ts",
     "../backend/src/models/ProductPositionModel.ts",
     "../backend/src/models/SegmentModel.ts"
-  ]
+  ],
+  "atom": {
+    "rewriteTsconfig": true
+  }
 }

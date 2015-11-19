@@ -1,10 +1,9 @@
 'use strict';
 
-import SG from './ShelvesGlobals';
+import Canvas from './Canvas';
 
-export default function() {
-
-    let hammer = new Hammer(SG.canvas, {
+export default function(canvas: Canvas) {
+    let hammer = new Hammer(canvas.canvas, {
         touchAction: 'none'
     });
     hammer.get('pan').set({ direction: Hammer.DIRECTION_ALL });
@@ -13,10 +12,10 @@ export default function() {
     let lastDeltaY = 0;
 
     hammer.on('pan', function(e: HammerInput) {
-        SG.xMove += e.deltaX - lastDeltaX;
+        canvas.xMove += e.deltaX - lastDeltaX;
         lastDeltaX = e.deltaX;
 
-        SG.yMove += e.deltaY - lastDeltaY;
+        canvas.yMove += e.deltaY - lastDeltaY;
         lastDeltaY = e.deltaY;
     });
 
@@ -26,12 +25,11 @@ export default function() {
     });
 
     hammer.on('tap', function() {
-        if (SG.scale == 0.33) {
-            SG.scale = 1;
+        if (canvas.scale == 0.33) {
+            canvas.scale = 1;
         }
         else {
-            SG.scale = 0.33;
+            canvas.scale = 0.33;
         }
     });
-
 }

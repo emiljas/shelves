@@ -43,7 +43,7 @@ gulp.task('ts2js', function() {
     // devtool: 'source-map',
 
     plugins: [
-      new originalWebpack.optimize.UglifyJsPlugin()
+      // new originalWebpack.optimize.UglifyJsPlugin()
     ],
 
     resolve: {

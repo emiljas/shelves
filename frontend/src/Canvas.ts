@@ -1,59 +1,93 @@
 'use strict';
 
-import SG from './ShelvesGlobals';
+import Segments from './Segments';
 import Segment from './Segment';
 import FpsMeasurer from './debug/FpsMeasurer';
+import SegmentRepository from './repository/SegmentRepository';
+import touch from './touch';
+
+let segmentRepository = new SegmentRepository();
 
 export default class Canvas {
+    private _segmentWidths: Array<number>;
+    public get segmentWidths(): Array<number> { return this._segmentWidths; }
+    public get SEGMENT_HEIGHT(): number { return 1920; }
+    public segments: Segments;
+    public canvas: HTMLCanvasElement;
+    public canvasWidth: number;
+    public canvasHeight: number;
+    public ctx: CanvasRenderingContext2D;
+    public timestamp: number;
+    public xMove: number;
+    public yMove: number;
+    public distanceToMove: number;
+    public lastTimestamp: number;
+    public scale = 0.33;
 
-    private static _instance = new Canvas();
-    public static get instance(): Canvas { return Canvas._instance; }
+    public static init(canvasId: string): Promise<Canvas> {
+        var canvas = new Canvas();
+
+        canvas.canvas = <HTMLCanvasElement>document.querySelector(canvasId);
+        canvas.canvasWidth = canvas.canvas.width;
+        canvas.canvasHeight = canvas.canvas.height;
+        canvas.ctx = canvas.canvas.getContext('2d');
+        canvas.timestamp = 0;
+        canvas.xMove = 0;
+        canvas.yMove = 0;
+        canvas.distanceToMove = 0;
+        canvas.segments = new Segments(canvas);
+
+        touch(canvas);
+
+
+        return segmentRepository.getWidths().then(function(widths) {
+          canvas._segmentWidths = widths;
+          return Promise.resolve(canvas);
+        });
+    }
 
     private animationTimestamp: number;
-
-    public static init(canvasId: string) {
-      SG.canvas = <HTMLCanvasElement>document.getElementById('canvas');
-      return new Canvas();
-    }
 
     public start() {
         window.requestAnimationFrame(this.loop);
     }
 
     private loop = (timestamp: number) => {
-        SG.timestamp = timestamp;
+        this.timestamp = timestamp;
 
-        SG.yMove = Math.min(0, SG.yMove);
-        SG.yMove = Math.max(SG.yMove, SG.canvasHeight - SG.canvasHeight * (SG.scale / 0.33));
+        this.yMove = Math.min(0, this.yMove);
+        this.yMove = Math.max(this.yMove, this.canvasHeight - this.canvasHeight * (this.scale / 0.33));
 
-        SG.ctx.clearRect(0, 0, SG.canvas.width, SG.canvas.height);
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-        if (!isNearZeroPx(SG.distanceToMove)) {
-            var secondsFromAnimationStart = (SG.timestamp - this.animationTimestamp) / 1000;
-            var xMovePerFrame = Math.sin(secondsFromAnimationStart) * SG.distanceToMove;
+        if (!isNearZeroPx(this.distanceToMove)) {
+            var secondsFromAnimationStart = (this.timestamp - this.animationTimestamp) / 1000;
+            var xMovePerFrame = Math.sin(secondsFromAnimationStart) * this.distanceToMove;
 
-            SG.xMove += xMovePerFrame;
-            SG.distanceToMove -= xMovePerFrame;
+            this.xMove += xMovePerFrame;
+            this.distanceToMove -= xMovePerFrame;
         }
 
-        SG.ctx.save();
-        SG.ctx.translate(SG.xMove, SG.yMove);
-        SG.ctx.scale(SG.scale, SG.scale);
+        this.ctx.save();
+        this.ctx.translate(this.xMove, this.yMove);
+        this.ctx.scale(this.scale, this.scale);
 
-        for(let segment of SG.segments)
-          segment.draw();
-        Segment.preloadSegments();
+        this.segments.draw();
 
-        SG.ctx.restore();
+        this.ctx.restore();
 
-        SG.lastTimestamp = timestamp;
+        this.lastTimestamp = timestamp;
         FpsMeasurer.instance.tick(timestamp);
         window.requestAnimationFrame(this.loop);
     };
 
+    public appendSegment() {
+      this.segments.appendSegment();
+    }
+
     public moveX(move: number) {
-        this.animationTimestamp = SG.timestamp;
-        SG.distanceToMove = move;
+        this.animationTimestamp = this.timestamp;
+        this.distanceToMove = move;
     }
 }
 

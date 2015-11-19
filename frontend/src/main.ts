@@ -1,37 +1,51 @@
 'use strict';
 
-import SG from './ShelvesGlobals';
 import Canvas from './Canvas';
 import windowResize from './windowResize';
 import touch from './touch';
 import Segment from './Segment';
 import enableDebug from './debug/enableDebug';
 
-Canvas.init('#shelvesCanvas1');
+import SegmentRepository from './repository/SegmentRepository';
+let segmentRepository = new SegmentRepository();
 
-SG.init().then(function() {
-  console.log(SG.segmentWidths);
-  windowResize();
-  touch();
-  Canvas.instance.start();
+
+Canvas.init('#shelvesCanvas1').then(function(_canvas) {
+  var canvas: Canvas;
+  canvas = _canvas;
+
+  // windowResize();
+  // touch();
+
+  canvas.start();
 
   _.times(5, function() {
-      Segment.appendSegment();
+      canvas.appendSegment();
   });
-  Segment.prependSegment();
+  // Segment.prependSegment(canvas);
 
-  enableDebug();
+  // enableDebug();
 });
 
-const SEGMENT_RATIO_MOVE = 0.7;
-let backBtn = document.getElementById('backBtn');
-backBtn.addEventListener('click', function() {
-  let move = SG.distanceToMove + SG.canvasWidth * SEGMENT_RATIO_MOVE;
-  Canvas.instance.moveX(move);
-}, false);
+Canvas.init('#shelvesCanvas2').then(function(_canvas) {
+  var canvas = _canvas;
+  canvas.start();
 
-let nextBtn = document.getElementById('nextBtn');
-nextBtn.addEventListener('click', function() {
-  let move = SG.distanceToMove - SG.canvasWidth * SEGMENT_RATIO_MOVE;
-  Canvas.instance.moveX(move);
-}, false);
+  _.times(5, function() {
+      canvas.appendSegment();
+  });
+});
+
+
+// const SEGMENT_RATIO_MOVE = 0.7;
+// let backBtn = document.getElementById('backBtn');
+// backBtn.addEventListener('click', function() {
+//   let move = canvas.distanceToMove + canvas.canvasWidth * SEGMENT_RATIO_MOVE;
+//   canvas.moveX(move);
+// }, false);
+//
+// let nextBtn = document.getElementById('nextBtn');
+// nextBtn.addEventListener('click', function() {
+//   let move = canvas.distanceToMove - canvas.canvasWidth * SEGMENT_RATIO_MOVE;
+//   canvas.moveX(move);
+// }, false);
