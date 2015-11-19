@@ -14,14 +14,12 @@ class Segment {
     private static frontPosition = 1;
     private static frontX = 0;
 
-    public static b() {
+    public static preloadSegments() {
       if(SG.xMove * 3 + Segment.backX > 0) {
-        console.log('prepend');
         Segment.prependSegment();
       }
 
       if(SG.xMove * 3 - SG.canvasWidth * 3 + Segment.frontX < 0) {
-        console.log('append');
         Segment.appendSegment();
       }
     }
@@ -82,7 +80,8 @@ class Segment {
             let spriteImg = this.spriteImg;
             let positions = this.data.productPositions;
             for (let p of positions) {
-                SG.ctx.drawImage(spriteImg, p.sx, p.sy, p.w, p.h, p.dx + this.x, p.dy, p.w, p.h);
+              if(p.h !== 0)
+              SG.ctx.drawImage(spriteImg, p.sx, p.sy, p.w, p.h, p.dx + this.x, p.dy, p.w, p.h);
             }
         }
     }
@@ -100,9 +99,5 @@ function loadImage(url: string) {
         });
     });
 }
-
-setInterval(function() {
-  Segment.b();
-}, 100);
 
 export default Segment;

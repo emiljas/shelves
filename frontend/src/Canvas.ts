@@ -1,7 +1,7 @@
 'use strict';
 
 import SG from './ShelvesGlobals';
-import draw from './draw';
+import Segment from './Segment';
 import FpsMeasurer from './debug/FpsMeasurer';
 
 export default class Canvas {
@@ -11,6 +11,10 @@ export default class Canvas {
 
     private animationTimestamp: number;
 
+    public static init(canvasId: string) {
+      SG.canvas = <HTMLCanvasElement>document.getElementById('canvas');
+      return new Canvas();
+    }
 
     public start() {
         window.requestAnimationFrame(this.loop);
@@ -35,7 +39,11 @@ export default class Canvas {
         SG.ctx.save();
         SG.ctx.translate(SG.xMove, SG.yMove);
         SG.ctx.scale(SG.scale, SG.scale);
-        draw();
+
+        for(let segment of SG.segments)
+          segment.draw();
+        Segment.preloadSegments();
+
         SG.ctx.restore();
 
         SG.lastTimestamp = timestamp;

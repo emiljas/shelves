@@ -7,7 +7,10 @@ import touch from './touch';
 import Segment from './Segment';
 import enableDebug from './debug/enableDebug';
 
+Canvas.init('#shelvesCanvas1');
+
 SG.init().then(function() {
+  console.log(SG.segmentWidths);
   windowResize();
   touch();
   Canvas.instance.start();

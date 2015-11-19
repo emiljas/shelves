@@ -40,7 +40,7 @@ gulp.task('ts2js', function() {
       filename: 'bundle.js',
     },
 
-    devtool: 'source-map',
+    // devtool: 'source-map',
 
     plugins: [
       new originalWebpack.optimize.UglifyJsPlugin()

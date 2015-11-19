@@ -37,6 +37,7 @@ export default class SG {
 
         return segmentRepository.getWidths().then(function(widths) {
           SG._segmentWidths = widths;
+          return Promise.resolve();
         });
     }
 }
