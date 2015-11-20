@@ -1,27 +1,27 @@
 'use strict';
 
 import Canvas from './Canvas';
-import Segments from './Segments';
 import SegmentRepository from './repository/SegmentRepository';
 
 let segmentRepository = new SegmentRepository();
 
 class Segment {
+    private x: number;
     private isLoaded = false;
     private canvas: Canvas;
-    private position: number;
-    public x: number;
+    private index: number;
     private data: SegmentModel;
     private spriteImg: HTMLImageElement;
 
 
-    constructor(canvas: Canvas, position: number) {
-        this.position = position;
+    constructor(canvas: Canvas, index: number, x: number) {
+        this.index = index;
         this.canvas = canvas;
+        this.x = x;
     }
 
     public load(segment: Segment) {
-        segmentRepository.getByPosition(this.position).then(function(data) {
+        segmentRepository.getByPosition(this.index).then(function(data) {
             segment.data = data;
             return loadImage(data.spriteImgUrl);
         })
@@ -32,7 +32,7 @@ class Segment {
     }
 
     public draw() {
-      var ctx = this.canvas.ctx;
+        let ctx = this.canvas.ctx;
         if (this.isLoaded) {
             ctx.beginPath();
             ctx.lineWidth = 6;
@@ -46,14 +46,16 @@ class Segment {
             let spriteImg = this.spriteImg;
             let positions = this.data.productPositions;
             for (let p of positions) {
-              if(p.h !== 0)
-              ctx.drawImage(spriteImg, p.sx, p.sy, p.w, p.h, p.dx + this.x, p.dy, p.w, p.h);
+                if (p.h !== 0) {
+                    ctx.drawImage(spriteImg, p.sx, p.sy, p.w, p.h, p.dx + this.x, p.dy, p.w, p.h);
+                }
             }
         }
     }
 }
 
 function loadImage(url: string) {
+    'use strict';
     return new Promise<HTMLImageElement>(function(resolve, reject) {
         let img = new Image();
         img.src = url;

@@ -1,5 +1,3 @@
-'use strict';
-
 // import SG from './ShelvesGlobals';
 //
 // const RESIZE_DEBOUNCED_WAIT = 500;
@@ -13,8 +11,9 @@
 // }
 
 export default function () {
+  'use strict';
   // window.addEventListener('resize', _.debounce(function(event: UIEvent) {
   //     resizeCanvas();
   // }, RESIZE_DEBOUNCED_WAIT));
   // resizeCanvas();
-};;
+};

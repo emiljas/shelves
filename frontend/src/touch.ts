@@ -3,6 +3,8 @@
 import Canvas from './Canvas';
 
 export default function(canvas: Canvas) {
+    'use strict';
+
     let hammer = new Hammer(canvas.canvas, {
         touchAction: 'none'
     });
@@ -25,10 +27,9 @@ export default function(canvas: Canvas) {
     });
 
     hammer.on('tap', function() {
-        if (canvas.scale == 0.33) {
+        if (canvas.scale === 0.33) {
             canvas.scale = 1;
-        }
-        else {
+        } else {
             canvas.scale = 0.33;
         }
     });

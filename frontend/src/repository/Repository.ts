@@ -7,15 +7,16 @@ export default class Repository {
         return new Promise<T>(function(resolve, reject) {
             let req = new XMLHttpRequest();
             req.onload = function(e) {
-                if (req.status == 200)
+                if (req.status === 200) {
                     resolve(JSON.parse(req.responseText));
-                else
+                } else {
                     reject({
                         status: req.status,
                         message: req.responseText
                     });
+                }
             };
-            req.open("get", SERVER_URL + url, true);
+            req.open('get', SERVER_URL + url, true);
             req.send();
         });
     }

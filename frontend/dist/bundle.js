@@ -46,39 +46,54 @@
 
 	'use strict';
 	var Canvas_1 = __webpack_require__(1);
+	// import windowResize from './windowResize';
+	// import touch from './touch';
+	// import Segment from './Segment';
+	// import enableDebug from './debug/enableDebug';
 	var SegmentRepository_1 = __webpack_require__(4);
 	var segmentRepository = new SegmentRepository_1.default();
-	Canvas_1.default.init('#shelvesCanvas1').then(function (_canvas) {
-	    var canvas;
-	    canvas = _canvas;
+	//should be deleted when setAttribute on server side!
+	var downloadSegmentWidths = segmentRepository.getWidths().then(function (widths) {
+	    var canvases = document.querySelectorAll('canvas');
+	    for (var i = 0; i < canvases.length; i++) {
+	        var canvas = canvases[i];
+	        canvas.setAttribute('data-segment-widths', JSON.stringify(widths));
+	    }
+	    return Promise.resolve();
+	});
+	downloadSegmentWidths.then(function () {
+	    var canvas1 = Canvas_1.default.init('#shelvesCanvas1');
 	    // windowResize();
 	    // touch();
-	    canvas.start();
+	    canvas1.start();
 	    _.times(5, function () {
-	        canvas.appendSegment();
+	        canvas1.appendSegment();
 	    });
 	    // Segment.prependSegment(canvas);
 	    // enableDebug();
-	});
-	Canvas_1.default.init('#shelvesCanvas2').then(function (_canvas) {
-	    var canvas = _canvas;
-	    canvas.start();
+	    var canvas2 = Canvas_1.default.init('#shelvesCanvas2');
+	    canvas2.start();
 	    _.times(5, function () {
-	        canvas.appendSegment();
+	        canvas2.appendSegment();
 	    });
+	    var canvas3 = Canvas_1.default.init('#shelvesCanvas3');
+	    canvas3.start();
+	    _.times(5, function () {
+	        canvas3.appendSegment();
+	    });
+	    // const SEGMENT_RATIO_MOVE = 0.7;
+	    // let backBtn = document.getElementById('backBtn');
+	    // backBtn.addEventListener('click', function() {
+	    //   let move = canvas.distanceToMove + canvas.canvasWidth * SEGMENT_RATIO_MOVE;
+	    //   canvas.moveX(move);
+	    // }, false);
+	    //
+	    // let nextBtn = document.getElementById('nextBtn');
+	    // nextBtn.addEventListener('click', function() {
+	    //   let move = canvas.distanceToMove - canvas.canvasWidth * SEGMENT_RATIO_MOVE;
+	    //   canvas.moveX(move);
+	    // }, false);
 	});
-	// const SEGMENT_RATIO_MOVE = 0.7;
-	// let backBtn = document.getElementById('backBtn');
-	// backBtn.addEventListener('click', function() {
-	//   let move = canvas.distanceToMove + canvas.canvasWidth * SEGMENT_RATIO_MOVE;
-	//   canvas.moveX(move);
-	// }, false);
-	//
-	// let nextBtn = document.getElementById('nextBtn');
-	// nextBtn.addEventListener('click', function() {
-	//   let move = canvas.distanceToMove - canvas.canvasWidth * SEGMENT_RATIO_MOVE;
-	//   canvas.moveX(move);
-	// }, false);
 
 
 /***/ },
@@ -88,44 +103,13 @@
 	'use strict';
 	var Segments_1 = __webpack_require__(2);
 	var FpsMeasurer_1 = __webpack_require__(7);
-	var SegmentRepository_1 = __webpack_require__(4);
 	var touch_1 = __webpack_require__(8);
-	var segmentRepository = new SegmentRepository_1.default();
 	var Canvas = (function () {
 	    function Canvas() {
 	        var _this = this;
 	        this.scale = 0.33;
-	        this.loop = function (timestamp) {
-	            _this.timestamp = timestamp;
-	            _this.yMove = Math.min(0, _this.yMove);
-	            _this.yMove = Math.max(_this.yMove, _this.canvasHeight - _this.canvasHeight * (_this.scale / 0.33));
-	            _this.ctx.clearRect(0, 0, _this.canvas.width, _this.canvas.height);
-	            if (!isNearZeroPx(_this.distanceToMove)) {
-	                var secondsFromAnimationStart = (_this.timestamp - _this.animationTimestamp) / 1000;
-	                var xMovePerFrame = Math.sin(secondsFromAnimationStart) * _this.distanceToMove;
-	                _this.xMove += xMovePerFrame;
-	                _this.distanceToMove -= xMovePerFrame;
-	            }
-	            _this.ctx.save();
-	            _this.ctx.translate(_this.xMove, _this.yMove);
-	            _this.ctx.scale(_this.scale, _this.scale);
-	            _this.segments.draw();
-	            _this.ctx.restore();
-	            _this.lastTimestamp = timestamp;
-	            FpsMeasurer_1.default.instance.tick(timestamp);
-	            window.requestAnimationFrame(_this.loop);
-	        };
+	        this.frameRequestCallback = function (timestamp) { _this.loop(timestamp); };
 	    }
-	    Object.defineProperty(Canvas.prototype, "segmentWidths", {
-	        get: function () { return this._segmentWidths; },
-	        enumerable: true,
-	        configurable: true
-	    });
-	    Object.defineProperty(Canvas.prototype, "SEGMENT_HEIGHT", {
-	        get: function () { return 1920; },
-	        enumerable: true,
-	        configurable: true
-	    });
 	    Canvas.init = function (canvasId) {
 	        var canvas = new Canvas();
 	        canvas.canvas = document.querySelector(canvasId);
@@ -138,13 +122,10 @@
 	        canvas.distanceToMove = 0;
 	        canvas.segments = new Segments_1.default(canvas);
 	        touch_1.default(canvas);
-	        return segmentRepository.getWidths().then(function (widths) {
-	            canvas._segmentWidths = widths;
-	            return Promise.resolve(canvas);
-	        });
+	        return canvas;
 	    };
 	    Canvas.prototype.start = function () {
-	        window.requestAnimationFrame(this.loop);
+	        window.requestAnimationFrame(this.frameRequestCallback);
 	    };
 	    Canvas.prototype.appendSegment = function () {
 	        this.segments.appendSegment();
@@ -153,12 +134,34 @@
 	        this.animationTimestamp = this.timestamp;
 	        this.distanceToMove = move;
 	    };
+	    Canvas.prototype.loop = function (timestamp) {
+	        this.timestamp = timestamp;
+	        this.yMove = Math.min(0, this.yMove);
+	        this.yMove = Math.max(this.yMove, this.canvasHeight - this.canvasHeight * (this.scale / 0.33));
+	        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+	        if (!isNearZeroPx(this.distanceToMove)) {
+	            var secondsFromAnimationStart = (this.timestamp - this.animationTimestamp) / 1000;
+	            var xMovePerFrame = Math.sin(secondsFromAnimationStart) * this.distanceToMove;
+	            this.xMove += xMovePerFrame;
+	            this.distanceToMove -= xMovePerFrame;
+	        }
+	        this.ctx.save();
+	        this.ctx.translate(this.xMove, this.yMove);
+	        this.ctx.scale(this.scale, this.scale);
+	        this.segments.draw();
+	        this.ctx.restore();
+	        this.lastTimestamp = timestamp;
+	        FpsMeasurer_1.default.instance.tick(timestamp);
+	        window.requestAnimationFrame(this.frameRequestCallback);
+	    };
+	    ;
 	    return Canvas;
 	})();
 	Object.defineProperty(exports, "__esModule", { value: true });
 	exports.default = Canvas;
 	var DIFF = 0.5;
 	function isNearZeroPx(value) {
+	    'use strict';
 	    return Math.abs(value) < DIFF;
 	}
 
@@ -169,17 +172,26 @@
 
 	'use strict';
 	var Segment_1 = __webpack_require__(3);
-	var cyclePosition_1 = __webpack_require__(6);
+	// import cyclePosition from './cyclePosition';
 	var SPACE_BETWEEN_SEGMENTS = 50;
 	var Segments = (function () {
 	    function Segments(canvas) {
 	        this.segments = new Array();
 	        this.backPosition = 0;
 	        this.backX = 0;
-	        this.frontPosition = 1;
+	        this.frontPosition = 0;
 	        this.frontX = 0;
 	        this.canvas = canvas;
+	        this.segmentWidths = JSON.parse(canvas.canvas.getAttribute('data-segment-widths'));
+	        this.segmentCount = this.segmentWidths.length;
 	    }
+	    Segments.prototype.draw = function () {
+	        for (var _i = 0, _a = this.segments; _i < _a.length; _i++) {
+	            var segment = _a[_i];
+	            segment.draw();
+	        }
+	        this.preloadSegments();
+	    };
 	    Segments.prototype.preloadSegments = function () {
 	        if (this.canvas.xMove * 3 + this.backX > 0) {
 	            this.prependSegment();
@@ -189,29 +201,45 @@
 	        }
 	    };
 	    Segments.prototype.prependSegment = function () {
-	        var position = cyclePosition_1.default(this.backPosition--, 300);
-	        var segment = new Segment_1.default(this.canvas, position);
-	        this.segments.push(segment);
-	        var segmentWidth = this.canvas.segmentWidths[position - 1];
+	        this.backPosition = this.getLastIndexIfBelowZero(this.backPosition - 1);
+	        var index = this.backPosition;
+	        var segmentWidth = this.segmentWidths[index];
 	        this.backX -= segmentWidth + SPACE_BETWEEN_SEGMENTS;
-	        segment.x = this.backX;
+	        var segment = new Segment_1.default(this.canvas, index, this.backX);
+	        this.segments.push(segment);
 	        segment.load(segment);
 	    };
 	    Segments.prototype.appendSegment = function () {
-	        var position = cyclePosition_1.default(this.frontPosition++, 300);
-	        var segment = new Segment_1.default(this.canvas, position);
+	        this.frontPosition = this.getZeroIndexIfUnderLast(this.frontPosition + 1);
+	        var index = this.frontPosition;
+	        console.log(index);
+	        var segment = new Segment_1.default(this.canvas, index, this.frontX);
 	        this.segments.push(segment);
-	        segment.x = this.frontX;
-	        var segmentWidth = this.canvas.segmentWidths[position - 1];
+	        var segmentWidth = this.segmentWidths[index];
 	        this.frontX += segmentWidth + SPACE_BETWEEN_SEGMENTS;
 	        segment.load(segment);
 	    };
-	    Segments.prototype.draw = function () {
-	        for (var _i = 0, _a = this.segments; _i < _a.length; _i++) {
-	            var segment = _a[_i];
-	            segment.draw();
+	    Segments.prototype.getLastIndexIfBelowZero = function (index) {
+	        if (index === -1) {
+	            return this.segmentCount - 1;
 	        }
-	        this.preloadSegments();
+	        else if (index >= 0 && index < this.segmentCount) {
+	            return index;
+	        }
+	        else {
+	            throw 'Segments: index < -1';
+	        }
+	    };
+	    Segments.prototype.getZeroIndexIfUnderLast = function (index) {
+	        if (index === this.segmentCount) {
+	            return 0;
+	        }
+	        else if (index >= 0 && index < this.segmentCount) {
+	            return index;
+	        }
+	        else {
+	            throw 'Segments: index > segment count';
+	        }
 	    };
 	    return Segments;
 	})();
@@ -227,13 +255,14 @@
 	var SegmentRepository_1 = __webpack_require__(4);
 	var segmentRepository = new SegmentRepository_1.default();
 	var Segment = (function () {
-	    function Segment(canvas, position) {
+	    function Segment(canvas, index, x) {
 	        this.isLoaded = false;
-	        this.position = position;
+	        this.index = index;
 	        this.canvas = canvas;
+	        this.x = x;
 	    }
 	    Segment.prototype.load = function (segment) {
-	        segmentRepository.getByPosition(this.position).then(function (data) {
+	        segmentRepository.getByPosition(this.index).then(function (data) {
 	            segment.data = data;
 	            return loadImage(data.spriteImgUrl);
 	        })
@@ -257,14 +286,16 @@
 	            var positions = this.data.productPositions;
 	            for (var _i = 0; _i < positions.length; _i++) {
 	                var p = positions[_i];
-	                if (p.h !== 0)
+	                if (p.h !== 0) {
 	                    ctx.drawImage(spriteImg, p.sx, p.sy, p.w, p.h, p.dx + this.x, p.dy, p.w, p.h);
+	                }
 	            }
 	        }
 	    };
 	    return Segment;
 	})();
 	function loadImage(url) {
+	    'use strict';
 	    return new Promise(function (resolve, reject) {
 	        var img = new Image();
 	        img.src = url;
@@ -299,8 +330,8 @@
 	    SegmentRepository.prototype.getWidths = function () {
 	        return this.getJson('/getSegmentWidths');
 	    };
-	    SegmentRepository.prototype.getByPosition = function (position) {
-	        return this.getJson('/getSegment?position=' + position);
+	    SegmentRepository.prototype.getByPosition = function (index) {
+	        return this.getJson('/getSegment?index=' + index);
 	    };
 	    return SegmentRepository;
 	})(Repository_1.default);
@@ -321,15 +352,17 @@
 	        return new Promise(function (resolve, reject) {
 	            var req = new XMLHttpRequest();
 	            req.onload = function (e) {
-	                if (req.status == 200)
+	                if (req.status === 200) {
 	                    resolve(JSON.parse(req.responseText));
-	                else
+	                }
+	                else {
 	                    reject({
 	                        status: req.status,
 	                        message: req.responseText
 	                    });
+	                }
 	            };
-	            req.open("get", SERVER_URL + url, true);
+	            req.open('get', SERVER_URL + url, true);
 	            req.send();
 	        });
 	    };
@@ -340,22 +373,7 @@
 
 
 /***/ },
-/* 6 */
-/***/ function(module, exports) {
-
-	function default_1(position, maxPosition) {
-	    if (position < 1)
-	        return maxPosition + position % maxPosition;
-	    if (position > maxPosition)
-	        return position % maxPosition;
-	    return position;
-	}
-	Object.defineProperty(exports, "__esModule", { value: true });
-	exports.default = default_1;
-	;
-
-
-/***/ },
+/* 6 */,
 /* 7 */
 /***/ function(module, exports) {
 
@@ -367,8 +385,9 @@
 	    }
 	    Object.defineProperty(FpsMeasurer, "instance", {
 	        get: function () {
-	            if (this._instance == null)
+	            if (!this._instance) {
 	                this._instance = new FpsMeasurer();
+	            }
 	            return this._instance;
 	        },
 	        enumerable: true,
@@ -393,6 +412,7 @@
 
 	'use strict';
 	function default_1(canvas) {
+	    'use strict';
 	    var hammer = new Hammer(canvas.canvas, {
 	        touchAction: 'none'
 	    });
@@ -410,7 +430,7 @@
 	        lastDeltaY = 0;
 	    });
 	    hammer.on('tap', function () {
-	        if (canvas.scale == 0.33) {
+	        if (canvas.scale === 0.33) {
 	            canvas.scale = 1;
 	        }
 	        else {

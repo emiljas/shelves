@@ -3,14 +3,11 @@ body {
   background-color: lightgrey;
 }
 
-#shelvesCanvasContainer {
-  max-width: 1100px;
-  margin: 0 auto;
-}
 
-#shelvesCanvas {
+canvas {
   background-color: white;
   cursor: move;
+  margin: 5px;
 }
 
 button {

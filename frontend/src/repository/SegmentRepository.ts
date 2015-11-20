@@ -7,7 +7,7 @@ export default class SegmentRepository extends Repository {
         return this.getJson<Array<number>>('/getSegmentWidths');
     }
 
-    public getByPosition(position: number): Promise<SegmentModel> {
-        return this.getJson<SegmentModel>('/getSegment?position=' + position)
+    public getByPosition(index: number): Promise<SegmentModel> {
+        return this.getJson<SegmentModel>('/getSegment?index=' + index);
     }
 }
