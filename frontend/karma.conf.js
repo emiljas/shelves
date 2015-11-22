@@ -50,9 +50,9 @@ module.exports = function(config) {
       }
     },
 
-    // webpackMiddleware: {
-        // noInfo: true
-    // },
+    webpackMiddleware: {
+        noInfo: true
+    },
 
     plugins: [
       require('karma-mocha'),

@@ -3,7 +3,9 @@ var originalWebpack = require('webpack');
 var webpack = require('webpack-stream');
 var watch = require('gulp-watch');
 var concat = require('gulp-concat');
+var replace = require('gulp-replace');
 var Server = require('karma').Server;
+var remapIstanbul = require('remap-istanbul/lib/gulpRemapIstanbul');
 
 gulp.task('watch', function() {
   gulp.start('test');
@@ -17,7 +19,7 @@ gulp.task('watch', function() {
 });
 
 gulp.task('test', function (done) {
-  new Server({
+  var server = new Server({
     configFile: __dirname + '/karma.conf.js'
   }, function(isError) {
       if(isError) {
@@ -28,13 +30,24 @@ gulp.task('test', function (done) {
         }, 15000);
       }
       done();
-  }).start();
+  });
+  server.start();
+
+  server.on('browser_complete', function() {
+    gulp.src('coverage/coverage-final.json')
+      .pipe(replace('.ts', '.js'))
+      .pipe(remapIstanbul({
+        reports: {
+          'html': 'coverage'
+        }
+      }));
+  });
 });
 
 gulp.task('ts2js', function() {
   return gulp.src('src/main.ts')
   .pipe(webpack({
-    // watch: true,
+    watch: true,
 
     output: {
       filename: 'bundle.js',
