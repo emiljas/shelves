@@ -5,7 +5,7 @@ import Canvas from './Canvas';
 export default function(canvas: Canvas) {
     'use strict';
 
-    let hammer = new Hammer(canvas.canvas, {
+    let hammer = new Hammer(canvas.canvasElement, {
         touchAction: 'none'
     });
     hammer.get('pan').set({ direction: Hammer.DIRECTION_ALL });

@@ -11,3 +11,5 @@ frontend/test/**/*.js
 frontend/test/**/*.js.map
 frontend/dist/**/*.map
 frontend/typings
+frontend/-html
+frontend/coverage

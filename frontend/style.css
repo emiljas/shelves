@@ -3,6 +3,10 @@ body {
   background-color: lightgrey;
 }
 
+.canvasContainer {
+  width: 100%;
+  text-align: center;
+}
 
 canvas {
   background-color: white;

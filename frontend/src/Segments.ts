@@ -2,7 +2,6 @@
 
 import Canvas from './Canvas';
 import Segment from './Segment';
-// import cyclePosition from './cyclePosition';
 
 const SPACE_BETWEEN_SEGMENTS = 50;
 
@@ -19,7 +18,7 @@ export default class Segments {
 
     constructor(canvas: Canvas) {
         this.canvas = canvas;
-        this.segmentWidths = JSON.parse(canvas.canvas.getAttribute('data-segment-widths'));
+        this.segmentWidths = JSON.parse(canvas.canvasElement.getAttribute('data-segment-widths'));
         this.segmentCount = this.segmentWidths.length;
     }
 
@@ -54,9 +53,8 @@ export default class Segments {
     }
 
     public appendSegment() {
-        this.frontPosition = this.getZeroIndexIfUnderLast(this.frontPosition + 1);
+        this.frontPosition = this.getZeroIndexIfUnderLast(this.frontPosition);
         let index = this.frontPosition;
-        console.log(index);
 
         let segment = new Segment(this.canvas, index, this.frontX);
         this.segments.push(segment);
@@ -65,6 +63,7 @@ export default class Segments {
         this.frontX += segmentWidth + SPACE_BETWEEN_SEGMENTS;
 
         segment.load(segment);
+        this.frontPosition++;
     }
 
     private getLastIndexIfBelowZero(index: number): number {
@@ -86,16 +85,4 @@ export default class Segments {
             throw 'Segments: index > segment count';
         }
     }
-
-    // private cyclePosition(index: number): number {
-    //     if (index === this.segmentCount) {
-    //         return 0;
-    //     } else if (index === -1) {
-    //         return this.segmentCount;
-    //     } else if (index >= 0 && index < this.segmentCount) {
-    //         return index;
-    //     } else {
-    //         throw 'cyclePosition: index must be in range of -1 to segment count';
-    //     }
-    // }
 }

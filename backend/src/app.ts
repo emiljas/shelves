@@ -28,11 +28,10 @@ app.get('/getSegment', function (req, res) {
   if(index < 0 || index > MAX_POSITION - 1)
     throw "invalid argument: position";
 
-  let url = 'http://www.rossmann.pl/DesktopModules/RossmannV4Modules/Shelves/GetSegmentHtml.ashx?json=%7B%22SegmentId%22%3A32301%2C%22Move%22%3A' + (index + 1) + '%7D';
+  let url = 'http://www.rossmann.pl/DesktopModules/RossmannV4Modules/Shelves/GetSegmentHtml.ashx?json=%7B%22SegmentId%22%3A32301%2C%22Move%22%3A' + index + '%7D';
   request(url, (err, result, body) => {
     let segmentHtmlResponse = parseSegmentHtmlResponse(body);
     let segmentWidth = segmentWidths[index];
-    console.log(segmentWidth);
     let segmentHeight = 1920;
     let productPositions = randomProductPositionsOnSegment({
       coordsList: segmentHtmlResponse.coordsList,

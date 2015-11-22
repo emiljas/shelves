@@ -31,17 +31,17 @@ downloadSegmentWidths.then(function() {
     // Segment.prependSegment(canvas);
     // enableDebug();
 
-    let canvas2 = Canvas.init('#shelvesCanvas2');
-    canvas2.start();
-    _.times(5, function() {
-        canvas2.appendSegment();
-    });
-
-    let canvas3 = Canvas.init('#shelvesCanvas3');
-    canvas3.start();
-    _.times(5, function() {
-        canvas3.appendSegment();
-    });
+    // let canvas2 = Canvas.init('#shelvesCanvas2');
+    // canvas2.start();
+    // _.times(5, function() {
+    //     canvas2.appendSegment();
+    // });
+    //
+    // let canvas3 = Canvas.init('#shelvesCanvas3');
+    // canvas3.start();
+    // _.times(5, function() {
+    //     canvas3.appendSegment();
+    // });
 
     // const SEGMENT_RATIO_MOVE = 0.7;
     // let backBtn = document.getElementById('backBtn');

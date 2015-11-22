@@ -34,13 +34,13 @@ gulp.task('test', function (done) {
 gulp.task('ts2js', function() {
   return gulp.src('src/main.ts')
   .pipe(webpack({
-    watch: true,
+    // watch: true,
 
     output: {
       filename: 'bundle.js',
     },
 
-    // devtool: 'source-map',
+    devtool: 'source-map',
 
     plugins: [
       // new originalWebpack.optimize.UglifyJsPlugin()

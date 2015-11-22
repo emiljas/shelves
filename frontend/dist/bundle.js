@@ -1,41 +1,41 @@
 /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
 /******/ 	var installedModules = {};
-
+/******/
 /******/ 	// The require function
 /******/ 	function __webpack_require__(moduleId) {
-
+/******/
 /******/ 		// Check if module is in cache
 /******/ 		if(installedModules[moduleId])
 /******/ 			return installedModules[moduleId].exports;
-
+/******/
 /******/ 		// Create a new module (and put it into the cache)
 /******/ 		var module = installedModules[moduleId] = {
 /******/ 			exports: {},
 /******/ 			id: moduleId,
 /******/ 			loaded: false
 /******/ 		};
-
+/******/
 /******/ 		// Execute the module function
 /******/ 		modules[moduleId].call(module.exports, module, module.exports, __webpack_require__);
-
+/******/
 /******/ 		// Flag the module as loaded
 /******/ 		module.loaded = true;
-
+/******/
 /******/ 		// Return the exports of the module
 /******/ 		return module.exports;
 /******/ 	}
-
-
+/******/
+/******/
 /******/ 	// expose the modules object (__webpack_modules__)
 /******/ 	__webpack_require__.m = modules;
-
+/******/
 /******/ 	// expose the module cache
 /******/ 	__webpack_require__.c = installedModules;
-
+/******/
 /******/ 	// __webpack_public_path__
 /******/ 	__webpack_require__.p = "";
-
+/******/
 /******/ 	// Load entry module and return exports
 /******/ 	return __webpack_require__(0);
 /******/ })
@@ -71,16 +71,17 @@
 	    });
 	    // Segment.prependSegment(canvas);
 	    // enableDebug();
-	    var canvas2 = Canvas_1.default.init('#shelvesCanvas2');
-	    canvas2.start();
-	    _.times(5, function () {
-	        canvas2.appendSegment();
-	    });
-	    var canvas3 = Canvas_1.default.init('#shelvesCanvas3');
-	    canvas3.start();
-	    _.times(5, function () {
-	        canvas3.appendSegment();
-	    });
+	    // let canvas2 = Canvas.init('#shelvesCanvas2');
+	    // canvas2.start();
+	    // _.times(5, function() {
+	    //     canvas2.appendSegment();
+	    // });
+	    //
+	    // let canvas3 = Canvas.init('#shelvesCanvas3');
+	    // canvas3.start();
+	    // _.times(5, function() {
+	    //     canvas3.appendSegment();
+	    // });
 	    // const SEGMENT_RATIO_MOVE = 0.7;
 	    // let backBtn = document.getElementById('backBtn');
 	    // backBtn.addEventListener('click', function() {
@@ -102,8 +103,8 @@
 
 	'use strict';
 	var Segments_1 = __webpack_require__(2);
-	var FpsMeasurer_1 = __webpack_require__(7);
-	var touch_1 = __webpack_require__(8);
+	var FpsMeasurer_1 = __webpack_require__(6);
+	var touch_1 = __webpack_require__(7);
 	var Canvas = (function () {
 	    function Canvas() {
 	        var _this = this;
@@ -112,10 +113,10 @@
 	    }
 	    Canvas.init = function (canvasId) {
 	        var canvas = new Canvas();
-	        canvas.canvas = document.querySelector(canvasId);
-	        canvas.canvasWidth = canvas.canvas.width;
-	        canvas.canvasHeight = canvas.canvas.height;
-	        canvas.ctx = canvas.canvas.getContext('2d');
+	        canvas.canvasElement = document.querySelector(canvasId);
+	        canvas.canvasWidth = canvas.canvasElement.width;
+	        canvas.canvasHeight = canvas.canvasElement.height;
+	        canvas.ctx = canvas.canvasElement.getContext('2d');
 	        canvas.timestamp = 0;
 	        canvas.xMove = 0;
 	        canvas.yMove = 0;
@@ -138,7 +139,7 @@
 	        this.timestamp = timestamp;
 	        this.yMove = Math.min(0, this.yMove);
 	        this.yMove = Math.max(this.yMove, this.canvasHeight - this.canvasHeight * (this.scale / 0.33));
-	        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+	        this.ctx.clearRect(0, 0, this.canvasElement.width, this.canvasElement.height);
 	        if (!isNearZeroPx(this.distanceToMove)) {
 	            var secondsFromAnimationStart = (this.timestamp - this.animationTimestamp) / 1000;
 	            var xMovePerFrame = Math.sin(secondsFromAnimationStart) * this.distanceToMove;
@@ -172,7 +173,6 @@
 
 	'use strict';
 	var Segment_1 = __webpack_require__(3);
-	// import cyclePosition from './cyclePosition';
 	var SPACE_BETWEEN_SEGMENTS = 50;
 	var Segments = (function () {
 	    function Segments(canvas) {
@@ -182,7 +182,7 @@
 	        this.frontPosition = 0;
 	        this.frontX = 0;
 	        this.canvas = canvas;
-	        this.segmentWidths = JSON.parse(canvas.canvas.getAttribute('data-segment-widths'));
+	        this.segmentWidths = JSON.parse(canvas.canvasElement.getAttribute('data-segment-widths'));
 	        this.segmentCount = this.segmentWidths.length;
 	    }
 	    Segments.prototype.draw = function () {
@@ -210,14 +210,14 @@
 	        segment.load(segment);
 	    };
 	    Segments.prototype.appendSegment = function () {
-	        this.frontPosition = this.getZeroIndexIfUnderLast(this.frontPosition + 1);
+	        this.frontPosition = this.getZeroIndexIfUnderLast(this.frontPosition);
 	        var index = this.frontPosition;
-	        console.log(index);
 	        var segment = new Segment_1.default(this.canvas, index, this.frontX);
 	        this.segments.push(segment);
 	        var segmentWidth = this.segmentWidths[index];
 	        this.frontX += segmentWidth + SPACE_BETWEEN_SEGMENTS;
 	        segment.load(segment);
+	        this.frontPosition++;
 	    };
 	    Segments.prototype.getLastIndexIfBelowZero = function (index) {
 	        if (index === -1) {
@@ -373,8 +373,7 @@
 
 
 /***/ },
-/* 6 */,
-/* 7 */
+/* 6 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -407,13 +406,13 @@
 
 
 /***/ },
-/* 8 */
+/* 7 */
 /***/ function(module, exports) {
 
 	'use strict';
 	function default_1(canvas) {
 	    'use strict';
-	    var hammer = new Hammer(canvas.canvas, {
+	    var hammer = new Hammer(canvas.canvasElement, {
 	        touchAction: 'none'
 	    });
 	    hammer.get('pan').set({ direction: Hammer.DIRECTION_ALL });
@@ -444,3 +443,4 @@
 
 /***/ }
 /******/ ]);
+//# sourceMappingURL=bundle.js.map

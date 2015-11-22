@@ -6,7 +6,7 @@ import touch from './touch';
 
 export default class Canvas {
     public segments: Segments;
-    public canvas: HTMLCanvasElement;
+    public canvasElement: HTMLCanvasElement;
     public canvasWidth: number;
     public canvasHeight: number;
     public ctx: CanvasRenderingContext2D;
@@ -23,10 +23,10 @@ export default class Canvas {
     public static init(canvasId: string) {
         let canvas = new Canvas();
 
-        canvas.canvas = <HTMLCanvasElement>document.querySelector(canvasId);
-        canvas.canvasWidth = canvas.canvas.width;
-        canvas.canvasHeight = canvas.canvas.height;
-        canvas.ctx = canvas.canvas.getContext('2d');
+        canvas.canvasElement = <HTMLCanvasElement>document.querySelector(canvasId);
+        canvas.canvasWidth = canvas.canvasElement.width;
+        canvas.canvasHeight = canvas.canvasElement.height;
+        canvas.ctx = canvas.canvasElement.getContext('2d');
         canvas.timestamp = 0;
         canvas.xMove = 0;
         canvas.yMove = 0;
@@ -56,7 +56,7 @@ export default class Canvas {
         this.yMove = Math.min(0, this.yMove);
         this.yMove = Math.max(this.yMove, this.canvasHeight - this.canvasHeight * (this.scale / 0.33));
 
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.ctx.clearRect(0, 0, this.canvasElement.width, this.canvasElement.height);
 
         if (!isNearZeroPx(this.distanceToMove)) {
             let secondsFromAnimationStart = (this.timestamp - this.animationTimestamp) / 1000;

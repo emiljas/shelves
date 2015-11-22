@@ -1,10 +1,10 @@
 {
-  "compileOnSave": false,
-  "buildOnSave": false,
+  "compileOnSave": true,
+  "buildOnSave": true,
   "compilerOptions": {
     "target": "es5",
     "noImplicitAny": true,
-    "sourceMap": false
+    "sourceMap": true
   },
   "filesGlob": [
     "src/**/*.ts",
@@ -24,7 +24,9 @@
     "src/Segments.ts",
     "src/touch.ts",
     "src/windowResize.ts",
+    "test/child/getLastTests.ts",
     "test/cyclePositionTests.ts",
+    "test/main.ts",
     "typings/tsd.d.ts",
     "../backend/src/models/ProductPositionModel.ts",
     "../backend/src/models/SegmentModel.ts"

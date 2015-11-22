@@ -49,6 +49,7 @@ class Segment {
                 if (p.h !== 0) {
                     ctx.drawImage(spriteImg, p.sx, p.sy, p.w, p.h, p.dx + this.x, p.dy, p.w, p.h);
                 }
+
             }
         }
     }
