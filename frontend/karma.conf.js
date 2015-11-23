@@ -1,4 +1,5 @@
 var path = require('path');
+var RewirePlugin = require("rewire-webpack");
 
 module.exports = function(config) {
   config.set({
@@ -13,8 +14,6 @@ module.exports = function(config) {
     // list of files / patterns to load in the browser
     files: [
       'test/main.ts',
-      // 'test/**/*.ts',
-      // 'src/**/*.ts',
       'dist/libs.js'
     ],
 
@@ -32,6 +31,10 @@ module.exports = function(config) {
     },
 
     webpack: {
+      plugins: [
+        new RewirePlugin()
+      ],
+
       resolve: {
         extensions: ['', '.ts']
       },
@@ -40,6 +43,7 @@ module.exports = function(config) {
         loaders: [
           { test: /\.ts$/, loader: 'ts-loader' }
         ],
+
         postLoaders: [
             {
                 test: /\.ts$/,

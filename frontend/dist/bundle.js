@@ -45,13 +45,13 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
-	var Canvas_1 = __webpack_require__(1);
+	var Canvas = __webpack_require__(1);
 	// import windowResize from './windowResize';
 	// import touch from './touch';
 	// import Segment from './Segment';
 	// import enableDebug from './debug/enableDebug';
-	var SegmentRepository_1 = __webpack_require__(4);
-	var segmentRepository = new SegmentRepository_1.default();
+	var SegmentRepository = __webpack_require__(4);
+	var segmentRepository = new SegmentRepository();
 	//should be deleted when setAttribute on server side!
 	var downloadSegmentWidths = segmentRepository.getWidths().then(function (widths) {
 	    var canvases = document.querySelectorAll('canvas');
@@ -62,7 +62,7 @@
 	    return Promise.resolve();
 	});
 	downloadSegmentWidths.then(function () {
-	    var canvas1 = Canvas_1.default.init('#shelvesCanvas1');
+	    var canvas1 = Canvas.init('#shelvesCanvas1');
 	    // windowResize();
 	    // touch();
 	    canvas1.start();
@@ -102,9 +102,9 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
-	var Segments_1 = __webpack_require__(2);
-	var FpsMeasurer_1 = __webpack_require__(6);
-	var touch_1 = __webpack_require__(7);
+	var Segments = __webpack_require__(2);
+	var FpsMeasurer = __webpack_require__(6);
+	var touch = __webpack_require__(7);
 	var Canvas = (function () {
 	    function Canvas() {
 	        var _this = this;
@@ -121,8 +121,8 @@
 	        canvas.xMove = 0;
 	        canvas.yMove = 0;
 	        canvas.distanceToMove = 0;
-	        canvas.segments = new Segments_1.default(canvas);
-	        touch_1.default(canvas);
+	        canvas.segments = new Segments(canvas);
+	        touch(canvas);
 	        return canvas;
 	    };
 	    Canvas.prototype.start = function () {
@@ -152,19 +152,18 @@
 	        this.segments.draw();
 	        this.ctx.restore();
 	        this.lastTimestamp = timestamp;
-	        FpsMeasurer_1.default.instance.tick(timestamp);
+	        FpsMeasurer.instance.tick(timestamp);
 	        window.requestAnimationFrame(this.frameRequestCallback);
 	    };
 	    ;
 	    return Canvas;
 	})();
-	Object.defineProperty(exports, "__esModule", { value: true });
-	exports.default = Canvas;
 	var DIFF = 0.5;
 	function isNearZeroPx(value) {
 	    'use strict';
 	    return Math.abs(value) < DIFF;
 	}
+	module.exports = Canvas;
 
 
 /***/ },
@@ -172,7 +171,7 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
-	var Segment_1 = __webpack_require__(3);
+	var Segment = __webpack_require__(3);
 	var SPACE_BETWEEN_SEGMENTS = 50;
 	var Segments = (function () {
 	    function Segments(canvas) {
@@ -182,6 +181,7 @@
 	        this.frontPosition = 0;
 	        this.frontX = 0;
 	        this.canvas = canvas;
+	        console.log(Segment);
 	        this.segmentWidths = JSON.parse(canvas.canvasElement.getAttribute('data-segment-widths'));
 	        this.segmentCount = this.segmentWidths.length;
 	    }
@@ -205,14 +205,14 @@
 	        var index = this.backPosition;
 	        var segmentWidth = this.segmentWidths[index];
 	        this.backX -= segmentWidth + SPACE_BETWEEN_SEGMENTS;
-	        var segment = new Segment_1.default(this.canvas, index, this.backX);
+	        var segment = new Segment(this.canvas, index, this.backX);
 	        this.segments.push(segment);
 	        segment.load(segment);
 	    };
 	    Segments.prototype.appendSegment = function () {
 	        this.frontPosition = this.getZeroIndexIfUnderLast(this.frontPosition);
 	        var index = this.frontPosition;
-	        var segment = new Segment_1.default(this.canvas, index, this.frontX);
+	        var segment = new Segment(this.canvas, index, this.frontX);
 	        this.segments.push(segment);
 	        var segmentWidth = this.segmentWidths[index];
 	        this.frontX += segmentWidth + SPACE_BETWEEN_SEGMENTS;
@@ -243,8 +243,7 @@
 	    };
 	    return Segments;
 	})();
-	Object.defineProperty(exports, "__esModule", { value: true });
-	exports.default = Segments;
+	module.exports = Segments;
 
 
 /***/ },
@@ -252,8 +251,8 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
-	var SegmentRepository_1 = __webpack_require__(4);
-	var segmentRepository = new SegmentRepository_1.default();
+	var SegmentRepository = __webpack_require__(4);
+	var segmentRepository = new SegmentRepository();
 	var Segment = (function () {
 	    function Segment(canvas, index, x) {
 	        this.isLoaded = false;
@@ -308,8 +307,7 @@
 	        });
 	    });
 	}
-	Object.defineProperty(exports, "__esModule", { value: true });
-	exports.default = Segment;
+	module.exports = Segment;
 
 
 /***/ },
@@ -322,7 +320,7 @@
 	    function __() { this.constructor = d; }
 	    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 	};
-	var Repository_1 = __webpack_require__(5);
+	var Repository = __webpack_require__(5);
 	var SegmentRepository = (function (_super) {
 	    __extends(SegmentRepository, _super);
 	    function SegmentRepository() {
@@ -335,9 +333,8 @@
 	        return this.getJson('/getSegment?index=' + index);
 	    };
 	    return SegmentRepository;
-	})(Repository_1.default);
-	Object.defineProperty(exports, "__esModule", { value: true });
-	exports.default = SegmentRepository;
+	})(Repository);
+	module.exports = SegmentRepository;
 
 
 /***/ },
@@ -369,8 +366,7 @@
 	    };
 	    return Repository;
 	})();
-	Object.defineProperty(exports, "__esModule", { value: true });
-	exports.default = Repository;
+	module.exports = Repository;
 
 
 /***/ },
@@ -402,8 +398,7 @@
 	    };
 	    return FpsMeasurer;
 	})();
-	Object.defineProperty(exports, "__esModule", { value: true });
-	exports.default = FpsMeasurer;
+	module.exports = FpsMeasurer;
 
 
 /***/ },
@@ -411,7 +406,7 @@
 /***/ function(module, exports) {
 
 	'use strict';
-	function default_1(canvas) {
+	function touch(canvas) {
 	    'use strict';
 	    var hammer = new Hammer(canvas.canvasElement, {
 	        touchAction: 'none'
@@ -438,8 +433,7 @@
 	        }
 	    });
 	}
-	Object.defineProperty(exports, "__esModule", { value: true });
-	exports.default = default_1;
+	module.exports = touch;
 
 
 /***/ }

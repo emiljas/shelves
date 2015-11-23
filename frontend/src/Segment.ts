@@ -1,7 +1,7 @@
 'use strict';
 
-import Canvas from './Canvas';
-import SegmentRepository from './repository/SegmentRepository';
+import Canvas = require('./Canvas');
+import SegmentRepository = require('./repository/SegmentRepository');
 
 let segmentRepository = new SegmentRepository();
 
@@ -70,4 +70,4 @@ function loadImage(url: string) {
     });
 }
 
-export default Segment;
+export = Segment;

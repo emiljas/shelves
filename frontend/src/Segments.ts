@@ -1,11 +1,11 @@
 'use strict';
 
-import Canvas from './Canvas';
-import Segment from './Segment';
+import Canvas = require('./Canvas');
+import Segment = require('./Segment');
 
 const SPACE_BETWEEN_SEGMENTS = 50;
 
-export default class Segments {
+class Segments {
     public segments = new Array<Segment>();
 
     private canvas: Canvas;
@@ -18,6 +18,9 @@ export default class Segments {
 
     constructor(canvas: Canvas) {
         this.canvas = canvas;
+
+        console.log(Segment);
+
         this.segmentWidths = JSON.parse(canvas.canvasElement.getAttribute('data-segment-widths'));
         this.segmentCount = this.segmentWidths.length;
     }
@@ -86,3 +89,5 @@ export default class Segments {
         }
     }
 }
+
+export = Segments;

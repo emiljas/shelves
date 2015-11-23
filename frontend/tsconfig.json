@@ -3,6 +3,7 @@
   "buildOnSave": true,
   "compilerOptions": {
     "target": "es5",
+    "module": "commonjs",
     "noImplicitAny": true,
     "sourceMap": true
   },
@@ -24,7 +25,6 @@
     "src/Segments.ts",
     "src/touch.ts",
     "src/windowResize.ts",
-    "test/child/getLastTests.ts",
     "test/cyclePositionTests.ts",
     "test/main.ts",
     "typings/tsd.d.ts",

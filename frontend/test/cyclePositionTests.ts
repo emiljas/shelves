@@ -1,9 +1,25 @@
 const assert = chai.assert;
-import cyclePosition from '../src/cyclePosition';
+let rewire = (<any>require)('rewire');
 
-describe('cyclePosition', function() {
-    it('return first position', function() {
-        let position = cyclePosition(args.input, args.max);
-        assert.equal(position, args.expected);
+
+const segmentsImport: any = rewire('../src/Segments');
+
+var o = {};
+segmentsImport.__set__('./Segment', o);
+
+import Segments = require('../src/Segments');
+// const Segments = SegmentsImport.default;
+// Segments.__set__('S')
+
+
+describe('Segments', function() {
+    describe('prependSegment', function() {
+        it('', function() {
+            let segments = new Segments(null);
+            segments.preloadSegments();
+            // segments.prependSegment();
+            // console.log(Segments);
+            // assert.ok(true);
+        });
     });
 });
