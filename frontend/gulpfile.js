@@ -46,29 +46,7 @@ gulp.task('test', function (done) {
 
 gulp.task('ts2js', function() {
   return gulp.src('src/main.ts')
-  .pipe(webpack({
-    watch: true,
-
-    output: {
-      filename: 'bundle.js',
-    },
-
-    devtool: 'source-map',
-
-    plugins: [
-      // new originalWebpack.optimize.UglifyJsPlugin()
-    ],
-
-    resolve: {
-      extensions: ['', '.ts']
-    },
-
-    module: {
-      loaders: [
-        { test: /\.ts$/, loader: 'ts-loader' }
-      ]
-    }
-  }))
+  .pipe(webpack(require('./webpack.config.js')))
   .pipe(gulp.dest('dist'));
 });
 

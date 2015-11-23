@@ -2,7 +2,7 @@
 
 const SERVER_URL = 'http://localhost:3000';
 
-class Repository {
+export default class Repository {
     protected getJson<T>(url: string): Promise<T> {
         return new Promise<T>(function(resolve, reject) {
             let req = new XMLHttpRequest();
@@ -21,5 +21,3 @@ class Repository {
         });
     }
 }
-
-export = Repository;

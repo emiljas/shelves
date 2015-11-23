@@ -1,12 +1,12 @@
 'use strict';
 
-import Canvas = require('./Canvas');
+import Canvas from './Canvas';
 // import windowResize from './windowResize';
 // import touch from './touch';
 // import Segment from './Segment';
 // import enableDebug from './debug/enableDebug';
 
-import SegmentRepository = require('./repository/SegmentRepository');
+import SegmentRepository from './repository/SegmentRepository';
 let segmentRepository = new SegmentRepository();
 
 //should be deleted when setAttribute on server side!

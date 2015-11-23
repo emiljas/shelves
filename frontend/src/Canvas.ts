@@ -1,10 +1,10 @@
 'use strict';
 
-import Segments = require('./Segments');
-import FpsMeasurer = require('./debug/FpsMeasurer');
-import touch = require('./touch');
+import Segments from './Segments';
+import FpsMeasurer from './debug/FpsMeasurer';
+import touch from './touch';
 
-class Canvas {
+export default class Canvas {
     public segments: Segments;
     public canvasElement: HTMLCanvasElement;
     public canvasWidth: number;
@@ -86,5 +86,3 @@ function isNearZeroPx(value: number) {
     'use strict';
     return Math.abs(value) < DIFF;
 }
-
-export = Canvas;

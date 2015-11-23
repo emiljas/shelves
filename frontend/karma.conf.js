@@ -36,21 +36,30 @@ module.exports = function(config) {
       ],
 
       resolve: {
-        extensions: ['', '.ts']
+        extensions: ['', '.webpack.js', '.web.js', '.ts', '.js']
       },
 
       module: {
         loaders: [
-          { test: /\.ts$/, loader: 'ts-loader' }
+          {
+            test: /\.ts$/,
+            exclude: /node_modules/,
+            loader: 'babel-loader!ts-loader'
+          },
+          {
+            test: /\.js$/,
+            exclude: /node_modules/,
+            loader: 'babel'
+          }
         ],
 
-        postLoaders: [
-            {
-                test: /\.ts$/,
-                include: path.resolve('src/'),
-                loader: 'istanbul-instrumenter'
-            }
-        ]
+        // postLoaders: [
+        //     {
+        //         test: /\.ts$/,
+        //         include: path.resolve('src/'),
+        //         loader: 'istanbul-instrumenter'
+        //     }
+        // ]
       }
     },
 
