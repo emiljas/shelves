@@ -260,6 +260,7 @@
 	        this.index = index;
 	        this.canvas = canvas;
 	        this.x = x;
+	        this.load(this);
 	    }
 	    Segment.prototype.load = function (segment) {
 	        segmentRepository.getByPosition(this.index).then(function (data) {

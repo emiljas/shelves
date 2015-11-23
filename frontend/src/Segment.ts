@@ -18,6 +18,7 @@ class Segment {
         this.index = index;
         this.canvas = canvas;
         this.x = x;
+        this.load(this);
     }
 
     public load(segment: Segment) {
