@@ -218,9 +218,9 @@
 	        var index = this.frontPosition;
 	        var segment = new Segment(this.canvas, index, this.frontX);
 	        this.segments.push(segment);
+	        segment.load(segment);
 	        var segmentWidth = this.segmentWidths[index];
 	        this.frontX += segmentWidth + SPACE_BETWEEN_SEGMENTS;
-	        segment.load(segment);
 	        this.frontPosition++;
 	    };
 	    Segments.prototype.getLastIndexIfBelowZero = function (index) {
@@ -315,9 +315,10 @@
 
 	'use strict';
 
-	var __extends = this && this.__extends || function (d, b) {
-	    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-	    function __() {
+	var __extends = undefined && undefined.__extends || function (d, b) {
+	    for (var p in b) {
+	        if (b.hasOwnProperty(p)) d[p] = b[p];
+	    }function __() {
 	        this.constructor = d;
 	    }
 	    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -380,7 +381,7 @@
 	        this.last = null;
 	    }
 	    Object.defineProperty(FpsMeasurer, "instance", {
-	        get: function () {
+	        get: function get() {
 	            if (!this._instance) {
 	                this._instance = new FpsMeasurer();
 	            }

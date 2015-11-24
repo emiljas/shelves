@@ -31,6 +31,8 @@ module.exports = function(config) {
     },
 
     webpack: {
+      watch: true,
+
       plugins: [
         new RewirePlugin()
       ],

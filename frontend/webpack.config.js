@@ -1,5 +1,6 @@
 module.exports = {
-    // watch: true,
+    watch: true,
+
     context: __dirname + '/src',
     entry: './main.ts',
 
@@ -23,7 +24,7 @@ module.exports = {
         {
           test: /\.ts$/,
           exclude: /node_modules/,
-          loader: 'babel-loader!ts-loader'
+          loader: 'babel-loader?presets=es2015!ts-loader'
         },
         {
           test: /\.js$/,

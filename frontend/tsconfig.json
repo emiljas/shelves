@@ -14,6 +14,9 @@
     "../backend/src/models/**/*.ts"
   ],
   "files": [
+    "src/append/BaseSegmentAppender.ts",
+    "src/append/SegmentAppender.ts",
+    "src/append/SegmentPrepender.ts",
     "src/Canvas.ts",
     "src/cyclePosition.ts",
     "src/debug/enableDebug.ts",
@@ -25,6 +28,8 @@
     "src/Segments.ts",
     "src/touch.ts",
     "src/windowResize.ts",
+    "test/append/SegmentAppenderTests.ts",
+    "test/append/SegmentPrependerTests.ts",
     "test/cyclePositionTests.ts",
     "test/main.ts",
     "typings/tsd.d.ts",

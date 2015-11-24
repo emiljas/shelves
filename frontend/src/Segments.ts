@@ -51,7 +51,6 @@ class Segments {
 
         let segment = new Segment(this.canvas, index, this.backX);
         this.segments.push(segment);
-
         segment.load(segment);
     }
 
@@ -61,11 +60,11 @@ class Segments {
 
         let segment = new Segment(this.canvas, index, this.frontX);
         this.segments.push(segment);
+        segment.load(segment);
 
         let segmentWidth = this.segmentWidths[index];
         this.frontX += segmentWidth + SPACE_BETWEEN_SEGMENTS;
 
-        segment.load(segment);
         this.frontPosition++;
     }
 
