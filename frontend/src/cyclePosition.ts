@@ -1,4 +1,4 @@
-export default function(position: number, maxPosition: number): number {
+function cyclePosition(position: number, maxPosition: number): number {
     'use strict';
 
     if (position < 1) {
@@ -9,3 +9,5 @@ export default function(position: number, maxPosition: number): number {
     }
     return position;
 };
+
+export = cyclePosition;

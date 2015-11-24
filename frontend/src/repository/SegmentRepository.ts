@@ -1,8 +1,8 @@
 'use strict';
 
-import Repository from './Repository';
+import Repository = require('./Repository');
 
-export default class SegmentRepository extends Repository {
+class SegmentRepository extends Repository {
     public getWidths(): Promise<Array<number>> {
         return this.getJson<Array<number>>('/getSegmentWidths');
     }
@@ -11,3 +11,5 @@ export default class SegmentRepository extends Repository {
         return this.getJson<SegmentModel>('/getSegment?index=' + index);
     }
 }
+
+export = SegmentRepository;

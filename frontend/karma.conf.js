@@ -44,7 +44,7 @@ module.exports = function(config) {
           {
             test: /\.ts$/,
             exclude: /node_modules/,
-            loader: 'babel-loader!ts-loader'
+            loader: 'babel-loader?presets=es2015!ts-loader'
           },
           {
             test: /\.js$/,
@@ -70,6 +70,8 @@ module.exports = function(config) {
     plugins: [
       require('karma-mocha'),
       require('karma-chrome-launcher'),
+      require('karma-firefox-launcher'),
+      require('karma-ie-launcher'),
       require('karma-webpack'),
       require('karma-chai'),
       require('karma-chai-as-promised'),

@@ -1,8 +1,8 @@
 'use strict';
 
-import Canvas from './Canvas';
+import Canvas = require('./Canvas');
 
-export default function touch(canvas: Canvas) {
+function touch(canvas: Canvas) {
     'use strict';
 
     let hammer = new Hammer(canvas.canvasElement, {
@@ -34,3 +34,5 @@ export default function touch(canvas: Canvas) {
         }
     });
 }
+
+export = touch;

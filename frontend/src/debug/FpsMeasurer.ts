@@ -1,6 +1,6 @@
 'use strict';
 
-export default class FpsMeasurer {
+class FpsMeasurer {
     private static _instance: FpsMeasurer;
 
     static get instance(): FpsMeasurer {
@@ -22,3 +22,5 @@ export default class FpsMeasurer {
         return Math.round(1 / this.elapsed);
     }
 }
+
+export = FpsMeasurer;

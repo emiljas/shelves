@@ -1,11 +1,11 @@
 'use strict';
 
-import Canvas from './Canvas';
-import Segment from './Segment';
+import Canvas = require('./Canvas');
+import Segment = require('./Segment');
 
 const SPACE_BETWEEN_SEGMENTS = 50;
 
-export default class Segments {
+class Segments {
     public segments = new Array<Segment>();
 
     private canvas: Canvas;
@@ -89,3 +89,5 @@ export default class Segments {
         }
     }
 }
+
+export = Segments;

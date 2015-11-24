@@ -1,6 +1,6 @@
-import FpsMeasurer from './FpsMeasurer';
+import FpsMeasurer = require('./FpsMeasurer');
 
-export default function enableDebug() {
+function enableDebug() {
     'use strict';
 
     let fpsDiv = document.createElement('div');
@@ -51,3 +51,5 @@ export default function enableDebug() {
     document.body.appendChild(fpsDiv);
     document.body.appendChild(featuresDiv);
 }
+
+export = enableDebug;
