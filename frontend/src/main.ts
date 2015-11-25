@@ -1,6 +1,6 @@
 'use strict';
 
-import Canvas = require('./Canvas');
+import ViewPort = require('./ViewPort');
 // import windowResize from './windowResize';
 // import touch from './touch';
 // import Segment from './Segment';
@@ -21,13 +21,10 @@ let downloadSegmentWidths = segmentRepository.getWidths().then(function(widths) 
 });
 
 downloadSegmentWidths.then(function() {
-    let canvas1 = Canvas.init('#shelvesCanvas1');
+    let viewPort1 = ViewPort.init('#shelvesCanvas1');
     // windowResize();
     // touch();
-    canvas1.start();
-    _.times(5, function() {
-        canvas1.appendSegment();
-    });
+    viewPort1.start();
     // Segment.prependSegment(canvas);
     // enableDebug();
 
@@ -44,16 +41,10 @@ downloadSegmentWidths.then(function() {
     // });
 
     // const SEGMENT_RATIO_MOVE = 0.7;
-    // let backBtn = document.getElementById('backBtn');
-    // backBtn.addEventListener('click', function() {
-    //   let move = canvas.distanceToMove + canvas.canvasWidth * SEGMENT_RATIO_MOVE;
-    //   canvas.moveX(move);
-    // }, false);
-    //
-    // let nextBtn = document.getElementById('nextBtn');
-    // nextBtn.addEventListener('click', function() {
-    //   let move = canvas.distanceToMove - canvas.canvasWidth * SEGMENT_RATIO_MOVE;
-    //   canvas.moveX(move);
-    // }, false);
+    let backBtn = document.getElementById('backBtn');
+    backBtn.addEventListener('click', () => { viewPort1.slideLeft(); }, false);
+
+    let nextBtn = document.getElementById('nextBtn');
+    nextBtn.addEventListener('click', () => { viewPort1.slideRight(); }, false);
 
 });

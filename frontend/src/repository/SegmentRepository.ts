@@ -1,6 +1,7 @@
 'use strict';
 
 import Repository = require('./Repository');
+import SegmentModel = require('../models/SegmentModel');
 
 class SegmentRepository extends Repository {
     public getWidths(): Promise<Array<number>> {

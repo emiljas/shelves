@@ -1,29 +1,37 @@
 'use strict';
 
-import Canvas = require('./Canvas');
+import ViewPort = require('./ViewPort');
 import SegmentRepository = require('./repository/SegmentRepository');
+import ProductPositionModel = require('./models/ProductPositionModel');
 
 let segmentRepository = new SegmentRepository();
 
 class Segment {
     private x: number;
     private isLoaded = false;
-    private canvas: Canvas;
+    private viewPort: ViewPort;
+    private ctx: CanvasRenderingContext2D;
     private index: number;
-    private data: SegmentModel;
     private spriteImg: HTMLImageElement;
 
+    private width: number;
+    private height: number;
+    private productPositions: Array<ProductPositionModel>;
 
-    constructor(canvas: Canvas, index: number, x: number) {
+    constructor(viewPort: ViewPort, index: number, x: number) {
         this.index = index;
-        this.canvas = canvas;
+        this.viewPort = viewPort;
+        this.ctx = viewPort.getCanvasContext();
         this.x = x;
         this.load(this);
     }
 
     public load(segment: Segment) {
-        segmentRepository.getByPosition(this.index).then(function(data) {
-            segment.data = data;
+        segmentRepository.getByPosition(this.index).then((data) => {
+            this.width = data.width;
+            this.height = data.height;
+            this.productPositions = data.productPositions;
+
             return loadImage(data.spriteImgUrl);
         })
             .then(function(img) {
@@ -33,22 +41,21 @@ class Segment {
     }
 
     public draw() {
-        let ctx = this.canvas.ctx;
         if (this.isLoaded) {
-            ctx.beginPath();
-            ctx.lineWidth = 6;
-            ctx.moveTo(this.x, 0);
-            ctx.lineTo(this.x + this.data.width, 0);
-            ctx.lineTo(this.x + this.data.width, this.data.height);
-            ctx.lineTo(this.x, this.data.height);
-            ctx.lineTo(this.x, 0);
-            ctx.stroke();
+            this.ctx.beginPath();
+            this.ctx.lineWidth = 20;
+            this.ctx.moveTo(this.x, 0);
+            this.ctx.lineTo(this.x + this.width, 0);
+            this.ctx.lineTo(this.x + this.width, this.height);
+            this.ctx.lineTo(this.x, this.height);
+            this.ctx.lineTo(this.x, 0);
+            this.ctx.stroke();
 
             let spriteImg = this.spriteImg;
-            let positions = this.data.productPositions;
+            let positions = this.productPositions;
             for (let p of positions) {
                 if (p.h !== 0) {
-                    ctx.drawImage(spriteImg, p.sx, p.sy, p.w, p.h, p.dx + this.x, p.dy, p.w, p.h);
+                    this.ctx.drawImage(spriteImg, p.sx, p.sy, p.w, p.h, p.dx + this.x, p.dy, p.w, p.h);
                 }
 
             }

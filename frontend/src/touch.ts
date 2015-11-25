@@ -1,11 +1,11 @@
 'use strict';
 
-import Canvas = require('./Canvas');
+import ViewPort = require('./ViewPort');
 
-function touch(canvas: Canvas) {
+function touch(viewPort: ViewPort) {
     'use strict';
 
-    let hammer = new Hammer(canvas.canvasElement, {
+    let hammer = new Hammer(viewPort.getCanvas(), {
         touchAction: 'none'
     });
     hammer.get('pan').set({ direction: Hammer.DIRECTION_ALL });
@@ -14,10 +14,10 @@ function touch(canvas: Canvas) {
     let lastDeltaY = 0;
 
     hammer.on('pan', function(e: HammerInput) {
-        canvas.xMove += e.deltaX - lastDeltaX;
+        viewPort.setXMove(viewPort.getXMove() + e.deltaX - lastDeltaX);
         lastDeltaX = e.deltaX;
 
-        canvas.yMove += e.deltaY - lastDeltaY;
+        viewPort.setYMove(viewPort.getYMove() + e.deltaY - lastDeltaY);
         lastDeltaY = e.deltaY;
     });
 
@@ -27,10 +27,10 @@ function touch(canvas: Canvas) {
     });
 
     hammer.on('tap', function() {
-        if (canvas.scale === 0.33) {
-            canvas.scale = 1;
+        if (viewPort.getScale() === 0.33) {
+            viewPort.setScale(1);
         } else {
-            canvas.scale = 0.33;
+            viewPort.setScale(0.33);
         }
     });
 }

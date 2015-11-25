@@ -1,3 +1,5 @@
+import LoadSegmentResult = require('./LoadSegmentResult');
+
 class SegmentAppender {
     private segmentWidths: Array<number>;
     private segmentCount: number;
@@ -5,11 +7,15 @@ class SegmentAppender {
     private nextX = 0;
 
     constructor(segmentWidths: Array<number>) {
-      this.segmentWidths = segmentWidths;
-      this.segmentCount = segmentWidths.length;
+        this.segmentWidths = segmentWidths;
+        this.segmentCount = segmentWidths.length;
     }
 
-    public append() {
+    public shouldAppend(xMove: number, canvasWidth: number): boolean {
+        return xMove * 3 - canvasWidth * 3 + this.nextX < 0;
+    }
+
+    public append(): LoadSegmentResult {
         this.nextIndex = this.getZeroIndexIfUnderLast(this.nextIndex);
         let result = { index: this.nextIndex, x: this.nextX };
         let segmentWidth = this.segmentWidths[this.nextIndex];

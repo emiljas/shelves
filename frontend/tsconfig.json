@@ -10,30 +10,30 @@
   "filesGlob": [
     "src/**/*.ts",
     "test/**/*.ts",
-    "typings/tsd.d.ts",
-    "../backend/src/models/**/*.ts"
+    "typings/tsd.d.ts"
   ],
   "files": [
-    "src/Canvas.ts",
     "src/cyclePosition.ts",
     "src/debug/enableDebug.ts",
     "src/debug/FpsMeasurer.ts",
+    "src/loadSegments/LoadSegmentResult.ts",
     "src/loadSegments/SegmentAppender.ts",
     "src/loadSegments/SegmentPrepender.ts",
     "src/main.ts",
+    "src/models/ProductPositionModel.ts",
+    "src/models/SegmentModel.ts",
     "src/repository/Repository.ts",
     "src/repository/SegmentRepository.ts",
     "src/Segment.ts",
     "src/Segments.ts",
     "src/touch.ts",
+    "src/ViewPort.ts",
     "src/windowResize.ts",
     "test/cyclePositionTests.ts",
     "test/loadSegments/SegmentAppenderTests.ts",
     "test/loadSegments/SegmentPrependerTests.ts",
     "test/main.ts",
-    "typings/tsd.d.ts",
-    "../backend/src/models/ProductPositionModel.ts",
-    "../backend/src/models/SegmentModel.ts"
+    "typings/tsd.d.ts"
   ],
   "atom": {
     "rewriteTsconfig": true

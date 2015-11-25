@@ -1,3 +1,5 @@
+import LoadSegmentResult = require('./LoadSegmentResult');
+
 class SegmentPrepender {
     private segmentWidths: Array<number>;
     private segmentCount: number;
@@ -9,7 +11,11 @@ class SegmentPrepender {
         this.segmentCount = segmentWidths.length;
     }
 
-    public prepend() {
+    public shouldPrepend(xMove: number): boolean {
+        return xMove * 3 + this.currentX > 0;
+    }
+
+    public prepend(): LoadSegmentResult {
         this.currentIndex = this.getLastIndexIfBelowZero(this.currentIndex - 1);
         let segmentWidth = this.segmentWidths[this.currentIndex];
         this.currentX -= segmentWidth;
