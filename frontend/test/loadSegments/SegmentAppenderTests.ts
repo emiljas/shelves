@@ -1,6 +1,6 @@
 const assert = chai.assert;
 
-import SegmentAppender = require('../../src/append/SegmentAppender');
+import SegmentAppender = require('../../src/loadSegments/SegmentAppender');
 
 describe('SegmentAppender', function() {
     const SEGMENT_WIDTHS = [200, 300, 100];

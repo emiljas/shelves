@@ -175,19 +175,15 @@
 
 	'use strict';
 
-	var Segment = __webpack_require__(3);
-	var SPACE_BETWEEN_SEGMENTS = 50;
+	var SegmentPrepender = __webpack_require__(!(function webpackMissingModule() { var e = new Error("Cannot find module \"./append/SegmentPrepender\""); e.code = 'MODULE_NOT_FOUND'; throw e; }()));
+	var SegmentAppender = __webpack_require__(!(function webpackMissingModule() { var e = new Error("Cannot find module \"./append/SegmentAppender\""); e.code = 'MODULE_NOT_FOUND'; throw e; }()));
 	var Segments = (function () {
 	    function Segments(canvas) {
 	        this.segments = new Array();
-	        this.backPosition = 0;
-	        this.backX = 0;
-	        this.frontPosition = 0;
-	        this.frontX = 0;
 	        this.canvas = canvas;
-	        console.log(Segment);
 	        this.segmentWidths = JSON.parse(canvas.canvasElement.getAttribute('data-segment-widths'));
-	        this.segmentCount = this.segmentWidths.length;
+	        this.prepender = new SegmentPrepender(this.segmentWidths);
+	        this.appender = new SegmentAppender(this.segmentWidths);
 	    }
 	    Segments.prototype.draw = function () {
 	        for (var _i = 0, _a = this.segments; _i < _a.length; _i++) {
@@ -197,119 +193,24 @@
 	        this.preloadSegments();
 	    };
 	    Segments.prototype.preloadSegments = function () {
-	        if (this.canvas.xMove * 3 + this.backX > 0) {
-	            this.prependSegment();
-	        }
-	        if (this.canvas.xMove * 3 - this.canvas.canvasWidth * 3 + this.frontX < 0) {
-	            this.appendSegment();
-	        }
-	    };
-	    Segments.prototype.prependSegment = function () {
-	        this.backPosition = this.getLastIndexIfBelowZero(this.backPosition - 1);
-	        var index = this.backPosition;
-	        var segmentWidth = this.segmentWidths[index];
-	        this.backX -= segmentWidth + SPACE_BETWEEN_SEGMENTS;
-	        var segment = new Segment(this.canvas, index, this.backX);
-	        this.segments.push(segment);
-	        segment.load(segment);
+	        // this.appender.append();
+	        // if (this.canvas.xMove * 3 + this.backX > 0) {
+	        //     this.prependSegment();
+	        // }
+	        //
+	        // if (this.canvas.xMove * 3 - this.canvas.canvasWidth * 3 + this.frontX < 0) {
+	        //     this.appendSegment();
+	        // }
 	    };
 	    Segments.prototype.appendSegment = function () {
-	        this.frontPosition = this.getZeroIndexIfUnderLast(this.frontPosition);
-	        var index = this.frontPosition;
-	        var segment = new Segment(this.canvas, index, this.frontX);
-	        this.segments.push(segment);
-	        segment.load(segment);
-	        var segmentWidth = this.segmentWidths[index];
-	        this.frontX += segmentWidth + SPACE_BETWEEN_SEGMENTS;
-	        this.frontPosition++;
-	    };
-	    Segments.prototype.getLastIndexIfBelowZero = function (index) {
-	        if (index === -1) {
-	            return this.segmentCount - 1;
-	        } else if (index >= 0 && index < this.segmentCount) {
-	            return index;
-	        } else {
-	            throw 'Segments: index < -1';
-	        }
-	    };
-	    Segments.prototype.getZeroIndexIfUnderLast = function (index) {
-	        if (index === this.segmentCount) {
-	            return 0;
-	        } else if (index >= 0 && index < this.segmentCount) {
-	            return index;
-	        } else {
-	            throw 'Segments: index > segment count';
-	        }
+	        this.appender.append();
 	    };
 	    return Segments;
 	})();
 	module.exports = Segments;
 
 /***/ },
-/* 3 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	var SegmentRepository = __webpack_require__(4);
-	var segmentRepository = new SegmentRepository();
-	var Segment = (function () {
-	    function Segment(canvas, index, x) {
-	        this.isLoaded = false;
-	        this.index = index;
-	        this.canvas = canvas;
-	        this.x = x;
-	        this.load(this);
-	    }
-	    Segment.prototype.load = function (segment) {
-	        segmentRepository.getByPosition(this.index).then(function (data) {
-	            segment.data = data;
-	            return loadImage(data.spriteImgUrl);
-	        }).then(function (img) {
-	            segment.spriteImg = img;
-	            segment.isLoaded = true;
-	        });
-	    };
-	    Segment.prototype.draw = function () {
-	        var ctx = this.canvas.ctx;
-	        if (this.isLoaded) {
-	            ctx.beginPath();
-	            ctx.lineWidth = 6;
-	            ctx.moveTo(this.x, 0);
-	            ctx.lineTo(this.x + this.data.width, 0);
-	            ctx.lineTo(this.x + this.data.width, this.data.height);
-	            ctx.lineTo(this.x, this.data.height);
-	            ctx.lineTo(this.x, 0);
-	            ctx.stroke();
-	            var spriteImg = this.spriteImg;
-	            var positions = this.data.productPositions;
-	            for (var _i = 0; _i < positions.length; _i++) {
-	                var p = positions[_i];
-	                if (p.h !== 0) {
-	                    ctx.drawImage(spriteImg, p.sx, p.sy, p.w, p.h, p.dx + this.x, p.dy, p.w, p.h);
-	                }
-	            }
-	        }
-	    };
-	    return Segment;
-	})();
-	function loadImage(url) {
-	    'use strict';
-
-	    return new Promise(function (resolve, reject) {
-	        var img = new Image();
-	        img.src = url;
-	        img.addEventListener('load', function () {
-	            resolve(img);
-	        });
-	        img.addEventListener('error', function (e) {
-	            reject(e);
-	        });
-	    });
-	}
-	module.exports = Segment;
-
-/***/ },
+/* 3 */,
 /* 4 */
 /***/ function(module, exports, __webpack_require__) {
 

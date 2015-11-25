@@ -1,6 +1,4 @@
-import BaseSegmentAppender = require('./BaseSegmentAppender');
-
-class SegmentAppender extends BaseSegmentAppender {
+class SegmentAppender {
     private segmentWidths: Array<number>;
     private segmentCount: number;
     private nextIndex = 0;
@@ -13,23 +11,18 @@ class SegmentAppender extends BaseSegmentAppender {
 
     public append() {
         this.nextIndex = this.getZeroIndexIfUnderLast(this.nextIndex);
-        let index = this.nextIndex;
-        let x = this.nextX;
-
-        let segmentWidth = this.segmentWidths[index];
+        let result = { index: this.nextIndex, x: this.nextX };
+        let segmentWidth = this.segmentWidths[this.nextIndex];
         this.nextX += segmentWidth;
-
         this.nextIndex++;
-        return { index, x };
+        return result;
     }
 
     private getZeroIndexIfUnderLast(index: number): number {
         if (index === this.segmentCount) {
             return 0;
-        } else if (index >= 0 && index < this.segmentCount) {
-            return index;
         } else {
-            throw 'Segments: index > segment count';
+            return index;
         }
     }
 }

@@ -1,5 +1,3 @@
-import BaseSegmentAppender = require('./BaseSegmentAppender');
-
 class SegmentPrepender {
     private segmentWidths: Array<number>;
     private segmentCount: number;
@@ -21,10 +19,8 @@ class SegmentPrepender {
     private getLastIndexIfBelowZero(index: number): number {
         if (index === -1) {
             return this.segmentCount - 1;
-        } else if (index >= 0 && index < this.segmentCount) {
-            return index;
         } else {
-            throw 'Segments: index < -1';
+            return index;
         }
     }
 }

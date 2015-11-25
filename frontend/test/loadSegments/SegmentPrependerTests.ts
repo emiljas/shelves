@@ -1,6 +1,6 @@
 const assert = chai.assert;
 
-import SegmentPrepender = require('../../src/append/SegmentPrepender');
+import SegmentPrepender = require('../../src/loadSegments/SegmentPrepender');
 
 describe('SegmentPrepender', function() {
     const SEGMENT_WIDTHS = [200, 300, 100];
