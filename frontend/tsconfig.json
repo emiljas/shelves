@@ -5,7 +5,7 @@
     "target": "es5",
     "module": "commonjs",
     "noImplicitAny": true,
-    "sourceMap": false
+    "sourceMap": true
   },
   "filesGlob": [
     "src/**/*.ts",
@@ -13,6 +13,9 @@
     "typings/tsd.d.ts"
   ],
   "files": [
+    "src/animation/Slide.ts",
+    "src/animation/SlideArgs.ts",
+    "src/animation/SlideController.ts",
     "src/cyclePosition.ts",
     "src/debug/enableDebug.ts",
     "src/debug/FpsMeasurer.ts",
@@ -29,7 +32,7 @@
     "src/touch.ts",
     "src/ViewPort.ts",
     "src/windowResize.ts",
-    "test/cyclePositionTests.ts",
+    "test/animation/SlideTests.ts",
     "test/loadSegments/SegmentAppenderTests.ts",
     "test/loadSegments/SegmentPrependerTests.ts",
     "test/main.ts",

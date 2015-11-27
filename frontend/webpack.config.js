@@ -1,3 +1,5 @@
+const webpack = require('webpack');
+
 module.exports = {
     watch: true,
 
@@ -9,10 +11,10 @@ module.exports = {
       filename: 'bundle.js'
     },
 
-    // devtool: 'source-map',
+    devtool: 'source-map',
 
     plugins: [
-      // new originalWebpack.optimize.UglifyJsPlugin()
+      new webpack.optimize.UglifyJsPlugin()
     ],
 
     resolve: {
@@ -24,12 +26,7 @@ module.exports = {
         {
           test: /\.ts$/,
           exclude: /node_modules/,
-          loader: 'babel-loader?presets=es2015!ts-loader'
-        },
-        {
-          test: /\.js$/,
-          exclude: /node_modules/,
-          loader: 'babel'
+          loader: 'ts-loader'
         }
       ]
     }

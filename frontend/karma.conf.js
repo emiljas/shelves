@@ -1,5 +1,6 @@
-var path = require('path');
-var RewirePlugin = require("rewire-webpack");
+const path = require('path');
+const RewirePlugin = require("rewire-webpack");
+const webpack = require('webpack');
 
 module.exports = function(config) {
   config.set({
@@ -33,7 +34,10 @@ module.exports = function(config) {
     webpack: {
       watch: true,
 
+      devtool: 'source-map',
+
       plugins: [
+        new webpack.optimize.UglifyJsPlugin(),
         new RewirePlugin()
       ],
 
@@ -46,22 +50,17 @@ module.exports = function(config) {
           {
             test: /\.ts$/,
             exclude: /node_modules/,
-            loader: 'babel-loader?presets=es2015!ts-loader'
-          },
-          {
-            test: /\.js$/,
-            exclude: /node_modules/,
-            loader: 'babel'
+            loader: 'ts-loader'
           }
         ],
 
-        // postLoaders: [
-        //     {
-        //         test: /\.ts$/,
-        //         include: path.resolve('src/'),
-        //         loader: 'istanbul-instrumenter'
-        //     }
-        // ]
+        postLoaders: [
+            {
+                test: /\.ts$/,
+                include: path.resolve('src/'),
+                loader: 'istanbul-instrumenter'
+            }
+        ]
       }
     },
 
