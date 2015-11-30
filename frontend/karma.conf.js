@@ -20,6 +20,7 @@ module.exports = function(config) {
 
     // list of files to exclude
     exclude: [
+      'test/**/*Tests.js'
     ],
 
     preprocessors: {
@@ -29,43 +30,6 @@ module.exports = function(config) {
     coverageReporter: {
       type : 'json',
       subdir : '.'
-    },
-
-    webpack: {
-      watch: true,
-
-      devtool: 'source-map',
-
-      plugins: [
-        new webpack.optimize.UglifyJsPlugin(),
-        new RewirePlugin()
-      ],
-
-      resolve: {
-        extensions: ['', '.webpack.js', '.web.js', '.ts', '.js']
-      },
-
-      module: {
-        loaders: [
-          {
-            test: /\.ts$/,
-            exclude: /node_modules/,
-            loader: 'ts-loader'
-          }
-        ],
-
-        postLoaders: [
-            {
-                test: /\.ts$/,
-                include: path.resolve('src/'),
-                loader: 'istanbul-instrumenter'
-            }
-        ]
-      }
-    },
-
-    webpackMiddleware: {
-        noInfo: true
     },
 
     plugins: [
@@ -97,9 +61,11 @@ module.exports = function(config) {
     // enable / disable watching file and executing tests whenever any file changes
     autoWatch: true,
 
+    autoWatchBatchDelay: 5000,
+
     // start these browsers
     // available browser launchers: https://npmjs.org/browse/keyword/karma-launcher
-    browsers: ['Chrome'],
+    browsers: ['Firefox'],
 
     // Continuous Integration mode
     // if true, Karma captures browsers, runs the tests and exits
@@ -107,6 +73,44 @@ module.exports = function(config) {
 
     // Concurrency level
     // how many browser should be started simultanous
-    concurrency: Infinity
+    concurrency: Infinity,
+
+    webpack: {
+      // watch: true,
+      // watchDelay: 5000,
+
+      devtool: 'source-map',
+
+      plugins: [
+        new webpack.optimize.UglifyJsPlugin(),
+        new RewirePlugin()
+      ],
+
+      resolve: {
+        extensions: ['', '.ts']
+      },
+
+      module: {
+        loaders: [
+          {
+            test: /\.ts$/,
+            exclude: /node_modules/,
+            loader: 'ts-loader'
+          }
+        ],
+
+        postLoaders: [
+            {
+                test: /\.ts$/,
+                include: path.resolve('src/'),
+                loader: 'istanbul-instrumenter'
+            }
+        ]
+      }
+    },
+
+    webpackMiddleware: {
+        noInfo: true
+    }
   })
 }

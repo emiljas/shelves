@@ -5,7 +5,11 @@ import Slide = require('../../src/animation/Slide');
 describe('Slide', function() {
     const X_MOVE = 500;
     const DISTANCE = 100;
-    const TIMESTAMP = 1000;
+    const FIRST_TIMESTAMP = 1000;
+    const TIMESTAMPS = [
+        1100, 1110, 1111, 1200, 1202, 1203,
+        1599, 1600, 1601, 1604, 1605, 2000
+    ];
 
     it('0ms - no move', function() {
         let xMoves = collectXMovesFromTimestamps([1000]);
@@ -18,18 +22,21 @@ describe('Slide', function() {
     });
 
     it('xMove increases with every step', function() {
-        let xMoves = collectXMovesFromTimestamps([1100, 1200, 1600, 2000]);
+        let xMoves = collectXMovesFromTimestamps(TIMESTAMPS);
         assert.deepEqual(xMoves, _.sortBy(xMoves));
     });
 
     it('make full move in one second', function() {
-        let xMoves = collectXMovesFromTimestamps([1100, 1200, 1600, 2000]);
+        let xMoves = collectXMovesFromTimestamps(TIMESTAMPS);
         assert.equal(_.last(xMoves), 600);
     });
 
     it('is done when full move made', function() {
-        let isDones = collectIsDonesFromTimestamps([1100, 1200, 1600, 2000]);
-        assert.deepEqual(isDones, [false, false, false, true]);
+        let isDones = collectIsDonesFromTimestamps(TIMESTAMPS);
+        assert.deepEqual(isDones, [
+            false, false, false, false, false, false,
+            false, false, false, false, false, true
+        ]);
     });
 
     function collectXMovesFromTimestamps(timestamps: Array<number>): Array<number> {
@@ -49,7 +56,7 @@ describe('Slide', function() {
         let slide = new Slide({
             xMove: X_MOVE,
             distance: DISTANCE,
-            timestamp: TIMESTAMP
+            timestamp: FIRST_TIMESTAMP
         });
 
         for (let timestamp of timestamps) {

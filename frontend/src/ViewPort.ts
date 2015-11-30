@@ -38,16 +38,11 @@ class ViewPort {
         viewPort.distanceToMove = 0;
         viewPort.segments = new Segments(viewPort);
 
-
-
-        // let backBtn = container.querySelector('.leftSlideBtn');
-        // backBtn.addEventListener('click', () => { viewPort.slideLeft(); }, false);
+        let backBtn = container.querySelector('.leftSlideBtn');
+        backBtn.addEventListener('click', () => { viewPort.slideLeft(); }, false);
 
         let nextBtn = container.querySelector('.rightSlideBtn');
         nextBtn.addEventListener('click', () => { viewPort.slideRight(); }, false);
-
-
-
 
         touch(viewPort);
 
@@ -68,28 +63,21 @@ class ViewPort {
         window.requestAnimationFrame(this.frameRequestCallback);
     }
 
-    // private slideLeft() {
-    //     let SEGMENT_RATIO_MOVE = 0.7;
-    //     let move = this.distanceToMove + this.width * SEGMENT_RATIO_MOVE;
-    //     this.moveX(move);
-    // }
-
     private slideRight() {
-        // let SEGMENT_RATIO_MOVE = 0.7;
-        // let move = this.distanceToMove - this.width * SEGMENT_RATIO_MOVE;
-        // this.moveX(move);
+        this.slideController.startSlide({
+          distance: -1000,
+          xMove: this.xMove,
+          timestamp: this.timestamp
+        });
+    }
 
+    private slideLeft() {
         this.slideController.startSlide({
           distance: 1000,
           xMove: this.xMove,
           timestamp: this.timestamp
         });
     }
-
-    // private moveX(move: number) {
-    //     this.animationTimestamp = this.timestamp;
-    //     this.distanceToMove = move;
-    // }
 
     private loop(timestamp: number) {
         this.timestamp = timestamp;
@@ -99,7 +87,6 @@ class ViewPort {
 
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-        // this.slideIfNecessary();
         this.slideController.onAnimationFrame(timestamp);
 
         this.ctx.save();
@@ -114,22 +101,6 @@ class ViewPort {
         FpsMeasurer.instance.tick(timestamp);
         window.requestAnimationFrame(this.frameRequestCallback);
     };
-
-    // private slideIfNecessary() {
-    //     if (!isNearZeroPx(this.distanceToMove)) {
-    //         let secondsFromAnimationStart = (this.timestamp - this.animationTimestamp) / 1000;
-    //         let xMovePerFrame = Math.sin(secondsFromAnimationStart) * this.distanceToMove;
-    //
-    //         this.xMove += xMovePerFrame;
-    //         this.distanceToMove -= xMovePerFrame;
-    //     }
-    // }
 }
-
-// const DIFF = 0.5;
-// function isNearZeroPx(value: number) {
-//     'use strict';
-//     return Math.abs(value) < DIFF;
-// }
 
 export = ViewPort;
