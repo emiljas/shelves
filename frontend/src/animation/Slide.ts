@@ -2,6 +2,8 @@ import SlideArgs = require('./SlideArgs');
 
 const HALF_OF_PI = Math.PI / 2;
 
+interface Result { xMove: number, isDone: boolean };
+
 //full move per second
 class Slide {
     private distance: number;
@@ -9,7 +11,6 @@ class Slide {
     private xMove: number;
     private startXMove: number;
     private startTimeStamp: number;
-    private isDone = false;
 
     constructor(args: SlideArgs) {
         this.distance = args.distance;
@@ -19,21 +20,16 @@ class Slide {
         this.startTimeStamp = args.timestamp;
     }
 
-    public IsDone() { return this.isDone; }
-
-    public calcXMove(timestamp: number): number {
+    public frame(timestamp: number): Result {
         let secsFromStart = (timestamp - this.startTimeStamp) / 1000;
-        let xMovePerFrame = Math.sin(secsFromStart * HALF_OF_PI) * this.distanceLeft;
 
-        this.xMove += xMovePerFrame;
-        this.distanceLeft -= xMovePerFrame;
+        let xMove = Math.round(this.startXMove + Math.sin(secsFromStart * HALF_OF_PI) * this.distance);
 
-        if (this.distanceLeft * this.distance <= 0) {
-            this.isDone = true;
-            return this.startXMove + this.distance;
+        if (secsFromStart >= 1) {
+            return { xMove: this.startXMove + this.distance, isDone: true };
         }
 
-        return this.xMove;
+        return { xMove: xMove, isDone: false };
     }
 }
 

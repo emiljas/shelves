@@ -12,10 +12,10 @@ class SlideController {
 
     public onAnimationFrame(timestamp: number) {
         if (this.slide) {
-            let xMove = this.slide.calcXMove(timestamp);
-            this.viewPort.setXMove(xMove);
+            let result = this.slide.frame(timestamp);
+            this.viewPort.setXMove(result.xMove);
 
-            if (this.slide.IsDone()) {
+            if (result.isDone) {
                 this.slide = null;
             }
         }

@@ -1,14 +1,16 @@
-var gulp = require('gulp');
-var originalWebpack = require('webpack');
-var webpack = require('webpack-stream');
-var watch = require('gulp-watch');
-var concat = require('gulp-concat');
-var replace = require('gulp-replace');
-var Server = require('karma').Server;
-var remapIstanbul = require('remap-istanbul/lib/gulpRemapIstanbul');
+const gulp = require('gulp');
+const shell = require('gulp-shell');
+const originalWebpack = require('webpack');
+const webpack = require('webpack-stream');
+const watch = require('gulp-watch');
+const concat = require('gulp-concat');
+const replace = require('gulp-replace');
+const Server = require('karma').Server;
+const remapIstanbul = require('remap-istanbul/lib/gulpRemapIstanbul');
 
-gulp.task('watch', function() {
+gulp.task('watch', ['build'], function() {
   gulp.start('test');
+  
   watch('src/**/*.ts', function() {
     gulp.start('ts2js');
   });
@@ -18,8 +20,10 @@ gulp.task('watch', function() {
   });
 });
 
+gulp.task('build', shell.task(['tsc']));
+
 gulp.task('test', function (done) {
-  var server = new Server({
+  const server = new Server({
     configFile: __dirname + '/karma.conf.js'
   }, function(isError) {
       if(isError) {
