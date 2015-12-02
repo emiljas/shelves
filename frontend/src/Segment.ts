@@ -3,6 +3,7 @@
 import ViewPort = require('./ViewPort');
 import SegmentRepository = require('./repository/SegmentRepository');
 import ProductPositionModel = require('./models/ProductPositionModel');
+import TapInput = require('./TapInput');
 
 let segmentRepository = new SegmentRepository();
 
@@ -60,6 +61,10 @@ class Segment {
 
             }
         }
+    }
+
+    public isClicked(e: TapInput): boolean {
+      return e.x > this.x;
     }
 }
 

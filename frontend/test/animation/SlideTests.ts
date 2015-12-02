@@ -45,6 +45,6 @@ describe('Slide', function() {
             timestamp: FIRST_TIMESTAMP
         });
 
-        return slide.frame(timestamp);
+        return slide.animationFrame(timestamp);
     }
 });

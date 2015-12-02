@@ -5,6 +5,7 @@ import Segment = require('./Segment');
 import SegmentPrepender = require('./loadSegments/SegmentPrepender');
 import SegmentAppender = require('./loadSegments/SegmentAppender');
 import LoadSegmentResult = require('./loadSegments/LoadSegmentResult');
+import TapInput = require('./TapInput');
 
 class Segments {
     public segments = new Array<Segment>();
@@ -23,6 +24,15 @@ class Segments {
         this.appender = new SegmentAppender(this.segmentWidths);
     }
 
+    public onClick(e: TapInput): void {
+        let d = '';
+
+        for (let segment of this.segments) {
+            d += (segment.isClicked(e) ? 'X' : '_');
+            d += ' ';
+        }
+        console.log(d);
+    }
 
     public draw() {
         for (let segment of this.segments) {
@@ -38,19 +48,17 @@ class Segments {
         if (this.prepender.shouldPrepend(xMove)) {
             let result = this.prepender.prepend();
             this.addSegment(result);
-            console.log('prepend');
         }
 
         if (this.appender.shouldAppend(xMove, canvasWidth)) {
             let result = this.appender.append();
             this.addSegment(result);
-            console.log('append');
         }
     }
 
     public addSegment(result: LoadSegmentResult) {
-      let segment = new Segment(this.viewPort, result.index, result.x);
-      this.segments.push(segment);
+        let segment = new Segment(this.viewPort, result.index, result.x);
+        this.segments.push(segment);
     }
 }
 

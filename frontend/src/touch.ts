@@ -26,12 +26,15 @@ function touch(viewPort: ViewPort) {
         lastDeltaY = 0;
     });
 
-    hammer.on('tap', function() {
-        if (viewPort.getScale() === 0.33) {
-            viewPort.setScale(1);
-        } else {
-            viewPort.setScale(0.33);
-        }
+    hammer.on('tap', function(e) {
+        // if (viewPort.getScale() === 0.33) {
+        //     viewPort.setScale(1);
+        // } else {
+        //     viewPort.setScale(0.33);
+        // }
+
+
+        viewPort.onClick(e.center);
     });
 }
 

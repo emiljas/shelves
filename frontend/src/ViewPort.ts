@@ -1,11 +1,13 @@
 'use strict';
 
+import XMoveHolder = require('./XMoveHolder');
 import Segments = require('./Segments');
 import FpsMeasurer = require('./debug/FpsMeasurer');
 import touch = require('./touch');
 import SlideController = require('./animation/SlideController');
+import TapInput = require('./TapInput');
 
-class ViewPort {
+class ViewPort implements XMoveHolder {
     private container: HTMLDivElement;
     private canvas: HTMLCanvasElement;
     private ctx: CanvasRenderingContext2D;
@@ -18,8 +20,7 @@ class ViewPort {
     private distanceToMove: number;
     private timestamp: number;
     private lastTimestamp: number;
-    private frameRequestCallback: FrameRequestCallback = (timestamp) => { this.loop(timestamp); };
-    private animationTimestamp: number;
+    private frameRequestCallback: FrameRequestCallback = (timestamp) => { this.onAnimationFrame(timestamp); };
 
     private slideController = new SlideController(this);
 
@@ -65,21 +66,21 @@ class ViewPort {
 
     private slideRight() {
         this.slideController.startSlide({
-          distance: -1000,
-          xMove: this.xMove,
-          timestamp: this.timestamp
+            distance: -1000,
+            xMove: this.xMove,
+            timestamp: this.timestamp
         });
     }
 
     private slideLeft() {
         this.slideController.startSlide({
-          distance: 1000,
-          xMove: this.xMove,
-          timestamp: this.timestamp
+            distance: 1000,
+            xMove: this.xMove,
+            timestamp: this.timestamp
         });
     }
 
-    private loop(timestamp: number) {
+    private onAnimationFrame(timestamp: number) {
         this.timestamp = timestamp;
 
         this.yMove = Math.min(0, this.yMove);
@@ -101,6 +102,10 @@ class ViewPort {
         FpsMeasurer.instance.tick(timestamp);
         window.requestAnimationFrame(this.frameRequestCallback);
     };
+
+    public onClick(e: TapInput): void {
+        this.segments.onClick(e);
+    }
 }
 
 export = ViewPort;
