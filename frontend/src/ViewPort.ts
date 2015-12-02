@@ -64,6 +64,10 @@ class ViewPort implements XMoveHolder {
         window.requestAnimationFrame(this.frameRequestCallback);
     }
 
+    public onClick(e: TapInput): void {
+        this.segments.onClick(e);
+    }
+
     private slideRight() {
         this.slideController.startSlide({
             distance: -1000,
@@ -102,10 +106,6 @@ class ViewPort implements XMoveHolder {
         FpsMeasurer.instance.tick(timestamp);
         window.requestAnimationFrame(this.frameRequestCallback);
     };
-
-    public onClick(e: TapInput): void {
-        this.segments.onClick(e);
-    }
 }
 
 export = ViewPort;

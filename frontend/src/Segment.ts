@@ -64,7 +64,7 @@ class Segment {
     }
 
     public isClicked(e: TapInput): boolean {
-      return e.x > this.x;
+      return e.x > this.x && e.x < this.x + this.width;
     }
 }
 

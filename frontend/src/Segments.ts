@@ -25,6 +25,10 @@ class Segments {
     }
 
     public onClick(e: TapInput): void {
+      let scale = this.viewPort.getScale();
+      e.x /= scale;
+      e.y /= scale;
+
         let d = '';
 
         for (let segment of this.segments) {
