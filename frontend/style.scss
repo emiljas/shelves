@@ -1,4 +1,16 @@
-body {
+.shelves {
+  .control {
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
+
+  canvas {
+    cursor: move;
+  }
+}
+
+/*body {
   margin: 0;
   background-color: lightgrey;
 }
@@ -47,3 +59,4 @@ button {
 .debugContainer .red{
   color: red;
 }
+*/

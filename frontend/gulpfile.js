@@ -7,16 +7,21 @@ const concat = require('gulp-concat');
 const replace = require('gulp-replace');
 const Server = require('karma').Server;
 const remapIstanbul = require('remap-istanbul/lib/gulpRemapIstanbul');
+const sass = require('gulp-sass');
 
 gulp.task('watch', ['build'], function() {
   gulp.start('test');
-  
+
   watch('src/**/*.ts', function() {
     gulp.start('ts2js');
   });
 
   watch('lib/*.js', function() {
     gulp.start('concatLibs');
+  });
+
+  watch('style.scss', function() {
+    gulp.start('sass');
   });
 });
 
@@ -51,7 +56,14 @@ gulp.task('test', function (done) {
 gulp.task('ts2js', function() {
   return gulp.src('src/main.ts')
   .pipe(webpack(require('./webpack.config.js')))
-  .pipe(gulp.dest('dist'));
+  // .pipe(gulp.dest('dist'));
+  .pipe(gulp.dest('../../../inetpub/wwwroot/RossmannV4Dnn/DesktopModules/RossmannV4Modules/Shelves2/Js'));
+});
+
+gulp.task('sass', function() {
+  return gulp.src('style.scss')
+    .pipe(sass().on('error', sass.logError))
+    .pipe(gulp.dest('../../../inetpub/wwwroot/RossmannV4Dnn/DesktopModules/RossmannV4Modules/Shelves2/Css'));
 });
 
 gulp.task('concatLibs', function() {

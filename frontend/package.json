@@ -25,6 +25,7 @@
     "gulp": "^3.9.0",
     "gulp-concat": "^2.6.0",
     "gulp-replace": "^0.5.4",
+    "gulp-sass": "^2.1.0",
     "gulp-shell": "^0.5.1",
     "gulp-watch": "^4.3.5",
     "inject-loader": "^2.0.1",

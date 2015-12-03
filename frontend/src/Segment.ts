@@ -8,6 +8,7 @@ import TapInput = require('./TapInput');
 let segmentRepository = new SegmentRepository();
 
 class Segment {
+    private canvas: HTMLCanvasElement;
     private x: number;
     private isLoaded = false;
     private viewPort: ViewPort;
@@ -35,42 +36,53 @@ class Segment {
 
             return loadImage(data.spriteImgUrl);
         })
-            .then(function(img) {
+            .then((img) => {
                 segment.spriteImg = img;
+                this.canvas = this.createCanvas();
                 segment.isLoaded = true;
             });
     }
 
     public draw() {
         if (this.isLoaded) {
-            this.ctx.beginPath();
-            this.ctx.lineWidth = 20;
-            this.ctx.moveTo(this.x, 0);
-            this.ctx.lineTo(this.x + this.width, 0);
-            this.ctx.lineTo(this.x + this.width, this.height);
-            this.ctx.lineTo(this.x, this.height);
-            this.ctx.lineTo(this.x, 0);
-            this.ctx.stroke();
-
-            let spriteImg = this.spriteImg;
-            let positions = this.productPositions;
-            for (let p of positions) {
-                if (p.h !== 0) {
-                    this.ctx.drawImage(spriteImg, p.sx, p.sy, p.w, p.h, p.dx + this.x, p.dy, p.w, p.h);
-                }
-
-            }
+          this.ctx.drawImage(this.canvas, 0, 0, this.width, this.height, this.x, 0, this.width, this.height);
         }
     }
 
     public isClicked(e: TapInput): boolean {
-      return e.x > this.x && e.x < this.x + this.width;
+        return e.x > this.x && e.x < this.x + this.width;
     }
 
     public fitOnViewPort(): void {
-      let x = ((this.viewPort.getWidth() - this.width) / 2) - this.x;
-      this.viewPort.setXMove(x);
-      this.viewPort.setScale(1);
+        let x = ((this.viewPort.getWidth() - this.width) / 2) - this.x;
+        this.viewPort.setXMove(x);
+        this.viewPort.setScale(1);
+    }
+
+    private createCanvas(): HTMLCanvasElement {
+        let canvas = document.createElement('canvas')
+        canvas.width = this.width;
+        canvas.height = this.height;
+        let ctx = canvas.getContext('2d');
+
+        ctx.beginPath();
+        ctx.lineWidth = 20;
+        ctx.moveTo(0, 0);
+        ctx.lineTo(this.width, 0);
+        ctx.lineTo(this.width, this.height);
+        ctx.lineTo(0, this.height);
+        ctx.lineTo(0, 0);
+        ctx.stroke();
+
+        let positions = this.productPositions;
+        for (let p of positions) {
+            if (p.h !== 0) {
+                ctx.drawImage(this.spriteImg, p.sx, p.sy, p.w, p.h, p.dx, p.dy, p.w, p.h);
+            }
+
+        }
+
+        return canvas;
     }
 }
 

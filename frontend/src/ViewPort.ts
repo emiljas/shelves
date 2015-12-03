@@ -24,14 +24,30 @@ class ViewPort implements XMoveHolder {
 
     private slideController = new SlideController(this);
 
-    public static init(canvasId: string) {
+    public static init(containerId: string) {
         let viewPort = new ViewPort();
 
-        let container = <HTMLDivElement>document.querySelector(canvasId);
+        let container = <HTMLDivElement>document.querySelector(containerId);
         viewPort.container = container;
+
+        container.style.width = document.documentElement.getBoundingClientRect().width + 'px';
+        container.style.height = document.documentElement.clientHeight + 'px';
+
+        let containerPlaceHolder = <HTMLDivElement>document.createElement('div');
+        containerPlaceHolder.style.width = container.getBoundingClientRect().width + 'px';
+        containerPlaceHolder.style.height = container.getBoundingClientRect().height + 'px';
+        container.parentElement.appendChild(containerPlaceHolder);
+
+
+        container.style.position = 'absolute';
+        container.style.left = '0';
+
+        viewPort.width = container.getBoundingClientRect().width;
+        viewPort.height = container.getBoundingClientRect().height;
         viewPort.canvas = <HTMLCanvasElement>container.querySelector('canvas');
-        viewPort.width = viewPort.canvas.width;
-        viewPort.height = viewPort.canvas.height;
+        viewPort.canvas.width = viewPort.width;
+        viewPort.canvas.height = viewPort.height;
+
         viewPort.ctx = viewPort.canvas.getContext('2d');
         viewPort.timestamp = 0;
         viewPort.xMove = 0;
@@ -40,10 +56,16 @@ class ViewPort implements XMoveHolder {
         viewPort.segments = new Segments(viewPort);
 
         let backBtn = container.querySelector('.leftSlideBtn');
-        backBtn.addEventListener('click', () => { viewPort.slideLeft(); }, false);
+        backBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            viewPort.slideLeft();
+        }, false);
 
         let nextBtn = container.querySelector('.rightSlideBtn');
-        nextBtn.addEventListener('click', () => { viewPort.slideRight(); }, false);
+        nextBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            viewPort.slideRight();
+        }, false);
 
         touch(viewPort);
 
