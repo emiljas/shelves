@@ -66,6 +66,12 @@ class Segment {
     public isClicked(e: TapInput): boolean {
       return e.x > this.x && e.x < this.x + this.width;
     }
+
+    public fitOnViewPort(): void {
+      let x = ((this.viewPort.getWidth() - this.width) / 2) - this.x;
+      this.viewPort.setXMove(x);
+      this.viewPort.setScale(1);
+    }
 }
 
 function loadImage(url: string) {

@@ -25,17 +25,25 @@ class Segments {
     }
 
     public onClick(e: TapInput): void {
-      let scale = this.viewPort.getScale();
-      e.x /= scale;
-      e.y /= scale;
+        let scale = this.viewPort.getScale();
+        console.log(scale);
+        e.x -= this.viewPort.getXMove();
+        e.x /= scale;
+        e.y /= scale;
 
-        let d = '';
-
+        let clickedSegment: Segment;
         for (let segment of this.segments) {
-            d += (segment.isClicked(e) ? 'X' : '_');
-            d += ' ';
+            if (segment.isClicked(e)) {
+                clickedSegment = segment;
+                break;
+            }
         }
-        console.log(d);
+
+        if (clickedSegment) {
+            clickedSegment.fitOnViewPort();
+        } else {
+            console.log('brak segmenty klik');
+        }
     }
 
     public draw() {

@@ -1,7 +1,7 @@
 const webpack = require('webpack');
 
 module.exports = {
-    watch: true,
+    // watch: true, //not working in workplace
 
     context: __dirname + '/src',
     entry: './main.ts',
