@@ -1,27 +1,18 @@
 .shelvesPlaceHolder {
-  //element to hold height of .shelves
-  height: 1080px; // initial height, should be programatically set to .shelves height
-}
+  height: 1080px; }
 
 .shelves {
   position: absolute;
-  left: 0;
-
-  .control {
+  left: 0; }
+  .shelves .control {
     position: absolute;
     top: 0;
-    left: 0;
-  }
-
-  &.loading .control {
-    display: none;
-  }
-
-  canvas {
+    left: 0; }
+  .shelves.loading .control {
+    display: none; }
+  .shelves canvas {
     border: 1px solid black;
-    cursor: move;
-  }
-}
+    cursor: move; }
 
 /*body {
   margin: 0;

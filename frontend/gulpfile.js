@@ -56,13 +56,14 @@ gulp.task('test', function (done) {
 gulp.task('ts2js', function() {
   return gulp.src('src/main.ts')
   .pipe(webpack(require('./webpack.config.js')))
-  // .pipe(gulp.dest('dist'));
+  .pipe(gulp.dest('dist'))
   .pipe(gulp.dest('../../../inetpub/wwwroot/RossmannV4Dnn/DesktopModules/RossmannV4Modules/Shelves2/Js'));
 });
 
 gulp.task('sass', function() {
   return gulp.src('style.scss')
     .pipe(sass().on('error', sass.logError))
+    .pipe(gulp.dest('.'))
     .pipe(gulp.dest('../../../inetpub/wwwroot/RossmannV4Dnn/DesktopModules/RossmannV4Modules/Shelves2/Css'));
 });
 

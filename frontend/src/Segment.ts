@@ -60,7 +60,7 @@ class Segment {
     }
 
     private createCanvas(): HTMLCanvasElement {
-        let canvas = document.createElement('canvas')
+        let canvas = document.createElement('canvas');
         canvas.width = this.width;
         canvas.height = this.height;
         let ctx = canvas.getContext('2d');
@@ -79,7 +79,6 @@ class Segment {
             if (p.h !== 0) {
                 ctx.drawImage(this.spriteImg, p.sx, p.sy, p.w, p.h, p.dx, p.dy, p.w, p.h);
             }
-
         }
 
         return canvas;

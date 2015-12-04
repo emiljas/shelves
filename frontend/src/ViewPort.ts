@@ -27,26 +27,40 @@ class ViewPort implements XMoveHolder {
     public static init(containerId: string) {
         let viewPort = new ViewPort();
 
+
+
+
+
+
+
         let container = <HTMLDivElement>document.querySelector(containerId);
+        let placeHolder = <HTMLDivElement>document.querySelector('.shelvesPlaceHolder[data-place-holder-for="' + containerId + '"]');
         viewPort.container = container;
-
-        container.style.width = document.documentElement.getBoundingClientRect().width + 'px';
-        container.style.height = document.documentElement.clientHeight + 'px';
-
-        let containerPlaceHolder = <HTMLDivElement>document.createElement('div');
-        containerPlaceHolder.style.width = container.getBoundingClientRect().width + 'px';
-        containerPlaceHolder.style.height = container.getBoundingClientRect().height + 'px';
-        container.parentElement.appendChild(containerPlaceHolder);
+        let canvas = <HTMLCanvasElement>container.querySelector('canvas');
+        viewPort.canvas = canvas;
 
 
-        container.style.position = 'absolute';
-        container.style.left = '0';
 
-        viewPort.width = container.getBoundingClientRect().width;
-        viewPort.height = container.getBoundingClientRect().height;
-        viewPort.canvas = <HTMLCanvasElement>container.querySelector('canvas');
-        viewPort.canvas.width = viewPort.width;
-        viewPort.canvas.height = viewPort.height;
+
+
+        canvas.width = document.documentElement.clientWidth;
+        let documentHeight = document.documentElement.clientHeight;
+        let containerY = container.getBoundingClientRect().top;
+        let bottomMargin = 0.05 * documentHeight;
+        canvas.height = documentHeight - containerY - bottomMargin;
+
+
+        viewPort.width = canvas.width;
+        viewPort.height = canvas.height;
+
+        placeHolder.style.height = container.getBoundingClientRect().height + 'px';
+
+        container.classList.remove('loading');
+
+
+
+
+
 
         viewPort.ctx = viewPort.canvas.getContext('2d');
         viewPort.timestamp = 0;
