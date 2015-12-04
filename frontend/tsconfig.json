@@ -19,6 +19,8 @@
     "src/cyclePosition.ts",
     "src/debug/enableDebug.ts",
     "src/debug/FpsMeasurer.ts",
+    "src/events/EventArgs.ts",
+    "src/events/Events.ts",
     "src/loadSegments/LoadSegmentResult.ts",
     "src/loadSegments/SegmentAppender.ts",
     "src/loadSegments/SegmentPrepender.ts",

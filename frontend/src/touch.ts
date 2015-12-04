@@ -36,6 +36,8 @@ function touch(viewPort: ViewPort) {
 
         viewPort.onClick(e.center);
     });
+
+    return hammer;
 }
 
 export = touch;

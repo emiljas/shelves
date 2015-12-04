@@ -1,5 +1,6 @@
 'use strict';
 
+import Events = require('./events/Events');
 import XMoveHolder = require('./XMoveHolder');
 import Segments = require('./Segments');
 import FpsMeasurer = require('./debug/FpsMeasurer');
@@ -8,6 +9,9 @@ import SlideController = require('./animation/SlideController');
 import TapInput = require('./TapInput');
 
 class ViewPort implements XMoveHolder {
+    private isDeleted = false;
+    private events = new Events();
+    private hammerManager: HammerManager;
     private container: HTMLDivElement;
     private canvas: HTMLCanvasElement;
     private ctx: CanvasRenderingContext2D;
@@ -27,40 +31,28 @@ class ViewPort implements XMoveHolder {
     public static init(containerId: string) {
         let viewPort = new ViewPort();
 
-
-
-
-
-
-
         let container = <HTMLDivElement>document.querySelector(containerId);
-        let placeHolder = <HTMLDivElement>document.querySelector('.shelvesPlaceHolder[data-place-holder-for="' + containerId + '"]');
         viewPort.container = container;
         let canvas = <HTMLCanvasElement>container.querySelector('canvas');
         viewPort.canvas = canvas;
 
-
-
-
-
-        canvas.width = document.documentElement.clientWidth;
-        let documentHeight = document.documentElement.clientHeight;
-        let containerY = container.getBoundingClientRect().top;
-        let bottomMargin = 0.05 * documentHeight;
-        canvas.height = documentHeight - containerY - bottomMargin;
-
+        (function fitCanvas() {
+            canvas.width = document.documentElement.clientWidth;
+            let documentHeight = document.documentElement.clientHeight;
+            let containerY = container.getBoundingClientRect().top;
+            let bottomMargin = 0.05 * documentHeight;
+            canvas.height = documentHeight - containerY - bottomMargin;
+        })();
 
         viewPort.width = canvas.width;
         viewPort.height = canvas.height;
 
-        placeHolder.style.height = container.getBoundingClientRect().height + 'px';
+        (function fitPlaceHolder() {
+            let placeHolder = <HTMLDivElement>document.querySelector('.shelvesPlaceHolder[data-place-holder-for="' + containerId + '"]');
+            placeHolder.style.height = container.getBoundingClientRect().height + 'px';
+        })();
 
         container.classList.remove('loading');
-
-
-
-
-
 
         viewPort.ctx = viewPort.canvas.getContext('2d');
         viewPort.timestamp = 0;
@@ -70,18 +62,18 @@ class ViewPort implements XMoveHolder {
         viewPort.segments = new Segments(viewPort);
 
         let backBtn = container.querySelector('.leftSlideBtn');
-        backBtn.addEventListener('click', (e) => {
+        viewPort.events.addEventListener(backBtn, 'click', (e) => {
             e.preventDefault();
             viewPort.slideLeft();
-        }, false);
+        });
 
         let nextBtn = container.querySelector('.rightSlideBtn');
-        nextBtn.addEventListener('click', (e) => {
+        viewPort.events.addEventListener(nextBtn, 'click', (e) => {
             e.preventDefault();
             viewPort.slideRight();
-        }, false);
+        });
 
-        touch(viewPort);
+        viewPort.hammerManager = touch(viewPort);
 
         return viewPort;
     }
@@ -96,12 +88,18 @@ class ViewPort implements XMoveHolder {
     public getScale() { return this.scale; }
     public setScale(value: number) { this.scale = value; }
 
-    public start() {
+    public start(): void {
         window.requestAnimationFrame(this.frameRequestCallback);
     }
 
     public onClick(e: TapInput): void {
         this.segments.onClick(e);
+    }
+
+    public unbind(): void {
+        this.isDeleted = true;
+        this.events.removeAllEventListeners();
+        this.hammerManager.destroy();
     }
 
     private slideRight() {
@@ -140,7 +138,10 @@ class ViewPort implements XMoveHolder {
 
         this.lastTimestamp = timestamp;
         FpsMeasurer.instance.tick(timestamp);
-        window.requestAnimationFrame(this.frameRequestCallback);
+
+        if (!this.isDeleted) {
+            window.requestAnimationFrame(this.frameRequestCallback);
+        }
     };
 }
 
