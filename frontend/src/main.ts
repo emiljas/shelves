@@ -7,12 +7,8 @@ const segmentRepository = new SegmentRepository();
 
 //should be deleted when setAttribute on server side!
 let downloadSegmentWidths = segmentRepository.getWidths().then(function(widths) {
-    let canvases = document.querySelectorAll('canvas');
-    for (let i = 0; i < canvases.length; i++) {
-        let canvas = canvases[i];
-        canvas.setAttribute('data-segment-widths', JSON.stringify(widths));
-    }
-
+    let shelvesContainer = document.querySelector('#shelves1');
+    shelvesContainer.setAttribute('data-segment-widths', JSON.stringify(widths));
     return Promise.resolve();
 });
 

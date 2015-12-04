@@ -16,9 +16,9 @@ class Segments {
     private prepender: SegmentPrepender;
     private appender: SegmentAppender;
 
-    constructor(viewPort: ViewPort) {
+    constructor(viewPort: ViewPort, segmentWidths: Array<number>) {
         this.viewPort = viewPort;
-        this.segmentWidths = JSON.parse(viewPort.getCanvas().getAttribute('data-segment-widths'));
+        this.segmentWidths = segmentWidths;
 
         this.prepender = new SegmentPrepender(this.segmentWidths);
         this.appender = new SegmentAppender(this.segmentWidths);

@@ -20,7 +20,8 @@ class ViewPort implements XMoveHolder {
     private height: number;
     private xMove: number;
     private yMove: number;
-    private scale: number = 0.33;
+    private initialScale: number;
+    private scale: number;
     private distanceToMove: number;
     private timestamp: number;
     private lastTimestamp: number;
@@ -59,7 +60,15 @@ class ViewPort implements XMoveHolder {
         viewPort.xMove = 0;
         viewPort.yMove = 0;
         viewPort.distanceToMove = 0;
-        viewPort.segments = new Segments(viewPort);
+
+        let segmentWidths: Array<number> = JSON.parse(container.getAttribute('data-segment-widths'));
+        let segmentHeight = parseInt(container.getAttribute('data-segment-height'), 10);
+        viewPort.segments = new Segments(viewPort, segmentWidths);
+
+        (function setInitialScale() {
+          viewPort.initialScale = viewPort.height / segmentHeight;
+          viewPort.scale = viewPort.initialScale;
+        })();
 
         let backBtn = container.querySelector('.leftSlideBtn');
         viewPort.events.addEventListener(backBtn, 'click', (e) => {
@@ -71,6 +80,18 @@ class ViewPort implements XMoveHolder {
         viewPort.events.addEventListener(nextBtn, 'click', (e) => {
             e.preventDefault();
             viewPort.slideRight();
+        });
+
+        let zoomInBtn = container.querySelector('.zoomInBtn');
+        viewPort.events.addEventListener(zoomInBtn, 'click', (e) => {
+          e.preventDefault();
+          viewPort.scale += 0.01;
+        });
+
+        let zoomOutBtn = container.querySelector('.zoomOutBtn');
+        viewPort.events.addEventListener(zoomOutBtn, 'click', (e) => {
+          e.preventDefault();
+          viewPort.scale -= 0.01;
         });
 
         viewPort.hammerManager = touch(viewPort);
@@ -122,7 +143,7 @@ class ViewPort implements XMoveHolder {
         this.timestamp = timestamp;
 
         this.yMove = Math.min(0, this.yMove);
-        this.yMove = Math.max(this.yMove, this.height - this.height * (this.scale / 0.33));
+        this.yMove = Math.max(this.yMove, this.height - this.height * (this.scale / this.initialScale));
 
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
