@@ -45,7 +45,7 @@ class Segment {
 
     public draw() {
         if (this.isLoaded) {
-          this.ctx.drawImage(this.canvas, 0, 0, this.width, this.height, this.x, 0, this.width, this.height);
+            this.ctx.drawImage(this.canvas, 0, 0, this.width, this.height, this.x, 0, this.width, this.height);
         }
     }
 
@@ -54,9 +54,20 @@ class Segment {
     }
 
     public fitOnViewPort(): void {
-        let x = ((this.viewPort.getWidth() - this.width) / 2) - this.x;
+        let canvasWidth = this.viewPort.getWidth();
+        let s = this.viewPort.getZoomScale();
+        let x = ((canvasWidth - this.width) / 2) - this.x;
+        // x /= s;
+        // console.log(x, x / s);
+
+        // let canvasHeight = this.viewPort.getHeight();
+        // let y =
+
+        // this.viewPort.setYMove(y);
+
+        // this.viewPort.setScale(1);
         this.viewPort.setXMove(x);
-        this.viewPort.setScale(1);
+        this.viewPort.setScale(this.viewPort.getZoomScale());
     }
 
     private createCanvas(): HTMLCanvasElement {

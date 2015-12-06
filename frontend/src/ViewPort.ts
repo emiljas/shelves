@@ -21,6 +21,7 @@ class ViewPort implements XMoveHolder {
     private xMove: number;
     private yMove: number;
     private initialScale: number;
+    private zoomScale: number;
     private scale: number;
     private distanceToMove: number;
     private timestamp: number;
@@ -66,6 +67,10 @@ class ViewPort implements XMoveHolder {
 
         (function setInitialScale() {
             viewPort.initialScale = viewPort.height / segmentHeight;
+
+            let maxSegmentWidth = _.max(segmentWidths);
+            viewPort.zoomScale = Math.min(0.3, viewPort.width / maxSegmentWidth);
+
             viewPort.scale = viewPort.initialScale;
         })();
 
@@ -103,10 +108,12 @@ class ViewPort implements XMoveHolder {
     public getCanvas() { return this.canvas; }
     public getCanvasContext() { return this.ctx; }
     public getWidth() { return this.width; }
+    public getHeight() { return this.height; }
     public getXMove() { return this.xMove; }
     public setXMove(value: number) { this.xMove = value; }
     public getYMove() { return this.yMove; }
     public setYMove(value: number) { this.yMove = value; }
+    public getZoomScale() { return this.zoomScale; }
     public getScale() { return this.scale; }
     public setScale(value: number) { this.scale = value; }
 
