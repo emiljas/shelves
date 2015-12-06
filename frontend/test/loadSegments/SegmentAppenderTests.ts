@@ -3,6 +3,8 @@ const assert = chai.assert;
 import SegmentAppender = require('../../src/loadSegments/SegmentAppender');
 
 describe('SegmentAppender', function() {
+    const DUMMO_CANVAS_WIDTH: number = null;
+    const DUMMO_INITIAL_SCALE: number = null;
     const SEGMENT_WIDTHS = [200, 300, 100];
 
     it('first append', function() {
@@ -18,7 +20,7 @@ describe('SegmentAppender', function() {
     });
 
     function append(times: number, expectedResult: any) {
-        let appender = new SegmentAppender(SEGMENT_WIDTHS);
+        let appender = new SegmentAppender(DUMMO_CANVAS_WIDTH, SEGMENT_WIDTHS, DUMMO_INITIAL_SCALE);
         let result: any;
         _.times(times, function() {
             result = appender.append();

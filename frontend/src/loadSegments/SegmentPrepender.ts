@@ -3,16 +3,18 @@ import LoadSegmentResult = require('./LoadSegmentResult');
 class SegmentPrepender {
     private segmentWidths: Array<number>;
     private segmentCount: number;
+    private initialScale: number;
     private currentIndex = 0;
     private currentX = 0;
 
-    constructor(segmentWidths: Array<number>) {
+    constructor(segmentWidths: Array<number>, initialScale: number) {
         this.segmentWidths = segmentWidths;
         this.segmentCount = segmentWidths.length;
+        this.initialScale = initialScale;
     }
 
     public shouldPrepend(xMove: number): boolean {
-        return xMove * 3 + this.currentX > 0;
+        return xMove / this.initialScale + this.currentX > 0;
     }
 
     public prepend(): LoadSegmentResult {

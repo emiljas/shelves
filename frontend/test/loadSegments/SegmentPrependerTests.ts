@@ -4,6 +4,7 @@ import SegmentPrepender = require('../../src/loadSegments/SegmentPrepender');
 
 describe('SegmentPrepender', function() {
     const SEGMENT_WIDTHS = [200, 300, 100];
+    const DUMMO_INITIAL_SCALE: number = null;
 
     it('first prepend (return last)', function() {
         prepend(1, { index: 2, x: -100 });
@@ -14,7 +15,7 @@ describe('SegmentPrepender', function() {
     });
 
     function prepend(times: number, expectedResult: any) {
-        let prepender = new SegmentPrepender(SEGMENT_WIDTHS);
+        let prepender = new SegmentPrepender(SEGMENT_WIDTHS, DUMMO_INITIAL_SCALE);
         let result: any;
         _.times(times, function() {
             result = prepender.prepend();

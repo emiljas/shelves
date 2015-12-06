@@ -1,10 +1,9 @@
 'use strict';
 
-const SERVER_URL = 'http://localhost:3000';
+const SERVER_URL = 'http://192.168.1.104:3000';
 
 class Repository {
     protected getJson<T>(url: string): Promise<T> {
-        debugger;
         return new Promise<T>(function(resolve, reject) {
             let req = new XMLHttpRequest();
             req.onload = function(e) {

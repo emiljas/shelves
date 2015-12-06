@@ -63,12 +63,13 @@ class ViewPort implements XMoveHolder {
 
         let segmentWidths: Array<number> = JSON.parse(container.getAttribute('data-segment-widths'));
         let segmentHeight = parseInt(container.getAttribute('data-segment-height'), 10);
-        viewPort.segments = new Segments(viewPort, segmentWidths);
 
         (function setInitialScale() {
-          viewPort.initialScale = viewPort.height / segmentHeight;
-          viewPort.scale = viewPort.initialScale;
+            viewPort.initialScale = viewPort.height / segmentHeight;
+            viewPort.scale = viewPort.initialScale;
         })();
+
+        viewPort.segments = new Segments(viewPort, segmentWidths, viewPort.initialScale);
 
         let backBtn = container.querySelector('.leftSlideBtn');
         viewPort.events.addEventListener(backBtn, 'click', (e) => {
@@ -84,14 +85,14 @@ class ViewPort implements XMoveHolder {
 
         let zoomInBtn = container.querySelector('.zoomInBtn');
         viewPort.events.addEventListener(zoomInBtn, 'click', (e) => {
-          e.preventDefault();
-          viewPort.scale += 0.01;
+            e.preventDefault();
+            viewPort.scale += 0.01;
         });
 
         let zoomOutBtn = container.querySelector('.zoomOutBtn');
         viewPort.events.addEventListener(zoomOutBtn, 'click', (e) => {
-          e.preventDefault();
-          viewPort.scale -= 0.01;
+            e.preventDefault();
+            viewPort.scale -= 0.01;
         });
 
         viewPort.hammerManager = touch(viewPort);

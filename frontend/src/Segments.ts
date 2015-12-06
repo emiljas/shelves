@@ -16,12 +16,13 @@ class Segments {
     private prepender: SegmentPrepender;
     private appender: SegmentAppender;
 
-    constructor(viewPort: ViewPort, segmentWidths: Array<number>) {
+    constructor(viewPort: ViewPort, segmentWidths: Array<number>, initialScale: number) {
         this.viewPort = viewPort;
         this.segmentWidths = segmentWidths;
 
-        this.prepender = new SegmentPrepender(this.segmentWidths);
-        this.appender = new SegmentAppender(this.segmentWidths);
+        let canvasWidth = this.viewPort.getWidth();
+        this.prepender = new SegmentPrepender(this.segmentWidths, initialScale);
+        this.appender = new SegmentAppender(canvasWidth, this.segmentWidths, initialScale);
     }
 
     public onClick(e: TapInput): void {
@@ -55,14 +56,13 @@ class Segments {
 
     public preloadSegments() {
         let xMove = this.viewPort.getXMove();
-        let canvasWidth = this.viewPort.getWidth();
 
         if (this.prepender.shouldPrepend(xMove)) {
             let result = this.prepender.prepend();
             this.addSegment(result);
         }
 
-        if (this.appender.shouldAppend(xMove, canvasWidth)) {
+        if (this.appender.shouldAppend(xMove)) {
             let result = this.appender.append();
             this.addSegment(result);
         }

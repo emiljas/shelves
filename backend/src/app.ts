@@ -15,7 +15,7 @@ app.use(function(req, res, next) {
 const MAX_POSITION = 300;
 var segmentWidths = [];
 for (var index = 0; index < MAX_POSITION - 1; index++) {
-    segmentWidths.push((index % 3 == 0) ? 400 : 930);
+    segmentWidths.push((index % 3 === 0) ? 400 : 930);
 }
 
 app.get('/getSegmentWidths', function(req, res) {
@@ -28,7 +28,7 @@ app.get('/getSegment', function(req, res) {
     if (index < 0 || index > MAX_POSITION - 1)
         throw "invalid argument: position";
 
-    let url = 'http://www.rossmann.pl/DesktopModules/RossmannV4Modules/Shelves/GetSegmentHtml.ashx?json=%7B%22SegmentId%22%3A36707%2C%22Move%22%3A' + index + '%7D';
+    let url = 'http://www.rossmann.pl/DesktopModules/RossmannV4Modules/Shelves/GetSegmentHtml.ashx?json=%7B%22SegmentId%22%3A34516%2C%22Move%22%3A' + index + '%7D';
     request(url, (err, result, body) => {
         let segmentHtmlResponse = parseSegmentHtmlResponse(body);
         let segmentWidth = segmentWidths[index];
