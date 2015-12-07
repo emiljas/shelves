@@ -53,12 +53,15 @@ class Segment {
         return e.x > this.x && e.x < this.x + this.width;
     }
 
-    public fitOnViewPort(): void {
+    public fitOnViewPort(y: number): void {
         let canvasWidth = this.viewPort.getWidth();
+        let canvasHeight = this.viewPort.getHeight();
         let zoomScale = this.viewPort.getZoomScale();
-        let x = ((canvasWidth - this.width * zoomScale) / 2) - this.x * zoomScale;
+        let xMove = (canvasWidth - this.width * zoomScale) / 2 - this.x * zoomScale;
+        let yMove = canvasHeight / 2 - y * zoomScale;
 
-        this.viewPort.setXMove(x);
+        this.viewPort.setXMove(xMove);
+        this.viewPort.setYMove(yMove);
         this.viewPort.setScale(zoomScale);
     }
 
@@ -79,9 +82,7 @@ class Segment {
 
         let positions = this.productPositions;
         for (let p of positions) {
-            if (p.h !== 0) {
-                ctx.drawImage(this.spriteImg, p.sx, p.sy, p.w, p.h, p.dx, p.dy, p.w, p.h);
-            }
+            ctx.drawImage(this.spriteImg, p.sx, p.sy, p.w, p.h, p.dx, p.dy, p.w, p.h);
         }
 
         return canvas;

@@ -20,6 +20,7 @@ class ViewPort implements XMoveHolder {
     private segmentHeight: number;
     private width: number;
     private height: number;
+    private y: number;
     private xMove: number = 0;
     private yMove: number = 0;
     private initialScale: number;
@@ -41,8 +42,10 @@ class ViewPort implements XMoveHolder {
     public getZoomScale() { return this.zoomScale; }
     public getScale() { return this.scale; }
     public setScale(value: number) { this.scale = value; }
+    public getY() { return this.y; }
 
     constructor(containerId: string) {
+      // (<any>window)['vp'] = this; //DEBUG ONLY
         this.container = <HTMLDivElement>document.querySelector(containerId);
         this.canvas = <HTMLCanvasElement>this.container.querySelector('canvas');
 
@@ -50,6 +53,7 @@ class ViewPort implements XMoveHolder {
 
         this.width = this.canvas.width;
         this.height = this.canvas.height;
+        this.y = this.container.getBoundingClientRect().top;
 
         this.fitPlaceHolder(containerId);
 
@@ -97,7 +101,9 @@ class ViewPort implements XMoveHolder {
         this.initialScale = this.height / this.segmentHeight;
 
         let maxSegmentWidth = _.max(this.segmentWidths);
-        this.zoomScale = Math.min(0.3, this.width / maxSegmentWidth);
+        this.zoomScale = Math.min(this.width / (1.1 * maxSegmentWidth), 1);
+
+        console.log(this.zoomScale);
 
         this.scale = this.initialScale;
     }

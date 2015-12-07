@@ -27,9 +27,9 @@ class Segments {
 
     public onClick(e: TapInput): void {
         let scale = this.viewPort.getScale();
-        e.x -= this.viewPort.getXMove();
-        e.x /= scale;
-        e.y /= scale;
+
+        e.x = (e.x - this.viewPort.getXMove()) / scale;
+        e.y = (e.y - this.viewPort.getYMove() - this.viewPort.getY()) / scale;
 
         let clickedSegment: Segment;
         for (let segment of this.segments) {
@@ -40,7 +40,7 @@ class Segments {
         }
 
         if (clickedSegment) {
-            clickedSegment.fitOnViewPort();
+            clickedSegment.fitOnViewPort(e.y);
         } else {
             console.log('brak segmenty klik');
         }

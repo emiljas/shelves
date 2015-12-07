@@ -27,13 +27,6 @@ function touch(viewPort: ViewPort) {
     });
 
     hammer.on('tap', function(e) {
-        // if (viewPort.getScale() === 0.33) {
-        //     viewPort.setScale(1);
-        // } else {
-        //     viewPort.setScale(0.33);
-        // }
-
-
         viewPort.onClick(e.center);
     });
 

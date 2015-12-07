@@ -1,4 +1,5 @@
 Slide: check if really one second
+drawImage: ROUND NUMBERS!
 
 require imports instead of es2015 modules - rewire-webpack dont support es2015 modules
 tslint: "no-require-imports": false,
