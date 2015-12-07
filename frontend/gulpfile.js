@@ -8,6 +8,7 @@ const replace = require('gulp-replace');
 const Server = require('karma').Server;
 const remapIstanbul = require('remap-istanbul/lib/gulpRemapIstanbul');
 const sass = require('gulp-sass');
+const plumber = require('gulp-plumber');
 
 gulp.task('watch', ['build'], function() {
   gulp.start('test');
@@ -55,6 +56,7 @@ gulp.task('test', function (done) {
 
 gulp.task('ts2js', function() {
   return gulp.src('src/main.ts')
+  .pipe(plumber())
   .pipe(webpack(require('./webpack.config.js')))
   .pipe(gulp.dest('dist'))
   .pipe(gulp.dest('../../../inetpub/wwwroot/RossmannV4Dnn/DesktopModules/RossmannV4Modules/Shelves2/Js'));

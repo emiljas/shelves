@@ -32,6 +32,7 @@ class ViewPort implements XMoveHolder {
 
     public static init(containerId: string) {
         let viewPort = new ViewPort();
+        (<any>window)['vp'] = <any>viewPort;
 
         let container = <HTMLDivElement>document.querySelector(containerId);
         viewPort.container = container;

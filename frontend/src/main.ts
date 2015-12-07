@@ -5,6 +5,7 @@ import ViewPort = require('./ViewPort');
 import SegmentRepository = require('./repository/SegmentRepository');
 const segmentRepository = new SegmentRepository();
 
+
 //should be deleted when setAttribute on server side!
 let downloadSegmentWidths = segmentRepository.getWidths().then(function(widths) {
     let shelvesContainer = document.querySelector('#shelves1');
@@ -19,7 +20,7 @@ downloadSegmentWidths.then(function() {
     viewPort.start();
 
     const RESIZE_DEBOUNCED_WAIT = 200;
-    const MOBILE_CHROME_HEADER_HEIGHT = 56
+    const MOBILE_CHROME_HEADER_HEIGHT = 56;
     let lastDocumentSize = getDocumentSize();
     window.addEventListener('resize', _.debounce(function(event: UIEvent) {
         let documentSize = getDocumentSize();
