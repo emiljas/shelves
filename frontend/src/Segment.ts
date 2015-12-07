@@ -54,15 +54,17 @@ class Segment {
     }
 
     public fitOnViewPort(y: number): void {
-        let canvasWidth = this.viewPort.getWidth();
-        let canvasHeight = this.viewPort.getHeight();
         let zoomScale = this.viewPort.getZoomScale();
+
+        let canvasWidth = this.viewPort.getWidth();
         let xMove = (canvasWidth - this.width * zoomScale) / 2 - this.x * zoomScale;
+
+        let canvasHeight = this.viewPort.getHeight();
         let yMove = canvasHeight / 2 - y * zoomScale;
 
-        this.viewPort.setXMove(xMove);
-        this.viewPort.setYMove(yMove);
-        this.viewPort.setScale(zoomScale);
+        this.viewPort.animate('xMove', xMove);
+        this.viewPort.animate('yMove', yMove);
+        this.viewPort.animate('scale', zoomScale);
     }
 
     private createCanvas(): HTMLCanvasElement {

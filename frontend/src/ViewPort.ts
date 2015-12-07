@@ -7,6 +7,7 @@ import FpsMeasurer = require('./debug/FpsMeasurer');
 import touch = require('./touch');
 import SlideController = require('./animation/SlideController');
 import TapInput = require('./TapInput');
+import ValueAnimatorController = require('./animation/ValueAnimatorController');
 
 class ViewPort implements XMoveHolder {
     private isDeleted = false;
@@ -28,6 +29,7 @@ class ViewPort implements XMoveHolder {
     private scale: number;
     private timestamp: number;
     private frameRequestCallback: FrameRequestCallback = (timestamp) => { this.onAnimationFrame(timestamp); };
+    private valueAnimatorController = new ValueAnimatorController();
 
     private slideController = new SlideController(this);
 
@@ -43,9 +45,11 @@ class ViewPort implements XMoveHolder {
     public getScale() { return this.scale; }
     public setScale(value: number) { this.scale = value; }
     public getY() { return this.y; }
+    public getValueAnimatorController() { return this.valueAnimatorController; }
+    public getTimestamp() { return this.timestamp; }
 
     constructor(containerId: string) {
-      // (<any>window)['vp'] = this; //DEBUG ONLY
+        // (<any>window)['vp'] = this; //DEBUG ONLY
         this.container = <HTMLDivElement>document.querySelector(containerId);
         this.canvas = <HTMLCanvasElement>this.container.querySelector('canvas');
 
@@ -76,6 +80,15 @@ class ViewPort implements XMoveHolder {
 
     public onClick(e: TapInput): void {
         this.segments.onClick(e);
+    }
+
+    public animate(propertyName: string, endValue: number): void {
+        this.valueAnimatorController.add({
+            start: (<any>this)[propertyName],
+            end: endValue,
+            timestamp: this.timestamp,
+            onChange: (value) => { (<any>this)[propertyName] = value; }
+        });
     }
 
     public unbind(): void {
@@ -151,8 +164,9 @@ class ViewPort implements XMoveHolder {
     private onAnimationFrame(timestamp: number) {
         this.timestamp = timestamp;
 
-        this.blockVerticalMoveOutsideCanvas();
         this.slideController.onAnimationFrame(timestamp);
+        this.valueAnimatorController.onAnimationFrame(timestamp);
+        this.blockVerticalMoveOutsideCanvas();
 
         this.draw();
 
