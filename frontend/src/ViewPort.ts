@@ -103,8 +103,6 @@ class ViewPort implements XMoveHolder {
         let maxSegmentWidth = _.max(this.segmentWidths);
         this.zoomScale = Math.min(this.width / (1.1 * maxSegmentWidth), 1);
 
-        console.log(this.zoomScale);
-
         this.scale = this.initialScale;
     }
 
