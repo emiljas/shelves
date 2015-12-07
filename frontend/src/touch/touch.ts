@@ -1,6 +1,6 @@
 'use strict';
 
-import ViewPort = require('./ViewPort');
+import ViewPort = require('../ViewPort');
 
 function touch(viewPort: ViewPort) {
     'use strict';

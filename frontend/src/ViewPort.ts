@@ -2,12 +2,12 @@
 
 import Events = require('./events/Events');
 import XMoveHolder = require('./XMoveHolder');
-import Segments = require('./Segments');
+import SegmentController = require('./segments/SegmentController');
 import FpsMeasurer = require('./debug/FpsMeasurer');
-import touch = require('./touch');
-import SlideController = require('./animation/SlideController');
-import TapInput = require('./TapInput');
+import touch = require('./touch/touch');
+import TapInput = require('./touch/TapInput');
 import ValueAnimatorController = require('./animation/ValueAnimatorController');
+import SlideController = require('./animation/SlideController');
 
 class ViewPort implements XMoveHolder {
     private isDeleted = false;
@@ -16,7 +16,7 @@ class ViewPort implements XMoveHolder {
     private container: HTMLDivElement;
     private canvas: HTMLCanvasElement;
     private ctx: CanvasRenderingContext2D;
-    private segments: Segments;
+    private segmentController: SegmentController;
     private segmentWidths: Array<number>;
     private segmentHeight: number;
     private width: number;
@@ -28,10 +28,9 @@ class ViewPort implements XMoveHolder {
     private zoomScale: number;
     private scale: number;
     private timestamp: number;
-    private frameRequestCallback: FrameRequestCallback = (timestamp) => { this.onAnimationFrame(timestamp); };
     private valueAnimatorController = new ValueAnimatorController();
-
     private slideController = new SlideController(this);
+    private frameRequestCallback: FrameRequestCallback = (timestamp) => { this.onAnimationFrame(timestamp); };
 
     public getCanvas() { return this.canvas; }
     public getCanvasContext() { return this.ctx; }
@@ -43,10 +42,7 @@ class ViewPort implements XMoveHolder {
     public setYMove(value: number) { this.yMove = value; }
     public getZoomScale() { return this.zoomScale; }
     public getScale() { return this.scale; }
-    public setScale(value: number) { this.scale = value; }
     public getY() { return this.y; }
-    public getValueAnimatorController() { return this.valueAnimatorController; }
-    public getTimestamp() { return this.timestamp; }
 
     constructor(containerId: string) {
         // (<any>window)['vp'] = this; //DEBUG ONLY
@@ -69,7 +65,7 @@ class ViewPort implements XMoveHolder {
         this.segmentHeight = parseInt(this.container.getAttribute('data-segment-height'), 10);
 
         this.setInitialScale();
-        this.segments = new Segments(this, this.segmentWidths, this.initialScale);
+        this.segmentController = new SegmentController(this, this.segmentWidths, this.initialScale);
         this.bindControl();
         this.hammerManager = touch(this);
     }
@@ -79,7 +75,7 @@ class ViewPort implements XMoveHolder {
     }
 
     public onClick(e: TapInput): void {
-        this.segments.onClick(e);
+        this.segmentController.onClick(e);
     }
 
     public animate(propertyName: string, endValue: number): void {
@@ -183,7 +179,7 @@ class ViewPort implements XMoveHolder {
         this.ctx.translate(this.xMove, this.yMove);
         this.ctx.scale(this.scale, this.scale);
 
-        this.segments.draw();
+        this.segmentController.draw();
 
         this.ctx.restore();
     }

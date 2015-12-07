@@ -1,18 +1,16 @@
 'use strict';
 
-import ViewPort = require('./ViewPort');
+import ViewPort = require('../ViewPort');
 import Segment = require('./Segment');
-import SegmentPrepender = require('./loadSegments/SegmentPrepender');
-import SegmentAppender = require('./loadSegments/SegmentAppender');
-import LoadSegmentResult = require('./loadSegments/LoadSegmentResult');
-import TapInput = require('./TapInput');
+import SegmentPrepender = require('../loadSegments/SegmentPrepender');
+import SegmentAppender = require('../loadSegments/SegmentAppender');
+import LoadSegmentResult = require('../loadSegments/LoadSegmentResult');
+import TapInput = require('../touch/TapInput');
 
-class Segments {
-    public segments = new Array<Segment>();
-
+class SegmentController {
     private viewPort: ViewPort;
+    private segments = new Array<Segment>();
     private segmentWidths: Array<number>;
-
     private prepender: SegmentPrepender;
     private appender: SegmentAppender;
 
@@ -42,7 +40,7 @@ class Segments {
         if (clickedSegment) {
             clickedSegment.fitOnViewPort(e.y);
         } else {
-            console.log('brak segmenty klik');
+            console.error('cannot find clicked segment');
         }
     }
 
@@ -73,4 +71,4 @@ class Segments {
     }
 }
 
-export = Segments;
+export = SegmentController;

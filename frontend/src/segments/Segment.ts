@@ -1,18 +1,19 @@
 'use strict';
 
-import ViewPort = require('./ViewPort');
-import SegmentRepository = require('./repository/SegmentRepository');
-import ProductPositionModel = require('./models/ProductPositionModel');
-import TapInput = require('./TapInput');
+import ViewPort = require('../ViewPort');
+import SegmentRepository = require('../repository/SegmentRepository');
+import ProductPositionModel = require('../models/ProductPositionModel');
+import TapInput = require('../touch/TapInput');
+import loadImage = require('../utils/loadImage');
 
 let segmentRepository = new SegmentRepository();
 
 class Segment {
-    private canvas: HTMLCanvasElement;
-    private x: number;
     private isLoaded = false;
     private viewPort: ViewPort;
+    private canvas: HTMLCanvasElement;
     private ctx: CanvasRenderingContext2D;
+    private x: number;
     private index: number;
     private spriteImg: HTMLImageElement;
 
@@ -89,20 +90,6 @@ class Segment {
 
         return canvas;
     }
-}
-
-function loadImage(url: string) {
-    'use strict';
-    return new Promise<HTMLImageElement>(function(resolve, reject) {
-        let img = new Image();
-        img.src = url;
-        img.addEventListener('load', function() {
-            resolve(img);
-        });
-        img.addEventListener('error', function(e: ErrorEvent) {
-            reject(e);
-        });
-    });
 }
 
 export = Segment;
