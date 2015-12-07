@@ -16,95 +16,19 @@ class ViewPort implements XMoveHolder {
     private canvas: HTMLCanvasElement;
     private ctx: CanvasRenderingContext2D;
     private segments: Segments;
+    private segmentWidths: Array<number>;
+    private segmentHeight: number;
     private width: number;
     private height: number;
-    private xMove: number;
-    private yMove: number;
+    private xMove: number = 0;
+    private yMove: number = 0;
     private initialScale: number;
     private zoomScale: number;
     private scale: number;
-    private distanceToMove: number;
     private timestamp: number;
-    private lastTimestamp: number;
     private frameRequestCallback: FrameRequestCallback = (timestamp) => { this.onAnimationFrame(timestamp); };
 
     private slideController = new SlideController(this);
-
-    public static init(containerId: string) {
-        let viewPort = new ViewPort();
-        (<any>window)['vp'] = <any>viewPort;
-
-        let container = <HTMLDivElement>document.querySelector(containerId);
-        viewPort.container = container;
-        let canvas = <HTMLCanvasElement>container.querySelector('canvas');
-        viewPort.canvas = canvas;
-
-        (function fitCanvas() {
-            canvas.width = document.documentElement.clientWidth;
-            let documentHeight = document.documentElement.clientHeight;
-            let containerY = container.getBoundingClientRect().top;
-            let bottomMargin = 0.05 * documentHeight;
-            canvas.height = documentHeight - containerY - bottomMargin;
-        })();
-
-        viewPort.width = canvas.width;
-        viewPort.height = canvas.height;
-
-        (function fitPlaceHolder() {
-            let placeHolder = <HTMLDivElement>document.querySelector('.shelvesPlaceHolder[data-place-holder-for="' + containerId + '"]');
-            placeHolder.style.height = container.getBoundingClientRect().height + 'px';
-        })();
-
-        container.classList.remove('loading');
-
-        viewPort.ctx = viewPort.canvas.getContext('2d');
-        viewPort.timestamp = 0;
-        viewPort.xMove = 0;
-        viewPort.yMove = 0;
-        viewPort.distanceToMove = 0;
-
-        let segmentWidths: Array<number> = JSON.parse(container.getAttribute('data-segment-widths'));
-        let segmentHeight = parseInt(container.getAttribute('data-segment-height'), 10);
-
-        (function setInitialScale() {
-            viewPort.initialScale = viewPort.height / segmentHeight;
-
-            let maxSegmentWidth = _.max(segmentWidths);
-            viewPort.zoomScale = Math.min(0.3, viewPort.width / maxSegmentWidth);
-
-            viewPort.scale = viewPort.initialScale;
-        })();
-
-        viewPort.segments = new Segments(viewPort, segmentWidths, viewPort.initialScale);
-
-        let backBtn = container.querySelector('.leftSlideBtn');
-        viewPort.events.addEventListener(backBtn, 'click', (e) => {
-            e.preventDefault();
-            viewPort.slideLeft();
-        });
-
-        let nextBtn = container.querySelector('.rightSlideBtn');
-        viewPort.events.addEventListener(nextBtn, 'click', (e) => {
-            e.preventDefault();
-            viewPort.slideRight();
-        });
-
-        let zoomInBtn = container.querySelector('.zoomInBtn');
-        viewPort.events.addEventListener(zoomInBtn, 'click', (e) => {
-            e.preventDefault();
-            viewPort.scale += 0.01;
-        });
-
-        let zoomOutBtn = container.querySelector('.zoomOutBtn');
-        viewPort.events.addEventListener(zoomOutBtn, 'click', (e) => {
-            e.preventDefault();
-            viewPort.scale -= 0.01;
-        });
-
-        viewPort.hammerManager = touch(viewPort);
-
-        return viewPort;
-    }
 
     public getCanvas() { return this.canvas; }
     public getCanvasContext() { return this.ctx; }
@@ -118,6 +42,30 @@ class ViewPort implements XMoveHolder {
     public getScale() { return this.scale; }
     public setScale(value: number) { this.scale = value; }
 
+    constructor(containerId: string) {
+        this.container = <HTMLDivElement>document.querySelector(containerId);
+        this.canvas = <HTMLCanvasElement>this.container.querySelector('canvas');
+
+        this.fitCanvas();
+
+        this.width = this.canvas.width;
+        this.height = this.canvas.height;
+
+        this.fitPlaceHolder(containerId);
+
+        this.container.classList.remove('loading');
+
+        this.ctx = this.canvas.getContext('2d');
+
+        this.segmentWidths = JSON.parse(this.container.getAttribute('data-segment-widths'));
+        this.segmentHeight = parseInt(this.container.getAttribute('data-segment-height'), 10);
+
+        this.setInitialScale();
+        this.segments = new Segments(this, this.segmentWidths, this.initialScale);
+        this.bindControl();
+        this.hammerManager = touch(this);
+    }
+
     public start(): void {
         window.requestAnimationFrame(this.frameRequestCallback);
     }
@@ -130,6 +78,54 @@ class ViewPort implements XMoveHolder {
         this.isDeleted = true;
         this.events.removeAllEventListeners();
         this.hammerManager.destroy();
+    }
+
+    private fitCanvas(): void {
+        this.canvas.width = document.documentElement.clientWidth;
+        let documentHeight = document.documentElement.clientHeight;
+        let containerY = this.container.getBoundingClientRect().top;
+        let bottomMargin = 0.05 * documentHeight;
+        this.canvas.height = documentHeight - containerY - bottomMargin;
+    }
+
+    private fitPlaceHolder(containerId: string): void {
+        let placeHolder = <HTMLDivElement>document.querySelector('.shelvesPlaceHolder[data-place-holder-for="' + containerId + '"]');
+        placeHolder.style.height = this.container.getBoundingClientRect().height + 'px';
+    }
+
+    private setInitialScale(): void {
+        this.initialScale = this.height / this.segmentHeight;
+
+        let maxSegmentWidth = _.max(this.segmentWidths);
+        this.zoomScale = Math.min(0.3, this.width / maxSegmentWidth);
+
+        this.scale = this.initialScale;
+    }
+
+    private bindControl(): void {
+        let backBtn = this.container.querySelector('.leftSlideBtn');
+        this.events.addEventListener(backBtn, 'click', (e) => {
+            e.preventDefault();
+            this.slideLeft();
+        });
+
+        let nextBtn = this.container.querySelector('.rightSlideBtn');
+        this.events.addEventListener(nextBtn, 'click', (e) => {
+            e.preventDefault();
+            this.slideRight();
+        });
+
+        let zoomInBtn = this.container.querySelector('.zoomInBtn');
+        this.events.addEventListener(zoomInBtn, 'click', (e) => {
+            e.preventDefault();
+            this.scale += 0.01;
+        });
+
+        let zoomOutBtn = this.container.querySelector('.zoomOutBtn');
+        this.events.addEventListener(zoomOutBtn, 'click', (e) => {
+            e.preventDefault();
+            this.scale -= 0.01;
+        });
     }
 
     private slideRight() {
@@ -151,13 +147,20 @@ class ViewPort implements XMoveHolder {
     private onAnimationFrame(timestamp: number) {
         this.timestamp = timestamp;
 
-        this.yMove = Math.min(0, this.yMove);
-        this.yMove = Math.max(this.yMove, this.height - this.height * (this.scale / this.initialScale));
-
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-
+        this.blockVerticalMoveOutsideCanvas();
         this.slideController.onAnimationFrame(timestamp);
 
+        this.draw();
+
+        FpsMeasurer.instance.tick(timestamp); //DEBUG ONLY
+
+        if (!this.isDeleted) {
+            window.requestAnimationFrame(this.frameRequestCallback);
+        }
+    };
+
+    private draw(): void {
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         this.ctx.save();
         this.ctx.translate(this.xMove, this.yMove);
         this.ctx.scale(this.scale, this.scale);
@@ -165,14 +168,12 @@ class ViewPort implements XMoveHolder {
         this.segments.draw();
 
         this.ctx.restore();
+    }
 
-        this.lastTimestamp = timestamp;
-        FpsMeasurer.instance.tick(timestamp);
-
-        if (!this.isDeleted) {
-            window.requestAnimationFrame(this.frameRequestCallback);
-        }
-    };
+    private blockVerticalMoveOutsideCanvas() {
+        this.yMove = Math.min(0, this.yMove);
+        this.yMove = Math.max(this.yMove, this.height - this.height * (this.scale / this.initialScale));
+    }
 }
 
 export = ViewPort;

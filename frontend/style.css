@@ -14,53 +14,29 @@
     border: 1px solid black;
     cursor: move; }
 
-/*body {
-  margin: 0;
-  background-color: lightgrey;
-}
-
-.canvasContainer {
+.debug .canvasContainer {
   width: 100%;
-  text-align: center;
-}
+  text-align: center; }
 
-canvas {
-  background-color: white;
-  cursor: move;
-  margin: 5px;
-}
-
-button {
-  height: 50px;
-  font-size: 1em;
-}
-
-.debugContainer {
+.debug .debugContainer {
   position: fixed;
   bottom: 0;
   background-color: rgba(0, 0, 0, 0.2);
-  font-weight: bold;
-}
+  font-weight: bold; }
 
-.debugContainer p {
+.debug .debugContainer p {
   padding: 0;
-  margin: 0;
-}
+  margin: 0; }
 
-.debugContainer.left {
+.debug .debugContainer.left {
   left: 0;
-  font-size: 1em;
-}
+  font-size: 1em; }
 
-.debugContainer.right {
-  right: 0;
-}
+.debug .debugContainer.right {
+  right: 0; }
 
-.debugContainer .green {
-  color: green;
-}
+.debug .debugContainer .green {
+  color: green; }
 
-.debugContainer .red{
-  color: red;
-}
-*/
+.debug .debugContainer .red {
+  color: red; }
