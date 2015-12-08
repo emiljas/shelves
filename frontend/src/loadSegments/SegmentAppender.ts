@@ -1,5 +1,6 @@
 import LoadSegmentResult = require('./LoadSegmentResult');
 import Segment = require('../segments/Segment');
+import LoopIndex = require('./LoopIndex');
 
 class SegmentAppender {
     private segments: Array<Segment>;
@@ -7,6 +8,7 @@ class SegmentAppender {
     private segmentWidths: Array<number>;
     private segmentCount: number;
     private nextIndex = 0;
+    private loopIndex: LoopIndex;
     private nextX = 0;
 
     constructor(segments: Array<Segment>, canvasWidth: number, segmentWidths: Array<number>) {
@@ -14,6 +16,7 @@ class SegmentAppender {
         this.canvasWidth = canvasWidth;
         this.segmentWidths = segmentWidths;
         this.segmentCount = segmentWidths.length;
+        this.loopIndex = new LoopIndex(this.segmentCount, 0);
     }
 
     public shouldAppend(xMove: number, scale: number): boolean {
@@ -23,7 +26,7 @@ class SegmentAppender {
     public unloadUnvisibleSegments() {
         for (let segment of this.segments) {
             if (segment.isAfterCanvasVisibleArea()) {
-              this.nextIndex -= 1;
+              this.nextIndex = this.loopIndex.prev();
               this.nextX -= segment.getWidth();
               _.pull(this.segments, segment);
             }
@@ -31,20 +34,11 @@ class SegmentAppender {
     }
 
     public append(): LoadSegmentResult {
-        this.nextIndex = this.getZeroIndexIfUnderLast(this.nextIndex);
         let result = { index: this.nextIndex, x: this.nextX };
         let segmentWidth = this.segmentWidths[this.nextIndex];
         this.nextX += segmentWidth;
-        this.nextIndex++;
+        this.nextIndex = this.loopIndex.next();
         return result;
-    }
-
-    private getZeroIndexIfUnderLast(index: number): number {
-        if (index === this.segmentCount) {
-            return 0;
-        } else {
-            return index;
-        }
     }
 }
 
