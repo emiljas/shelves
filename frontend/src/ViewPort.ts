@@ -19,8 +19,8 @@ class ViewPort implements XMoveHolder {
     private segmentController: SegmentController;
     private segmentWidths: Array<number>;
     private segmentHeight: number;
-    private width: number;
-    private height: number;
+    private canvasWidth: number;
+    private canvasHeight: number;
     private y: number;
     private xMove: number = 0;
     private yMove: number = 0;
@@ -34,8 +34,8 @@ class ViewPort implements XMoveHolder {
 
     public getCanvas() { return this.canvas; }
     public getCanvasContext() { return this.ctx; }
-    public getWidth() { return this.width; }
-    public getHeight() { return this.height; }
+    public getCanvasWidth() { return this.canvasWidth; }
+    public getCanvasHeight() { return this.canvasHeight; }
     public getXMove() { return this.xMove; }
     public setXMove(value: number) { this.xMove = value; }
     public getYMove() { return this.yMove; }
@@ -51,8 +51,8 @@ class ViewPort implements XMoveHolder {
 
         this.fitCanvas();
 
-        this.width = this.canvas.width;
-        this.height = this.canvas.height;
+        this.canvasWidth = this.canvas.width;
+        this.canvasHeight = this.canvas.height;
         this.y = this.container.getBoundingClientRect().top;
 
         this.fitPlaceHolder(containerId);
@@ -107,10 +107,10 @@ class ViewPort implements XMoveHolder {
     }
 
     private setInitialScale(): void {
-        this.initialScale = this.height / this.segmentHeight;
+        this.initialScale = this.canvasHeight / this.segmentHeight;
 
         let maxSegmentWidth = _.max(this.segmentWidths);
-        this.zoomScale = Math.min(this.width / (1.1 * maxSegmentWidth), 1);
+        this.zoomScale = Math.min(this.canvasWidth / (1.1 * maxSegmentWidth), 1);
 
         this.scale = this.initialScale;
     }
@@ -186,7 +186,7 @@ class ViewPort implements XMoveHolder {
 
     private blockVerticalMoveOutsideCanvas() {
         this.yMove = Math.min(0, this.yMove);
-        this.yMove = Math.max(this.yMove, this.height - this.height * (this.scale / this.initialScale));
+        this.yMove = Math.max(this.yMove, this.canvasHeight - this.canvasHeight * (this.scale / this.initialScale));
     }
 }
 

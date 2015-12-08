@@ -18,7 +18,7 @@ class SegmentController {
         this.viewPort = viewPort;
         this.segmentWidths = segmentWidths;
 
-        let canvasWidth = this.viewPort.getWidth();
+        let canvasWidth = this.viewPort.getCanvasWidth();
         this.prepender = new SegmentPrepender(this.segmentWidths, initialScale);
         this.appender = new SegmentAppender(canvasWidth, this.segmentWidths, initialScale);
     }
