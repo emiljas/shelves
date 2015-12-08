@@ -14,13 +14,13 @@ class SegmentController {
     private prepender: SegmentPrepender;
     private appender: SegmentAppender;
 
-    constructor(viewPort: ViewPort, segmentWidths: Array<number>, initialScale: number) {
+    constructor(viewPort: ViewPort, segmentWidths: Array<number>) {
         this.viewPort = viewPort;
         this.segmentWidths = segmentWidths;
 
         let canvasWidth = this.viewPort.getCanvasWidth();
-        this.prepender = new SegmentPrepender(this.segmentWidths, initialScale);
-        this.appender = new SegmentAppender(canvasWidth, this.segmentWidths, initialScale);
+        this.prepender = new SegmentPrepender(this.segments, this.segmentWidths);
+        this.appender = new SegmentAppender(this.segments, canvasWidth, this.segmentWidths);
     }
 
     public onClick(e: TapInput): void {
@@ -53,16 +53,18 @@ class SegmentController {
 
     public preloadSegments() {
         let xMove = this.viewPort.getXMove();
+        let scale = this.viewPort.getScale();
 
-        if (this.prepender.shouldPrepend(xMove)) {
+        if (this.prepender.shouldPrepend(xMove, scale)) {
             let result = this.prepender.prepend();
             this.addSegment(result);
         }
 
-        if (this.appender.shouldAppend(xMove)) {
+        if (this.appender.shouldAppend(xMove, scale)) {
             let result = this.appender.append();
             this.addSegment(result);
         }
+        this.appender.unloadUnvisibleSegments();
     }
 
     public addSegment(result: LoadSegmentResult) {

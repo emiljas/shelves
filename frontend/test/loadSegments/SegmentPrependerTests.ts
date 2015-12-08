@@ -1,10 +1,11 @@
 const assert = chai.assert;
 
 import SegmentPrepender = require('../../src/loadSegments/SegmentPrepender');
+import Segment = require('../../src/segments/Segment');
 
 describe('SegmentPrepender', function() {
+    const DUMMO_SEGMENTS = new Array<Segment>();
     const SEGMENT_WIDTHS = [200, 300, 100];
-    const DUMMO_INITIAL_SCALE: number = null;
 
     it('first prepend (return last)', function() {
         prepend(1, { index: 2, x: -100 });
@@ -15,7 +16,7 @@ describe('SegmentPrepender', function() {
     });
 
     function prepend(times: number, expectedResult: any) {
-        let prepender = new SegmentPrepender(SEGMENT_WIDTHS, DUMMO_INITIAL_SCALE);
+        let prepender = new SegmentPrepender(DUMMO_SEGMENTS, SEGMENT_WIDTHS);
         let result: any;
         _.times(times, function() {
             result = prepender.prepend();

@@ -65,7 +65,7 @@ class ViewPort implements XMoveHolder {
         this.segmentHeight = parseInt(this.container.getAttribute('data-segment-height'), 10);
 
         this.setInitialScale();
-        this.segmentController = new SegmentController(this, this.segmentWidths, this.initialScale);
+        this.segmentController = new SegmentController(this, this.segmentWidths);
         this.bindControl();
         this.hammerManager = touch(this);
     }
@@ -110,7 +110,7 @@ class ViewPort implements XMoveHolder {
         this.initialScale = this.canvasHeight / this.segmentHeight;
 
         let maxSegmentWidth = _.max(this.segmentWidths);
-        this.zoomScale = Math.min(this.canvasWidth / (1.1 * maxSegmentWidth), 1);
+        this.zoomScale = Math.min(this.canvasWidth / (1.25 * maxSegmentWidth), 1);
 
         this.scale = this.initialScale;
     }

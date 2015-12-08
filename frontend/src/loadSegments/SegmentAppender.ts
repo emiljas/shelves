@@ -1,22 +1,33 @@
 import LoadSegmentResult = require('./LoadSegmentResult');
+import Segment = require('../segments/Segment');
 
 class SegmentAppender {
+    private segments: Array<Segment>;
     private canvasWidth: number;
     private segmentWidths: Array<number>;
     private segmentCount: number;
-    private initialScale: number;
     private nextIndex = 0;
     private nextX = 0;
 
-    constructor(canvasWidth: number, segmentWidths: Array<number>, initialScale: number) {
+    constructor(segments: Array<Segment>, canvasWidth: number, segmentWidths: Array<number>) {
+        this.segments = segments;
         this.canvasWidth = canvasWidth;
         this.segmentWidths = segmentWidths;
         this.segmentCount = segmentWidths.length;
-        this.initialScale = initialScale;
     }
 
-    public shouldAppend(xMove: number): boolean {
-        return xMove / this.initialScale - this.canvasWidth / this.initialScale + this.nextX < 0;
+    public shouldAppend(xMove: number, scale: number): boolean {
+        return xMove / scale - this.canvasWidth / scale + this.nextX < 0;
+    }
+
+    public unloadUnvisibleSegments() {
+        for (let segment of this.segments) {
+            if (segment.isAfterCanvasVisibleArea()) {
+              this.nextIndex -= 1;
+              this.nextX -= segment.getWidth();
+              _.pull(this.segments, segment);
+            }
+        }
     }
 
     public append(): LoadSegmentResult {

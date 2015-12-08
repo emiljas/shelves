@@ -29,6 +29,8 @@ class Segment {
         this.load(this);
     }
 
+    public getWidth(): number { return this.width; }
+
     public load(segment: Segment) {
         segmentRepository.getByPosition(this.index).then((data) => {
             this.width = data.width;
@@ -52,6 +54,21 @@ class Segment {
 
     public isClicked(e: TapInput): boolean {
         return e.x > this.x && e.x < this.x + this.width;
+    }
+
+    public isBeforeCanvasVisibleArea(): boolean {
+        let xMove = this.viewPort.getXMove();
+        let scale = this.viewPort.getScale();
+
+        return xMove / scale + this.x + this.width < 0;
+    }
+
+    public isAfterCanvasVisibleArea(): boolean {
+        let xMove = this.viewPort.getXMove();
+        let scale = this.viewPort.getScale();
+        let canvasWidth = this.viewPort.getCanvasWidth();
+
+        return xMove / scale - canvasWidth / scale + this.x > 0;
     }
 
     public fitOnViewPort(y: number): void {

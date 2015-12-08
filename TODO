@@ -6,6 +6,11 @@ tslint: "no-require-imports": false,
 
 
 
+ładowanie segmentow:
+- 
+
+
+
 
 
 // const assert = chai.assert;
