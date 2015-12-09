@@ -10,22 +10,20 @@ let segmentRepository = new SegmentRepository();
 
 class Segment {
     private isLoaded = false;
-    private viewPort: ViewPort;
     private canvas: HTMLCanvasElement;
     private ctx: CanvasRenderingContext2D;
-    private x: number;
-    private index: number;
     private spriteImg: HTMLImageElement;
 
     private width: number;
     private height: number;
     private productPositions: Array<ProductPositionModel>;
 
-    constructor(viewPort: ViewPort, index: number, x: number) {
-        this.index = index;
-        this.viewPort = viewPort;
+    constructor(
+        private viewPort: ViewPort,
+        private index: number,
+        private x: number
+    ) {
         this.ctx = viewPort.getCanvasContext();
-        this.x = x;
         this.load(this);
     }
 

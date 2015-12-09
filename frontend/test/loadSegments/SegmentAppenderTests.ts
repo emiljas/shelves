@@ -30,14 +30,4 @@ describe('SegmentAppender', function() {
             assert.deepEqual(result, expectedResult);
         }
     });
-    //
-    // describe('shouldAppend', function() {
-    //   it('test', function() {
-    //     let appender = new SegmentAppender(600, [200 / 0.33, 300 / 0.33, 100 / 0.33], 0.33);
-    //     assert.isTrue(appender.shouldAppend(600), 'before any append');
-    //     appender.append();
-    //     appender.append();
-    //     appender.append();
-    //   });
-    // });
 });

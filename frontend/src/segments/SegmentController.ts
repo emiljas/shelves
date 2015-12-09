@@ -8,16 +8,14 @@ import LoadSegmentResult = require('../loadSegments/LoadSegmentResult');
 import TapInput = require('../touch/TapInput');
 
 class SegmentController {
-    private viewPort: ViewPort;
     private segments = new Array<Segment>();
-    private segmentWidths: Array<number>;
     private prepender: SegmentPrepender;
     private appender: SegmentAppender;
 
-    constructor(viewPort: ViewPort, segmentWidths: Array<number>) {
-        this.viewPort = viewPort;
-        this.segmentWidths = segmentWidths;
-
+    constructor(
+      private viewPort: ViewPort,
+      private segmentWidths: Array<number>
+    ) {
         let canvasWidth = this.viewPort.getCanvasWidth();
         this.prepender = new SegmentPrepender(this.segments, this.segmentWidths);
         this.appender = new SegmentAppender(this.segments, canvasWidth, this.segmentWidths);
@@ -59,6 +57,7 @@ class SegmentController {
             let result = this.prepender.prepend();
             this.addSegment(result);
         }
+        this.prepender.unloadUnvisibleSegments();
 
         if (this.appender.shouldAppend(xMove, scale)) {
             let result = this.appender.append();

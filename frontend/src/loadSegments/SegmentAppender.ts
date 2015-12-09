@@ -3,18 +3,16 @@ import Segment = require('../segments/Segment');
 import LoopIndex = require('./LoopIndex');
 
 class SegmentAppender {
-    private segments: Array<Segment>;
-    private canvasWidth: number;
-    private segmentWidths: Array<number>;
     private segmentCount: number;
     private nextIndex = 0;
     private loopIndex: LoopIndex;
     private nextX = 0;
 
-    constructor(segments: Array<Segment>, canvasWidth: number, segmentWidths: Array<number>) {
-        this.segments = segments;
-        this.canvasWidth = canvasWidth;
-        this.segmentWidths = segmentWidths;
+    constructor(
+        private segments: Array<Segment>,
+        private canvasWidth: number,
+        private segmentWidths: Array<number>
+    ) {
         this.segmentCount = segmentWidths.length;
         this.loopIndex = new LoopIndex(this.segmentCount, 0);
     }
@@ -26,9 +24,9 @@ class SegmentAppender {
     public unloadUnvisibleSegments() {
         for (let segment of this.segments) {
             if (segment.isAfterCanvasVisibleArea()) {
-              this.nextIndex = this.loopIndex.prev();
-              this.nextX -= segment.getWidth();
-              _.pull(this.segments, segment);
+                this.nextIndex = this.loopIndex.prev();
+                this.nextX -= segment.getWidth();
+                _.pull(this.segments, segment);
             }
         }
     }
