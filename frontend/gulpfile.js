@@ -10,7 +10,7 @@ const remapIstanbul = require('remap-istanbul/lib/gulpRemapIstanbul');
 const sass = require('gulp-sass');
 const plumber = require('gulp-plumber');
 
-gulp.task('watch', ['build'], function() {
+gulp.task('watch', ['build', 'ts2js', 'concatLibs', 'sass'], function() {
   gulp.start('test');
 
   watch('src/**/*.ts', function() {

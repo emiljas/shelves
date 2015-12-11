@@ -34,8 +34,8 @@
     "src/repository/SegmentRepository.ts",
     "src/segments/Segment.ts",
     "src/segments/SegmentController.ts",
-    "src/threads/number.worker.ts",
     "src/threads/Thread.ts",
+    "src/threads/ThreadClient.ts",
     "src/touch/TapInput.ts",
     "src/touch/touch.ts",
     "src/utils/loadImage.ts",
@@ -47,8 +47,10 @@
     "test/loadSegments/SegmentAppenderTests.ts",
     "test/loadSegments/SegmentPrependerTests.ts",
     "test/main.ts",
+    "test/threads/sum.worker.ts",
+    "test/threads/SumResult.ts",
+    "test/threads/SumThreadClient.ts",
     "test/threads/ThreadTests.ts",
-    "test/webworkers/ThreadTests.ts",
     "typings/tsd.d.ts"
   ],
   "atom": {

@@ -1,18 +1,21 @@
 const webpack = require('webpack');
 const path = require('path');
+const glob = require('glob');
+const _ = require('lodash');
+
+var workerFileNames = glob.sync('./src/**/*.worker.ts');
+workerFileNames = _.map(workerFileNames, function(fileName) {
+  return fileName.replace('./src', '.');
+});
 
 module.exports = {
-    // watch: true, //not working in workplace
-
     context: __dirname + '/src',
-    entry: ['./threads/number.worker.ts', './main.ts'],
+    entry: [, './main.ts'].concat(workerFileNames),
 
     output: {
       path: __dirname,
       filename: 'dist/bundle.js'
     },
-
-    devtool: 'source-map',
 
     plugins: [
       new webpack.optimize.UglifyJsPlugin()
@@ -26,7 +29,7 @@ module.exports = {
       loaders: [
         {
           test: /\.ts$/,
-          exclude: [/node_modules/, './threads/number.worker.ts'],
+          exclude: [/node_modules/],
           loader: 'ts-loader'
         }
       ],

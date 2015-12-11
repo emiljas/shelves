@@ -65,7 +65,7 @@ module.exports = function(config) {
 
     // start these browsers
     // available browser launchers: https://npmjs.org/browse/keyword/karma-launcher
-    browsers: ['Firefox'],
+    browsers: ['Chrome'],
 
     // Continuous Integration mode
     // if true, Karma captures browsers, runs the tests and exits
@@ -76,18 +76,14 @@ module.exports = function(config) {
     concurrency: Infinity,
 
     webpack: {
-      // watch: true,
-      // watchDelay: 5000,
-
       devtool: 'source-map',
 
       plugins: [
-        new webpack.optimize.UglifyJsPlugin(),
         new RewirePlugin()
       ],
 
       resolve: {
-        extensions: ['', '.ts']
+        extensions: ['', '.webpack.js', '.web.js', '.worker.js', '.worker.ts', '.ts', '.js']
       },
 
       module: {
@@ -98,13 +94,16 @@ module.exports = function(config) {
             loader: 'ts-loader'
           }
         ],
-
         postLoaders: [
-            {
-                test: /\.ts$/,
-                include: path.resolve('src/'),
-                loader: 'istanbul-instrumenter'
-            }
+          {
+            test: /\.worker\.ts/,
+            loader: 'worker?inline'
+          },
+          {
+            test: /\.ts$/,
+            include: path.resolve('src/'),
+            loader: 'istanbul-instrumenter'
+          }
         ]
       }
     },
