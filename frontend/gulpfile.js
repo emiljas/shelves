@@ -58,7 +58,7 @@ gulp.task('ts2js', function() {
   return gulp.src('src/main.ts')
   .pipe(plumber())
   .pipe(webpack(require('./webpack.config.js')))
-  .pipe(gulp.dest('dist'))
+  .pipe(gulp.dest('.'))
   .pipe(gulp.dest('../../../inetpub/wwwroot/RossmannV4Dnn/DesktopModules/RossmannV4Modules/Shelves2/Js'));
 });
 

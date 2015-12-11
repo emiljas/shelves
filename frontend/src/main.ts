@@ -16,6 +16,7 @@ console.log(MyWorker);
 
 
 
+
 let worker = new MyWorker();
 console.log(worker, worker.onmessage)
 

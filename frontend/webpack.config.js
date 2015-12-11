@@ -8,8 +8,8 @@ module.exports = {
     entry: ['./threads/number.worker.ts', './main.ts'],
 
     output: {
-      path: __dirname + '/dist',
-      filename: 'bundle.js'
+      path: __dirname,
+      filename: 'dist/bundle.js'
     },
 
     devtool: 'source-map',
@@ -33,8 +33,6 @@ module.exports = {
       postLoaders: [
         {
           test: /\.worker\.ts/,
-          // include: path.resolve(__dirname, 'src/threads/number.worker.ts'),
-          // include: path.resolve('.'),
           loader: 'worker?inline&name=dist/[hash].worker.js'
         }
       ]
