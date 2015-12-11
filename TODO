@@ -5,9 +5,16 @@ require imports instead of es2015 modules - rewire-webpack dont support es2015 m
 tslint: "no-require-imports": false,
 
 
+jeden ekran w minimalnej skali, zeby przy oddaleniu nie bylo widac pustych miejsc
+pole loadingPrority?
+navigator.hardwareConcurrency
 
-ładowanie segmentow:
-- 
+1. ladowac najpierw te widoczne z wybranego planogramu
+2. ladowac najpierw reszte widocznych
+3. pozniej jeden ekran niewidocznych regalow po obu stronach
+
+rysowac tylko widoczne regaly
+usuwac segmenty dalsze niz jeden ekran od krawedzi canvasu
 
 
 

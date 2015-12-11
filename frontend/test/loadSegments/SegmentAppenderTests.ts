@@ -30,4 +30,12 @@ describe('SegmentAppender', function() {
             assert.deepEqual(result, expectedResult);
         }
     });
+
+    // describe('unloadUnvisibleSegments', function() {
+    //   it('new', function() {
+    //     let segments = [];
+    //     let DUMMO
+    //     let appender = new SegmentAppender();
+    //   })
+    // });
 });

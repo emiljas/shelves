@@ -7,6 +7,25 @@ const segmentRepository = new SegmentRepository();
 
 import enableDebug = require('./debug/enableDebug');
 
+// import t = require('./threads/number.worker');
+// (<any>t).w();
+import MyWorker = require('./threads/number.worker.ts');
+console.log(MyWorker);
+
+
+
+
+
+let worker = new MyWorker();
+console.log(worker, worker.onmessage)
+
+worker.onmessage = (e: any) => {
+  alert(e.data);
+
+};
+worker.postMessage('');
+
+
 
 //should be deleted when setAttribute on server side!
 let downloadSegmentWidths = segmentRepository.getWidths().then(function(widths) {
