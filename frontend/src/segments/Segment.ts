@@ -5,15 +5,15 @@ import SegmentRepository = require('../repository/SegmentRepository');
 import ProductPositionModel = require('../models/ProductPositionModel');
 import TapInput = require('../touch/TapInput');
 import loadImage = require('../utils/loadImage');
+import SegmentPlace = require('./SegmentPlace');
 
 let segmentRepository = new SegmentRepository();
 
-class Segment {
+class Segment implements SegmentPlace {
     private isLoaded = false;
     private canvas: HTMLCanvasElement;
     private ctx: CanvasRenderingContext2D;
     private spriteImg: HTMLImageElement;
-
     private width: number;
     private height: number;
     private productPositions: Array<ProductPositionModel>;
@@ -28,6 +28,7 @@ class Segment {
     }
 
     public getWidth(): number { return this.width; }
+    public getX(): number { return this.x; }
 
     public load(segment: Segment) {
         segmentRepository.getByPosition(this.index).then((data) => {

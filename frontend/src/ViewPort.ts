@@ -68,6 +68,12 @@ class ViewPort implements XMoveHolder {
         this.segmentController = new SegmentController(this, this.segmentWidths);
         this.bindControl();
         this.hammerManager = touch(this);
+        // 
+        // console.log({
+        //   canvasWidth: this.canvasWidth,
+        //   xMove: this.xMove,
+        //   scale: this.scale
+        // });
     }
 
     public start(): void {

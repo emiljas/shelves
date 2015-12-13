@@ -31,11 +31,21 @@ describe('SegmentAppender', function() {
         }
     });
 
-    // describe('unloadUnvisibleSegments', function() {
-    //   it('new', function() {
-    //     let segments = [];
-    //     let DUMMO
-    //     let appender = new SegmentAppender();
-    //   })
-    // });
+    describe('unloadUnvisibleSegments', function() {
+        // it('new', function() {
+        //     let segments = new Array<Segment>();
+        //     let canvasWidth = 100;
+        //     let segmentWidths = [100, 200, 100];
+        //
+        //     let xMove = 0;
+        //     let scale = 0.3;
+        //
+        //     let appender = new SegmentAppender(segments, canvasWidth, segmentWidths);
+        //     appender.append();
+        //     appender.append();
+        //     appender.append();
+        //     appender.unloadUnvisibleSegments(xMove, scale);
+        //     assert.equal(segments.length, 0);
+        // });
+    });
 });

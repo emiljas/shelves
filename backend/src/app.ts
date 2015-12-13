@@ -22,6 +22,10 @@ app.get('/getSegmentWidths', function(req, res) {
     res.json(segmentWidths);
 });
 
+
+let lastModified = addDays(new Date(), -1);
+let expires = addDays(new Date(), 1);
+
 app.get('/getSegment', function(req, res) {
     let index = req.query.index;
 
@@ -45,9 +49,21 @@ app.get('/getSegment', function(req, res) {
             spriteImgUrl: segmentHtmlResponse.spriteImgUrl,
             productPositions: productPositions
         };
-        res.json(response);
+
+        res.setHeader('Content-Type', 'application/json');
+        res.setHeader('Last-Modified', lastModified.toUTCString());
+        res.setHeader('Expires', expires.toUTCString());
+        console.log(lastModified.toUTCString(), expires.toUTCString());
+        // res.setHeader('Cache-Control', 'public');
+        res.send(JSON.stringify(response));
     });
 });
+
+function addDays(date, days) {
+    var result = new Date(date);
+    result.setDate(result.getDate() + days);
+    return result;
+}
 
 var server = app.listen(3000, function() {
     var host = server.address().address;

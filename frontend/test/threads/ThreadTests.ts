@@ -1,4 +1,5 @@
 import SumThreadClient = require('./SumThreadClient');
+// import FillArrayBufferThreadClient = require('./FillArrayBufferThreadClient');
 const assert = chai.assert;
 
 
@@ -18,4 +19,22 @@ describe('Thread', function() {
       done();
     });
   });
+
+  // it('send as transferable if ArrayBuffer', (done) => {
+  //   let canvas = document.createElement('canvas');
+  //   canvas.width = 100;
+  //   canvas.height = 100;
+  //   let ctx = canvas.getContext('2d');
+  //   ctx.fillStyle = '#FFFFFF';
+  //   ctx.fillRect(0, 0, canvas.width, canvas.height);
+  //
+  //
+  //   let threadClient = new FillArrayBufferThreadClient();
+  //   threadClient.post({}).then((result) => {
+  //     assert.equal(result.ab[0], 1);
+  //     done();
+  //   }).catch((err) => {
+  //     done(err);
+  //   });
+  // });
 });

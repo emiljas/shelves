@@ -19,6 +19,10 @@ class ThreadClient<T_IN, T_OUT> {
         }
       });
 
+      this.worker.addEventListener('error', (e) => {
+        console.error(e.message);
+      });
+
       this.worker.postMessage(data);
     });
   }

@@ -63,7 +63,7 @@ class SegmentController {
             let result = this.appender.append();
             this.addSegment(result);
         }
-        this.appender.unloadUnvisibleSegments();
+        // this.appender.unloadUnvisibleSegments();
     }
 
     public addSegment(result: LoadSegmentResult) {

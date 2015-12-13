@@ -1,0 +1,4 @@
+interface SegmentPlace {
+}
+
+export = SegmentPlace;
