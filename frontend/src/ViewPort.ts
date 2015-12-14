@@ -40,6 +40,7 @@ class ViewPort implements XMoveHolder {
     public setXMove(value: number) { this.xMove = value; }
     public getYMove() { return this.yMove; }
     public setYMove(value: number) { this.yMove = value; }
+    public getInitialScale() { return this.initialScale; }
     public getZoomScale() { return this.zoomScale; }
     public getScale() { return this.scale; }
     public getY() { return this.y; }
@@ -68,7 +69,7 @@ class ViewPort implements XMoveHolder {
         this.segmentController = new SegmentController(this, this.segmentWidths);
         this.bindControl();
         this.hammerManager = touch(this);
-        // 
+        //
         // console.log({
         //   canvasWidth: this.canvasWidth,
         //   xMove: this.xMove,

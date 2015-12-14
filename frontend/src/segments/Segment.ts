@@ -28,6 +28,7 @@ class Segment implements SegmentPlace {
     }
 
     public getWidth(): number { return this.width; }
+    public getIndex(): number { return this.index; }
     public getX(): number { return this.x; }
 
     public load(segment: Segment) {

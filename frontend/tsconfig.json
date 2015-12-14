@@ -26,6 +26,7 @@
     "src/loadSegments/LoadSegmentResult.ts",
     "src/loadSegments/LoopIndex.ts",
     "src/loadSegments/SegmentAppender.ts",
+    "src/loadSegments/SegmentAppenderArgs.ts",
     "src/loadSegments/SegmentPrepender.ts",
     "src/main.ts",
     "src/models/ProductPositionModel.ts",
