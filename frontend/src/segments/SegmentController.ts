@@ -10,7 +10,7 @@ import TapInput = require('../touch/TapInput');
 class SegmentController {
     private segments = new Array<Segment>();
     private prepender: SegmentPrepender;
-    private appender: SegmentAppender;
+    // private appender: SegmentAppender;
 
     constructor(
       private viewPort: ViewPort,
@@ -18,7 +18,7 @@ class SegmentController {
     ) {
         let canvasWidth = this.viewPort.getCanvasWidth();
         this.prepender = new SegmentPrepender(this.segments, this.segmentWidths);
-        this.appender = new SegmentAppender(this.segments, canvasWidth, this.segmentWidths);
+        // this.appender = <any>null; //new SegmentAppender(this.segments, canvasWidth, this.segmentWidths);
     }
 
     public onClick(e: TapInput): void {
@@ -59,10 +59,10 @@ class SegmentController {
         }
         this.prepender.unloadUnvisibleSegments();
 
-        if (this.appender.shouldAppend(xMove, scale)) {
-            let result = this.appender.append();
-            this.addSegment(result);
-        }
+        // if (this.appender.shouldAppend(0, xMove, scale)) {
+        //     let result = this.appender.append();
+        //     this.addSegment(result);
+        // }
         // this.appender.unloadUnvisibleSegments();
     }
 
