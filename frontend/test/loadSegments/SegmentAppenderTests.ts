@@ -5,32 +5,15 @@ import Segment = require('../../src/segments/Segment');
 
 describe('SegmentAppender', function() {
   it('append', function() {
+    let initialScale = 0.3;
     let segments = new Array<Segment>();
     let canvasWidth = 600;
-    let segmentWidths = [200, 300, 100];
-    let segmentIndex = 0;
-    let createSegment: any = (): any => { return null; };
-    let startX = 100;
-    let appender = new SegmentAppender({
-      segments,
-      canvasWidth,
-      segmentWidths,
-      segmentIndex,
-      startX,
-      createSegment
-    });
-    appender.work(0);
-    assert.equal(segments.length, 2);
-  });
-
-  it('unload', function() {
-    let segments = new Array<Segment>();
-    let canvasWidth = 600;
-    let segmentWidths = [200, 300, 100];
+    let segmentWidths = [200 / initialScale, 300 / initialScale, 600 / initialScale, 100 / initialScale];
     let segmentIndex = 0;
     let createSegment: any = (): any => { return {}; };
     let startX = 100;
     let appender = new SegmentAppender({
+      initialScale,
       segments,
       canvasWidth,
       segmentWidths,
@@ -39,8 +22,29 @@ describe('SegmentAppender', function() {
       createSegment
     });
     appender.work(0);
-    appender.work(200);
-    assert.equal(segments.length, 1);
+    assert.equal(segments.length, 3);
+  });
+
+  it('unload', function() {
+    let initialScale = 0.3;
+    let segments = new Array<Segment>();
+    let canvasWidth = 600;
+    let segmentWidths = [200 / initialScale, 300 / initialScale, 600 / initialScale, 100 / initialScale];
+    let segmentIndex = 0;
+    let createSegment: any = (): any => { return {}; };
+    let startX = 100;
+    let appender = new SegmentAppender({
+      initialScale,
+      segments,
+      canvasWidth,
+      segmentWidths,
+      segmentIndex,
+      startX,
+      createSegment
+    });
+    appender.work(0);
+    appender.work(601);
+    assert.equal(segments.length, 2);
   });
 });
 

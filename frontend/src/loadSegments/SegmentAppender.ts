@@ -4,6 +4,7 @@ import Segment = require('../segments/Segment');
 import LoopIndex = require('./LoopIndex');
 
 interface SegmentAppenderArgs {
+    initialScale: number;
     segments: Array<Segment>;
     canvasWidth: number;
     segmentWidths: Array<number>;
@@ -28,7 +29,7 @@ class SegmentAppender {
   constructor(private args: SegmentAppenderArgs) {
     this.segmentCount = args.segmentWidths.length;
     this.loopIndex = new LoopIndex(this.segmentCount, args.segmentIndex);
-    this.nextX = args.startX;
+    this.nextX = args.startX / this.args.initialScale;
   }
 
   public work(xMove: number): void {
@@ -40,7 +41,7 @@ class SegmentAppender {
   }
 
   private shouldAppend(xMove: number): boolean {
-       let freeSpace = -xMove + this.args.canvasWidth - this.nextX;
+       let freeSpace = -xMove + 2 * this.args.canvasWidth - this.nextX * this.args.initialScale;
        return freeSpace > 0;
   }
 
@@ -69,8 +70,9 @@ class SegmentAppender {
   }
 
   private isSegmentAfterCanvasVisibleArea(xMove: number, segmentX: number) {
-      console.log(xMove - this.args.canvasWidth + segmentX);
-      return xMove - this.args.canvasWidth + segmentX > 0;
+      let distanceFromCanvasRightEdge = xMove - this.args.canvasWidth + segmentX * this.args.initialScale;
+      console.log(distanceFromCanvasRightEdge);
+      return distanceFromCanvasRightEdge > this.args.canvasWidth;
   }
 }
 
