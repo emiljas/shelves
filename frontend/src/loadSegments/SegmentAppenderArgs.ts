@@ -1,4 +1,4 @@
-import SegmentPlace = require('../segments/SegmentPlace');
+import ISegmentPlace = require('../segments/ISegmentPlace');
 
 interface SegmentAppenderArgs {
     INITIAL_SCALE: number;
@@ -6,8 +6,8 @@ interface SegmentAppenderArgs {
     SEGMENT_WIDTHS: Array<number>;
     START_SEGMENT_INDEX: number;
     START_X: number;
-    segments: Array<SegmentPlace>;
-    createSegment: (index: number, x: number) => SegmentPlace;
+    segments: Array<ISegmentPlace>;
+    createSegment: (index: number, x: number) => ISegmentPlace;
 }
 
 export = SegmentAppenderArgs;

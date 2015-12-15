@@ -1,26 +1,53 @@
 const assert = chai.assert;
 
 import SegmentPrepender = require('../../src/loadSegments/SegmentPrepender');
-import Segment = require('../../src/segments/Segment');
+import ISegmentPlace = require('../../src/segments/ISegmentPlace');
+import MockSegmentPlace = require('./MockSegmentPlace');
 
 describe('SegmentPrepender', function() {
-    const DUMMO_SEGMENTS = new Array<Segment>();
-    const SEGMENT_WIDTHS = [200, 300, 100];
+    let INITIAL_SCALE = 0.3;
+    let CANVAS_WIDTH = 600;
+    let SEGMENT_WIDTHS = [
+      100 / INITIAL_SCALE, 600 / INITIAL_SCALE, 300 / INITIAL_SCALE, 200 / INITIAL_SCALE,
+      400 / INITIAL_SCALE //first appended segment
+    ];
+    let START_SEGMENT_INDEX = 4;
+    let START_X = 500;
+    let createSegment = (index: number, x: number): ISegmentPlace => { return new MockSegmentPlace(index, x); };
 
-    it('first prepend (return last)', function() {
-        prepend(1, { index: 2, x: -100 });
+    it('prepend', function() {
+        let segments = new Array<ISegmentPlace>();
+        let prepender = makePrepender(segments);
+        prepender.work(0);
+        assert.equal(segments.length, 3);
     });
 
-    it('second prepend', function() {
-        prepend(2, { index: 1, x: -400 });
+    it('one pixel before unload', function() {
+        let segments = new Array<ISegmentPlace>();
+        let prepender = makePrepender(segments);
+        prepender.work(0);
+        prepender.work(-599);
+        assert.equal(segments.length, 3);
     });
 
-    function prepend(times: number, expectedResult: any) {
-        let prepender = new SegmentPrepender(DUMMO_SEGMENTS, SEGMENT_WIDTHS);
-        let result: any;
-        _.times(times, function() {
-            result = prepender.prepend();
+    it('unload', function() {
+        let segments = new Array<ISegmentPlace>();
+        let prepender = makePrepender(segments);
+        prepender.work(0);
+        prepender.work(-602);
+        assert.equal(segments.length, 2);
+    });
+
+    function makePrepender(segments: Array<ISegmentPlace>): SegmentPrepender {
+        let prepender = new SegmentPrepender({
+            INITIAL_SCALE,
+            CANVAS_WIDTH,
+            SEGMENT_WIDTHS,
+            START_SEGMENT_INDEX,
+            START_X,
+            segments,
+            createSegment
         });
-        assert.deepEqual(result, expectedResult);
+        return prepender;
     }
 });

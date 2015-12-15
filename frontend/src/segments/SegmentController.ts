@@ -6,6 +6,7 @@ import SegmentPrepender = require('../loadSegments/SegmentPrepender');
 import SegmentAppender = require('../loadSegments/SegmentAppender');
 import LoadSegmentResult = require('../loadSegments/LoadSegmentResult');
 import TapInput = require('../touch/TapInput');
+import SegmentAppenderArgs = require('../loadSegments/SegmentAppenderArgs');
 
 class SegmentController {
     private segments = new Array<Segment>();
@@ -16,9 +17,7 @@ class SegmentController {
         private viewPort: ViewPort,
         private segmentWidths: Array<number>
     ) {
-        let canvasWidth = this.viewPort.getCanvasWidth();
-        this.prepender = new SegmentPrepender(this.segments, this.segmentWidths);
-        this.appender = new SegmentAppender({
+        let appenderArgs: SegmentAppenderArgs = {
             INITIAL_SCALE: viewPort.getInitialScale(),
             CANVAS_WIDTH: viewPort.getCanvasWidth(),
             SEGMENT_WIDTHS: segmentWidths,
@@ -26,7 +25,9 @@ class SegmentController {
             START_X: 0,
             segments: this.segments,
             createSegment: (index, x) => { return new Segment(viewPort, index, x); }
-        });
+        };
+        this.prepender = new SegmentPrepender(appenderArgs);
+        this.appender = new SegmentAppender(appenderArgs);
     }
 
     public onClick(e: TapInput): void {
@@ -51,6 +52,8 @@ class SegmentController {
     }
 
     public draw() {
+      console.log(this.segments.length);
+      
         for (let segment of this.segments) {
             segment.draw();
         }
@@ -59,15 +62,8 @@ class SegmentController {
 
     public preloadSegments() {
         let xMove = this.viewPort.getXMove();
-        let scale = this.viewPort.getScale();
-
-        if (this.prepender.shouldPrepend(xMove, scale)) {
-            let result = this.prepender.prepend();
-            this.addSegment(result);
-        }
-        this.prepender.unloadUnvisibleSegments();
-
         this.appender.work(xMove);
+        this.prepender.work(xMove);
     }
 
     public addSegment(result: LoadSegmentResult) {

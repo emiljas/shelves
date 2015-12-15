@@ -1,6 +1,10 @@
 import SegmentAppenderArgs = require('./SegmentAppenderArgs');
 import LoopIndex = require('./LoopIndex');
 
+/*
+dodaje i usuwa segmenty
+pierwszy segment dodany jest w x = START_X i ma index START_SEGMENT_INDEX
+*/
 class SegmentAppender {
   private segmentCount: number;
   private loopIndex: LoopIndex;
@@ -23,7 +27,7 @@ class SegmentAppender {
 
   private shouldAppend(xMove: number): boolean {
        let freeSpace = -xMove + this.args.CANVAS_WIDTH - this.nextX * this.args.INITIAL_SCALE;
-       return freeSpace + this.args.CANVAS_WIDTH > 0;
+       return Math.round(freeSpace + this.args.CANVAS_WIDTH) > 0;
   }
 
   private append(): void {
@@ -47,7 +51,7 @@ class SegmentAppender {
 
   private isSegmentAfterCanvasVisibleArea(xMove: number, segmentX: number) {
       let distanceFromCanvasRightEdge = xMove - this.args.CANVAS_WIDTH + segmentX * this.args.INITIAL_SCALE;
-      return distanceFromCanvasRightEdge > this.args.CANVAS_WIDTH;
+      return Math.round(distanceFromCanvasRightEdge) > this.args.CANVAS_WIDTH;
   }
 }
 

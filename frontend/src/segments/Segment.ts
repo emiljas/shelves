@@ -5,11 +5,11 @@ import SegmentRepository = require('../repository/SegmentRepository');
 import ProductPositionModel = require('../models/ProductPositionModel');
 import TapInput = require('../touch/TapInput');
 import loadImage = require('../utils/loadImage');
-import SegmentPlace = require('./SegmentPlace');
+import ISegmentPlace = require('./ISegmentPlace');
 
 let segmentRepository = new SegmentRepository();
 
-class Segment implements SegmentPlace {
+class Segment implements ISegmentPlace {
     private isLoaded = false;
     private canvas: HTMLCanvasElement;
     private ctx: CanvasRenderingContext2D;
@@ -56,20 +56,20 @@ class Segment implements SegmentPlace {
         return e.x > this.x && e.x < this.x + this.width;
     }
 
-    public isBeforeCanvasVisibleArea(): boolean {
-        let xMove = this.viewPort.getXMove();
-        let scale = this.viewPort.getScale();
-
-        return xMove / scale + this.x + this.width < 0;
-    }
-
-    public isAfterCanvasVisibleArea(): boolean {
-        let xMove = this.viewPort.getXMove();
-        let scale = this.viewPort.getScale();
-        let canvasWidth = this.viewPort.getCanvasWidth();
-
-        return xMove / scale - canvasWidth / scale + this.x > 0;
-    }
+    // public isBeforeCanvasVisibleArea(): boolean {
+    //     let xMove = this.viewPort.getXMove();
+    //     let scale = this.viewPort.getScale();
+    //
+    //     return xMove / scale + this.x + this.width < 0;
+    // }
+    //
+    // public isAfterCanvasVisibleArea(): boolean {
+    //     let xMove = this.viewPort.getXMove();
+    //     let scale = this.viewPort.getScale();
+    //     let canvasWidth = this.viewPort.getCanvasWidth();
+    //
+    //     return xMove / scale - canvasWidth / scale + this.x > 0;
+    // }
 
     public fitOnViewPort(y: number): void {
         let zoomScale = this.viewPort.getZoomScale();
@@ -104,6 +104,10 @@ class Segment implements SegmentPlace {
         for (let p of positions) {
             ctx.drawImage(this.spriteImg, p.sx, p.sy, p.w, p.h, p.dx, p.dy, p.w, p.h);
         }
+
+        ctx.font = '800px Ariel';
+        ctx.fillStyle = 'red';
+        ctx.fillText(this.getIndex().toString(), 50, 600);
 
         return canvas;
     }
