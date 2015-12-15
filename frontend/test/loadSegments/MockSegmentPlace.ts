@@ -6,6 +6,7 @@ class MockSegmentPlace implements ISegmentPlace {
 
     public getIndex(): number { return this.index; }
     public getX(): number { return this.x; }
+    public unload(): void { /* nothing */ }
 }
 
 export = MockSegmentPlace;

@@ -8,6 +8,7 @@ import touch = require('./touch/touch');
 import TapInput = require('./touch/TapInput');
 import DrawingController = require('./animation/DrawingController');
 import ValueAnimatorController = require('./animation/ValueAnimatorController');
+import CanvasPool = require('./segments/CanvasPool');
 
 class ViewPort implements XMoveHolder {
     private isDeleted = false;
@@ -19,6 +20,7 @@ class ViewPort implements XMoveHolder {
     private segmentController: SegmentController;
     private segmentWidths: Array<number>;
     private segmentHeight: number;
+    private maxSegmentWidth: number;
     private canvasWidth: number;
     private canvasHeight: number;
     private y: number;
@@ -35,6 +37,7 @@ class ViewPort implements XMoveHolder {
     private timestamp: number;
     private drawingController = new DrawingController();
     private valueAnimatorController = new ValueAnimatorController();
+    private canvasPool: CanvasPool;
     private frameRequestCallback: FrameRequestCallback = (timestamp) => { this.onAnimationFrame(timestamp); };
 
     public getCanvas() { return this.canvas; }
@@ -49,6 +52,7 @@ class ViewPort implements XMoveHolder {
     public getZoomScale() { return this.zoomScale; }
     public getScale() { return this.scale; }
     public getY() { return this.y; }
+    public getCanvasPool() { return this.canvasPool; }
 
     constructor(containerId: string) {
         // (<any>window)['vp'] = this; //DEBUG ONLY
@@ -69,6 +73,9 @@ class ViewPort implements XMoveHolder {
 
         this.segmentWidths = JSON.parse(this.container.getAttribute('data-segment-widths'));
         this.segmentHeight = parseInt(this.container.getAttribute('data-segment-height'), 10);
+        this.maxSegmentWidth = _.max(this.segmentWidths);
+
+        this.canvasPool = new CanvasPool(this.maxSegmentWidth, this.segmentHeight);
 
         this.setInitialScale();
         this.segmentController = new SegmentController(this, this.segmentWidths);
@@ -123,10 +130,7 @@ class ViewPort implements XMoveHolder {
 
     private setInitialScale(): void {
         this.initialScale = this.canvasHeight / this.segmentHeight;
-
-        let maxSegmentWidth = _.max(this.segmentWidths);
-        this.zoomScale = Math.min(this.canvasWidth / (1.25 * maxSegmentWidth), 1);
-
+        this.zoomScale = Math.min(this.canvasWidth / (1.25 * this.maxSegmentWidth), 1);
         this.scale = this.initialScale;
     }
 
@@ -174,6 +178,8 @@ class ViewPort implements XMoveHolder {
             this.blockVerticalMoveOutsideCanvas();
 
             this.draw();
+        } else {
+          this.segmentController.preloadSegments();
         }
 
         FpsMeasurer.instance.tick(timestamp); //DEBUG ONLY

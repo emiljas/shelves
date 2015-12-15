@@ -84,10 +84,14 @@ class Segment implements ISegmentPlace {
         this.viewPort.animate('scale', zoomScale);
     }
 
+    public unload(): void {
+        if (this.isLoaded) {
+            this.viewPort.getCanvasPool().release(this.canvas);
+        }
+    }
+
     private createCanvas(): HTMLCanvasElement {
-        let canvas = document.createElement('canvas');
-        canvas.width = this.width;
-        canvas.height = this.height;
+        let canvas = this.viewPort.getCanvasPool().get();
         let ctx = canvas.getContext('2d');
 
         ctx.beginPath();

@@ -25,11 +25,11 @@ class SegmentController {
             START_X: 0,
             segments: this.segments,
             createSegment: (index, x) => {
-              let segment = new Segment(viewPort, index, x);
-              segment.load().then(() => {
-                this.notDrawnSegmentCount++;
-              });
-              return segment;
+                let segment = new Segment(viewPort, index, x);
+                segment.load().then(() => {
+                  this.notDrawnSegmentCount++;
+                });
+                return segment;
             }
         };
         this.prepender = new SegmentPrepender(appenderArgs);
@@ -58,16 +58,15 @@ class SegmentController {
     }
 
     public checkIfNonDrawnSegmentsExistsAndReset(): boolean {
-      let nonDrawnSegmentsExists = this.notDrawnSegmentCount > 0;
-      this.notDrawnSegmentCount = 0;
-      return nonDrawnSegmentsExists;
+        let nonDrawnSegmentsExists = this.notDrawnSegmentCount > 0;
+        this.notDrawnSegmentCount = 0;
+        return nonDrawnSegmentsExists;
     }
 
-    public draw() {
+    public draw(): void {
         for (let segment of this.segments) {
             segment.draw();
         }
-        this.preloadSegments();
     }
 
     public preloadSegments() {
