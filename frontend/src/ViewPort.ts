@@ -168,9 +168,9 @@ class ViewPort implements XMoveHolder {
 
     private onAnimationFrame(timestamp: number) {
         this.timestamp = timestamp;
+        this.valueAnimatorController.onAnimationFrame(timestamp);
 
-        if (this.mustBeRedraw()  /*this.drawingController.mustRedraw()*/) {
-            this.valueAnimatorController.onAnimationFrame(timestamp);
+        if (this.mustBeRedraw()) {
             this.blockVerticalMoveOutsideCanvas();
 
             this.draw();
@@ -202,7 +202,8 @@ class ViewPort implements XMoveHolder {
     private mustBeRedraw(): boolean {
       return this.xMove !== this.drawnXMove
           || this.yMove !== this.drawnYMove
-          || this.scale !== this.drawnScale;
+          || this.scale !== this.drawnScale
+          || this.segmentController.checkIfNonDrawnSegmentsExistsAndReset();
     }
 
     private blockVerticalMoveOutsideCanvas() {

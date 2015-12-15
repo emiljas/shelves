@@ -24,14 +24,13 @@ class Segment implements ISegmentPlace {
         private x: number
     ) {
         this.ctx = viewPort.getCanvasContext();
-        this.load(this);
     }
 
     public getIndex(): number { return this.index; }
     public getX(): number { return this.x; }
 
-    public load(segment: Segment) {
-        segmentRepository.getByPosition(this.index).then((data) => {
+    public load(): Promise<void> {
+        return segmentRepository.getByPosition(this.index).then((data) => {
             this.width = data.width;
             this.height = data.height;
             this.productPositions = data.productPositions;
@@ -39,9 +38,10 @@ class Segment implements ISegmentPlace {
             return loadImage(data.spriteImgUrl);
         })
             .then((img) => {
-                segment.spriteImg = img;
+                this.spriteImg = img;
                 this.canvas = this.createCanvas();
-                segment.isLoaded = true;
+                this.isLoaded = true;
+                return Promise.resolve();
             });
     }
 

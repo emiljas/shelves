@@ -11,7 +11,7 @@ class SegmentController {
     private segments = new Array<Segment>();
     private prepender: SegmentPrepender;
     private appender: SegmentAppender;
-    // private notDrawnSegments = 0;
+    private notDrawnSegmentCount = 0;
 
     constructor(
         private viewPort: ViewPort,
@@ -24,7 +24,13 @@ class SegmentController {
             START_SEGMENT_INDEX: 0,
             START_X: 0,
             segments: this.segments,
-            createSegment: (index, x) => { return new Segment(viewPort, index, x); }
+            createSegment: (index, x) => {
+              let segment = new Segment(viewPort, index, x);
+              segment.load().then(() => {
+                this.notDrawnSegmentCount++;
+              });
+              return segment;
+            }
         };
         this.prepender = new SegmentPrepender(appenderArgs);
         this.appender = new SegmentAppender(appenderArgs);
@@ -49,6 +55,12 @@ class SegmentController {
         } else {
             console.error('cannot find clicked segment');
         }
+    }
+
+    public checkIfNonDrawnSegmentsExistsAndReset(): boolean {
+      let nonDrawnSegmentsExists = this.notDrawnSegmentCount > 0;
+      this.notDrawnSegmentCount = 0;
+      return nonDrawnSegmentsExists;
     }
 
     public draw() {
