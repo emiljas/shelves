@@ -4,7 +4,7 @@ import ViewPort = require('../ViewPort');
 import Segment = require('./Segment');
 import SegmentPrepender = require('../loadSegments/SegmentPrepender');
 import SegmentAppender = require('../loadSegments/SegmentAppender');
-import LoadSegmentResult = require('../loadSegments/LoadSegmentResult');
+// import LoadSegmentResult = require('../loadSegments/LoadSegmentResult');
 import TapInput = require('../touch/TapInput');
 import SegmentAppenderArgs = require('../loadSegments/SegmentAppenderArgs');
 
@@ -52,8 +52,6 @@ class SegmentController {
     }
 
     public draw() {
-      console.log(this.segments.length);
-      
         for (let segment of this.segments) {
             segment.draw();
         }
@@ -62,14 +60,17 @@ class SegmentController {
 
     public preloadSegments() {
         let xMove = this.viewPort.getXMove();
+        let scale = this.viewPort.getScale();
+        let initialScale = this.viewPort.getInitialScale();
+        xMove *= initialScale / scale;
         this.appender.work(xMove);
         this.prepender.work(xMove);
     }
-
-    public addSegment(result: LoadSegmentResult) {
-        let segment = new Segment(this.viewPort, result.index, result.x);
-        this.segments.push(segment);
-    }
+    //
+    // public addSegment(result: LoadSegmentResult) {
+    //     let segment = new Segment(this.viewPort, result.index, result.x);
+    //     this.segments.push(segment);
+    // }
 }
 
 export = SegmentController;

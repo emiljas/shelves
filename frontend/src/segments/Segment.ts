@@ -105,9 +105,10 @@ class Segment implements ISegmentPlace {
             ctx.drawImage(this.spriteImg, p.sx, p.sy, p.w, p.h, p.dx, p.dy, p.w, p.h);
         }
 
-        ctx.font = '800px Ariel';
-        ctx.fillStyle = 'red';
-        ctx.fillText(this.getIndex().toString(), 50, 600);
+        ctx.font = 'bold 250px Ariel';
+        ctx.fillStyle = 'black';
+        ctx.textAlign = 'center';
+        ctx.fillText(this.getIndex().toString(), this.getWidth() / 2, 600);
 
         return canvas;
     }
