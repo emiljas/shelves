@@ -13,6 +13,8 @@
     "typings/tsd.d.ts"
   ],
   "files": [
+    "src/animation/AnimatedValuesLock.ts",
+    "src/animation/DrawingController.ts",
     "src/animation/Slide.ts",
     "src/animation/SlideArgs.ts",
     "src/animation/SlideController.ts",
@@ -23,7 +25,6 @@
     "src/debug/FpsMeasurer.ts",
     "src/events/EventArgs.ts",
     "src/events/Events.ts",
-    "src/loadSegments/LoadSegmentResult.ts",
     "src/loadSegments/LoopIndex.ts",
     "src/loadSegments/SegmentAppender.ts",
     "src/loadSegments/SegmentAppenderArgs.ts",
@@ -45,6 +46,7 @@
     "src/utils/loadImage.ts",
     "src/ViewPort.ts",
     "src/XMoveHolder.ts",
+    "test/animation/AnimatedValuesLockTests.ts",
     "test/animation/SlideControllerTests.ts",
     "test/animation/SlideTests.ts",
     "test/animation/ValueAnimatorTests.ts",

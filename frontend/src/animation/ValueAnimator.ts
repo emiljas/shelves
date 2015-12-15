@@ -14,6 +14,11 @@ class ValueAnimator {
         this.difference = args.end - args.start;
     }
 
+    public getId(): string {
+      return this.args.id;
+    }
+    public isDone() { return this._isDone; }
+
     public onAnimationFrame(timestamp: number) {
         let secsFromStart = (timestamp - this.args.timestamp) / 1000;
         if (secsFromStart >= 1) {
@@ -24,8 +29,6 @@ class ValueAnimator {
             this.args.onChange(value);
         }
     }
-
-    public isDone() { return this._isDone; }
 }
 
 export = ValueAnimator;

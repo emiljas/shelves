@@ -18,7 +18,6 @@ class SegmentAppender {
   }
 
   public work(xMove: number): void {
-    // console.log(xMove);
     while (this.shouldAppend(xMove)) {
       this.append();
     }

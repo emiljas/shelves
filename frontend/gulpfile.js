@@ -59,7 +59,7 @@ gulp.task('ts2js', function() {
   .pipe(plumber())
   .pipe(webpack(require('./webpack.config.js')))
   .pipe(gulp.dest('.'))
-  .pipe(gulp.dest('../../../inetpub/wwwroot/RossmannV4Dnn/DesktopModules/RossmannV4Modules/Shelves2/Js'));
+  .pipe(gulp.dest('../../../inetpub/wwwroot/RossmannV4Dnn/DesktopModules/RossmannV4Modules/Shelves2'));
 });
 
 gulp.task('sass', function() {
@@ -82,5 +82,6 @@ gulp.task('concatLibs', function() {
       ]
     }
   }))
-  .pipe(gulp.dest('dist'));
+  .pipe(gulp.dest('dist'))
+  .pipe(gulp.dest('../../../inetpub/wwwroot/RossmannV4Dnn/DesktopModules/RossmannV4Modules/Shelves2/dist'));
 });

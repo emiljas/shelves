@@ -6,8 +6,8 @@ import SegmentController = require('./segments/SegmentController');
 import FpsMeasurer = require('./debug/FpsMeasurer');
 import touch = require('./touch/touch');
 import TapInput = require('./touch/TapInput');
+import DrawingController = require('./animation/DrawingController');
 import ValueAnimatorController = require('./animation/ValueAnimatorController');
-import SlideController = require('./animation/SlideController');
 
 class ViewPort implements XMoveHolder {
     private isDeleted = false;
@@ -27,9 +27,14 @@ class ViewPort implements XMoveHolder {
     private initialScale: number;
     private zoomScale: number;
     private scale: number;
+
+    private drawnXMove: number;
+    private drawnYMove: number;
+    private drawnScale: number;
+
     private timestamp: number;
+    private drawingController = new DrawingController();
     private valueAnimatorController = new ValueAnimatorController();
-    private slideController = new SlideController(this);
     private frameRequestCallback: FrameRequestCallback = (timestamp) => { this.onAnimationFrame(timestamp); };
 
     public getCanvas() { return this.canvas; }
@@ -69,12 +74,6 @@ class ViewPort implements XMoveHolder {
         this.segmentController = new SegmentController(this, this.segmentWidths);
         this.bindControl();
         this.hammerManager = touch(this);
-        //
-        // console.log({
-        //   canvasWidth: this.canvasWidth,
-        //   xMove: this.xMove,
-        //   scale: this.scale
-        // });
     }
 
     public start(): void {
@@ -87,11 +86,20 @@ class ViewPort implements XMoveHolder {
 
     public animate(propertyName: string, endValue: number): void {
         this.valueAnimatorController.add({
+            id: propertyName,
             start: (<any>this)[propertyName],
             end: endValue,
             timestamp: this.timestamp,
             onChange: (value) => { (<any>this)[propertyName] = value; }
         });
+    }
+
+    public beginAnimation() {
+        this.drawingController.beginAnimation();
+    }
+
+    public endAnimation() {
+        this.drawingController.endAnimation();
     }
 
     public unbind(): void {
@@ -149,29 +157,24 @@ class ViewPort implements XMoveHolder {
     }
 
     private slideRight() {
-        this.slideController.startSlide({
-            distance: -1000,
-            xMove: this.xMove,
-            timestamp: this.timestamp
-        });
+        let xMove = this.xMove - this.canvasWidth;
+        this.animate('xMove', xMove);
     }
 
     private slideLeft() {
-        this.slideController.startSlide({
-            distance: 1000,
-            xMove: this.xMove,
-            timestamp: this.timestamp
-        });
+        let xMove = this.xMove + this.canvasWidth;
+        this.animate('xMove', xMove);
     }
 
     private onAnimationFrame(timestamp: number) {
         this.timestamp = timestamp;
 
-        this.slideController.onAnimationFrame(timestamp);
-        this.valueAnimatorController.onAnimationFrame(timestamp);
-        this.blockVerticalMoveOutsideCanvas();
+        if (this.mustBeRedraw()  /*this.drawingController.mustRedraw()*/) {
+            this.valueAnimatorController.onAnimationFrame(timestamp);
+            this.blockVerticalMoveOutsideCanvas();
 
-        this.draw();
+            this.draw();
+        }
 
         FpsMeasurer.instance.tick(timestamp); //DEBUG ONLY
 
@@ -181,7 +184,12 @@ class ViewPort implements XMoveHolder {
     };
 
     private draw(): void {
+        this.drawnXMove = this.xMove;
+        this.drawnYMove = this.yMove;
+        this.drawnScale = this.scale;
+
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
         this.ctx.save();
         this.ctx.translate(this.xMove, this.yMove);
         this.ctx.scale(this.scale, this.scale);
@@ -189,6 +197,12 @@ class ViewPort implements XMoveHolder {
         this.segmentController.draw();
 
         this.ctx.restore();
+    }
+
+    private mustBeRedraw(): boolean {
+      return this.xMove !== this.drawnXMove
+          || this.yMove !== this.drawnYMove
+          || this.scale !== this.drawnScale;
     }
 
     private blockVerticalMoveOutsideCanvas() {

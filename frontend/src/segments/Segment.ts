@@ -27,7 +27,6 @@ class Segment implements ISegmentPlace {
         this.load(this);
     }
 
-    public getWidth(): number { return this.width; }
     public getIndex(): number { return this.index; }
     public getX(): number { return this.x; }
 
@@ -105,10 +104,11 @@ class Segment implements ISegmentPlace {
             ctx.drawImage(this.spriteImg, p.sx, p.sy, p.w, p.h, p.dx, p.dy, p.w, p.h);
         }
 
+        //debug only!
         ctx.font = 'bold 250px Ariel';
         ctx.fillStyle = 'black';
         ctx.textAlign = 'center';
-        ctx.fillText(this.getIndex().toString(), this.getWidth() / 2, 600);
+        ctx.fillText(this.getIndex().toString(), this.width / 2, 600);
 
         return canvas;
     }

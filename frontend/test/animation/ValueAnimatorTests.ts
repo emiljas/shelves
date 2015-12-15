@@ -5,6 +5,7 @@ describe('ValueAnimator', function() {
     it('0 to 10 - values in asc order, last is 10', function() {
         let values = new Array<number>();
         let animator = new ValueAnimator({
+            id: 'id',
             start: 0,
             end: 10,
             timestamp: 1000,
@@ -22,6 +23,7 @@ describe('ValueAnimator', function() {
     it('10 to 0 - values in desc order, last is 0', function() {
         let values = new Array<number>();
         let animator = new ValueAnimator({
+            id: 'id',
             start: 10,
             end: 0,
             timestamp: 1000,

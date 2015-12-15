@@ -1,4 +1,5 @@
 interface ValueAnimatorArgs {
+    id: string;
     start: number;
     end: number;
     timestamp: number;
