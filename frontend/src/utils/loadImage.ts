@@ -1,19 +1,29 @@
 function loadImage(url: string) {
     'use strict';
     return new Promise<HTMLImageElement>(<any>((resolve: any, reject: any, onCancel: any) => {
-        let img = new Image();
-        img.src = url;
+        url = '/DesktopModules/RossmannV4Modules/Shelves2/ImageProxy.ashx?src=' + encodeURIComponent(url);
 
-        img.onload = function() {
-            resolve(img);
-        };
+        let req = new XMLHttpRequest();
+        req.open('get', url);
+        req.responseType = 'blob';
+        req.send();
+        req.onload = function () {
+            let img = new Image();
+            let imgSrc = window.URL.createObjectURL(req.response);
+            img.src = imgSrc;
 
-        img.onerror = function(err) {
-            reject(err);
+            img.onload = function() {
+              window.URL.revokeObjectURL(imgSrc);
+              resolve(img);
+            };
+
+            img.onerror = function(err) {
+                reject(err);
+            };
         };
 
         onCancel(function() {
-            img.src = '';
+          req.abort();
         });
     }));
 }

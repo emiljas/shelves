@@ -27,7 +27,7 @@ class SegmentController {
             createSegment: (index, x) => {
                 let segment = new Segment(viewPort, index, x);
                 segment.load().then(() => {
-                  this.notDrawnSegmentCount++;
+                    this.notDrawnSegmentCount++;
                 });
                 return segment;
             }
@@ -76,6 +76,12 @@ class SegmentController {
         xMove *= initialScale / scale;
         this.appender.work(xMove);
         this.prepender.work(xMove);
+    }
+
+    public unload(): void {
+        for (let segment of this.segments) {
+            segment.unload();
+        }
     }
 }
 

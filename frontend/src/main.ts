@@ -11,7 +11,7 @@ import ViewPort = require('./ViewPort');
 import SegmentRepository = require('./repository/SegmentRepository');
 const segmentRepository = new SegmentRepository();
 
-import enableDebug = require('./debug/enableDebug');
+// import enableDebug = require('./debug/enableDebug');
 
 //should be deleted when setAttribute on server side!
 let downloadSegmentWidths = segmentRepository.getWidths().then(function(widths) {
@@ -26,7 +26,7 @@ downloadSegmentWidths.then(function() {
     viewPort = new ViewPort('#shelves1');
     viewPort.start();
 
-    enableDebug(); //DEBUG ONLY
+    // enableDebug(); //DEBUG ONLY
 
     const RESIZE_DEBOUNCED_WAIT = 200;
     const MOBILE_CHROME_HEADER_HEIGHT = 56;

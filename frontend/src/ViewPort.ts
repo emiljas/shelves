@@ -111,6 +111,7 @@ class ViewPort implements XMoveHolder {
 
     public unbind(): void {
         this.isDeleted = true;
+        this.segmentController.unload();
         this.events.removeAllEventListeners();
         this.hammerManager.destroy();
     }
@@ -176,13 +177,12 @@ class ViewPort implements XMoveHolder {
 
         if (this.mustBeRedraw()) {
             this.blockVerticalMoveOutsideCanvas();
-
             this.draw();
         } else {
-          this.segmentController.preloadSegments();
+            this.segmentController.preloadSegments();
         }
 
-        FpsMeasurer.instance.tick(timestamp); //DEBUG ONLY
+        // FpsMeasurer.instance.tick(timestamp); //DEBUG ONLY
 
         if (!this.isDeleted) {
             window.requestAnimationFrame(this.frameRequestCallback);
@@ -206,10 +206,10 @@ class ViewPort implements XMoveHolder {
     }
 
     private mustBeRedraw(): boolean {
-      return this.xMove !== this.drawnXMove
-          || this.yMove !== this.drawnYMove
-          || this.scale !== this.drawnScale
-          || this.segmentController.checkIfNonDrawnSegmentsExistsAndReset();
+        return this.xMove !== this.drawnXMove
+            || this.yMove !== this.drawnYMove
+            || this.scale !== this.drawnScale
+            || this.segmentController.checkIfNonDrawnSegmentsExistsAndReset();
     }
 
     private blockVerticalMoveOutsideCanvas() {

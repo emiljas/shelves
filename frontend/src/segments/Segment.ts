@@ -17,7 +17,7 @@ class Segment implements ISegmentPlace {
     private width: number;
     private height: number;
     private productPositions: Array<ProductPositionModel>;
-    private requestInProgress: Promise<any> = null;
+    private requestInProgressPromise: Promise<any> = null;
 
     constructor(
         private viewPort: ViewPort,
@@ -31,22 +31,31 @@ class Segment implements ISegmentPlace {
     public getX(): number { return this.x; }
 
     public load(): Promise<void> {
-        let getByPositionPromise = this.requestInProgress = segmentRepository.getByPosition(this.index);
+        let getByPositionPromise = this.requestInProgressPromise = segmentRepository.getByPosition(this.index);
         return getByPositionPromise.then((data) => {
             this.width = data.width;
             this.height = data.height;
             this.productPositions = data.productPositions;
 
-            let loadImagePromise = this.requestInProgress = loadImage(data.spriteImgUrl);
+            let loadImagePromise = this.requestInProgressPromise = loadImage(data.spriteImgUrl);
             return loadImagePromise;
         })
             .then((img) => {
-                this.requestInProgress = null;
+                this.requestInProgressPromise = null;
                 this.spriteImg = img;
                 this.canvas = this.createCanvas();
+                return this.synchro();
+            })
+            .then(() => {
                 this.isLoaded = true;
                 return Promise.resolve();
             });
+    }
+
+    private synchro(): Promise<void> {
+      return new Promise<void>((resolve) => {
+        setTimeout(resolve, 0);
+      });
     }
 
     public draw() {
@@ -76,8 +85,8 @@ class Segment implements ISegmentPlace {
     public unload(): void {
         if (this.isLoaded) {
             this.viewPort.getCanvasPool().release(this.canvas);
-        } else if (this.requestInProgress !== null) {
-            this.requestInProgress.cancel();
+        } else if (this.requestInProgressPromise !== null) {
+            this.requestInProgressPromise.cancel();
         }
     }
 

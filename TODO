@@ -4,6 +4,8 @@ drawImage: ROUND NUMBERS!
 require imports instead of es2015 modules - rewire-webpack dont support es2015 modules
 tslint: "no-require-imports": false,
 
+przed wgraniem:
+bluebird 2 to 3 migration on portal
 
 jeden ekran w minimalnej skali, zeby przy oddaleniu nie bylo widac pustych miejsc
 pole loadingPrority?
