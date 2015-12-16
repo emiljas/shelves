@@ -1,15 +1,21 @@
 function loadImage(url: string) {
     'use strict';
-    return new Promise<HTMLImageElement>(function(resolve, reject) {
+    return new Promise<HTMLImageElement>(<any>((resolve: any, reject: any, onCancel: any) => {
         let img = new Image();
         img.src = url;
-        img.addEventListener('load', function() {
+
+        img.onload = function() {
             resolve(img);
+        };
+
+        img.onerror = function(err) {
+            reject(err);
+        };
+
+        onCancel(function() {
+            img.src = '';
         });
-        img.addEventListener('error', function(e: ErrorEvent) {
-            reject(e);
-        });
-    });
+    }));
 }
 
 export = loadImage;

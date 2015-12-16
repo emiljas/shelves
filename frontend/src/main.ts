@@ -1,5 +1,11 @@
 'use strict';
 
+(<any>Promise).config({
+    warnings: true,
+    longStackTraces: false,
+    cancellation: true
+});
+
 import ViewPort = require('./ViewPort');
 
 import SegmentRepository = require('./repository/SegmentRepository');

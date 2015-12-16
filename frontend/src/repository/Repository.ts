@@ -6,7 +6,7 @@ const SERVER_URL = 'http://192.168.1.104:3000';
 
 class Repository {
     protected getJson<T>(url: string): Promise<T> {
-        return new Promise<T>(function(resolve, reject) {
+        return new Promise<T>(<any>((resolve: any, reject: any, onCancel: any) => {
             let req = new XMLHttpRequest();
             req.onload = function(e) {
                 if (req.status === 200) {
@@ -20,7 +20,11 @@ class Repository {
             };
             req.open('get', SERVER_URL + url, true);
             req.send();
-        });
+
+            onCancel(function() {
+              req.abort();
+            });
+        }));
     }
 }
 
