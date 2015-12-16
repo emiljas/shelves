@@ -44,18 +44,9 @@ class Segment implements ISegmentPlace {
                 this.requestInProgressPromise = null;
                 this.spriteImg = img;
                 this.canvas = this.createCanvas();
-                return this.synchro();
-            })
-            .then(() => {
                 this.isLoaded = true;
                 return Promise.resolve();
             });
-    }
-
-    private synchro(): Promise<void> {
-      return new Promise<void>((resolve) => {
-        setTimeout(resolve, 0);
-      });
     }
 
     public draw() {

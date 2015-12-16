@@ -410,16 +410,8 @@
 	            _this.requestInProgressPromise = null;
 	            _this.spriteImg = img;
 	            _this.canvas = _this.createCanvas();
-	            return _this.synchro();
-	        })
-	            .then(function () {
 	            _this.isLoaded = true;
 	            return Promise.resolve();
-	        });
-	    };
-	    Segment.prototype.synchro = function () {
-	        return new Promise(function (resolve) {
-	            setTimeout(resolve, 0);
 	        });
 	    };
 	    Segment.prototype.draw = function () {
