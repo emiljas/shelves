@@ -1,7 +1,7 @@
 function loadImage(url: string) {
     'use strict';
     return new Promise<HTMLImageElement>(<any>((resolve: any, reject: any, onCancel: any) => {
-        url = '/DesktopModules/RossmannV4Modules/Shelves2/ImageProxy.ashx?src=' + encodeURIComponent(url);
+        url = 'http://192.168.1.104:3000/DesktopModules/RossmannV4Modules/Shelves2/ImageProxy.ashx?src=' + encodeURIComponent(url);
 
         let req = new XMLHttpRequest();
         req.open('get', url);

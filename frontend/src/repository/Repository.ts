@@ -1,9 +1,9 @@
 'use strict';
 
 // const SERVER_URL = 'http://localhost:3000';
-// const SERVER_URL = 'http://192.168.1.104:3000';
+const SERVER_URL = 'http://192.168.1.104:3000';
 // const SERVER_URL = 'http://www.api.devrossmann.pl';
-const SERVER_URL = 'http://www.api.localhost.pl';
+// const SERVER_URL = 'http://www.api.localhost.pl';
 
 class Repository {
     protected getJson<T>(url: string): Promise<T> {

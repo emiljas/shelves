@@ -485,11 +485,9 @@
 	        _super.apply(this, arguments);
 	    }
 	    SegmentRepository.prototype.getWidths = function () {
-	        // return this.getJson<Array<number>>('/getSegmentWidths');
 	        return this.getJson('/shelves/segmentWidths');
 	    };
 	    SegmentRepository.prototype.getByPosition = function (index) {
-	        // return this.getJson<SegmentModel>('/getSegment?index=' + index);
 	        return this.getJson('/shelves/segment?index=' + index);
 	    };
 	    return SegmentRepository;
@@ -503,9 +501,9 @@
 
 	'use strict';
 	// const SERVER_URL = 'http://localhost:3000';
-	// const SERVER_URL = 'http://192.168.1.104:3000';
+	var SERVER_URL = 'http://192.168.1.104:3000';
 	// const SERVER_URL = 'http://www.api.devrossmann.pl';
-	var SERVER_URL = 'http://www.api.localhost.pl';
+	// const SERVER_URL = 'http://www.api.localhost.pl';
 	var Repository = (function () {
 	    function Repository() {
 	    }
@@ -543,7 +541,7 @@
 	function loadImage(url) {
 	    'use strict';
 	    return new Promise((function (resolve, reject, onCancel) {
-	        url = '/DesktopModules/RossmannV4Modules/Shelves2/ImageProxy.ashx?src=' + encodeURIComponent(url);
+	        url = 'http://192.168.1.104:3000/DesktopModules/RossmannV4Modules/Shelves2/ImageProxy.ashx?src=' + encodeURIComponent(url);
 	        var req = new XMLHttpRequest();
 	        req.open('get', url);
 	        req.responseType = 'blob';
