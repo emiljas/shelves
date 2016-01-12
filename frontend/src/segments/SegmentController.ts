@@ -6,6 +6,7 @@ import SegmentPrepender = require('../loadSegments/SegmentPrepender');
 import SegmentAppender = require('../loadSegments/SegmentAppender');
 import TapInput = require('../touch/TapInput');
 import SegmentAppenderArgs = require('../loadSegments/SegmentAppenderArgs');
+import SegmentWidthModel = require('../models/SegmentWidthModel');
 
 class SegmentController {
     private segments = new Array<Segment>();
@@ -15,6 +16,7 @@ class SegmentController {
 
     constructor(
         private viewPort: ViewPort,
+        private segmentsData: Array<SegmentWidthModel>,
         private segmentWidths: Array<number>
     ) {
         let appenderArgs: SegmentAppenderArgs = {
@@ -25,7 +27,8 @@ class SegmentController {
             START_X: 0,
             segments: this.segments,
             createSegment: (index, x) => {
-                let segment = new Segment(viewPort, index, x);
+                let id = this.segmentsData[index].id;
+                let segment = new Segment(viewPort, index, id, x);
                 segment.load().then(() => {
                     this.notDrawnSegmentCount++;
                 });

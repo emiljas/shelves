@@ -2,14 +2,15 @@
 
 import Repository = require('./Repository');
 import SegmentModel = require('../models/SegmentModel');
+import SegmentWidthModel = require('../models/SegmentWidthModel');
 
 class SegmentRepository extends Repository {
-    public getWidths(): Promise<Array<number>> {
-        return this.getJson<Array<number>>('/shelves/segmentWidths');
+    public getWidths(): Promise<Array<SegmentWidthModel>> {
+        return this.getJson<Array<SegmentWidthModel>>('/DesktopModules/RossmannV4Modules/Shelves2/GetSegmentWidths.ashx');
     }
 
-    public getByPosition(index: number): Promise<SegmentModel> {
-        return this.getJson<SegmentModel>('/shelves/segment?index=' + index);
+    public getById(id: number): Promise<SegmentModel> {
+        return this.getJson<SegmentModel>('/DesktopModules/RossmannV4Modules/Shelves2/GetSegment.ashx?id=' + id);
     }
 }
 

@@ -2,10 +2,16 @@
 
 import ViewPort = require('../ViewPort');
 import SegmentRepository = require('../repository/SegmentRepository');
+import ShelfModel = require('../models/ShelfModel');
+import KnownImageModel = require('../models/KnownImageModel');
+import ImageModel = require('../models/ImageModel');
 import ProductPositionModel = require('../models/ProductPositionModel');
 import TapInput = require('../touch/TapInput');
-import loadImage = require('../utils/loadImage');
+import loadImage = require('../utils/loadCancelableImage');
+import createWhitePixelImg = require('../utils/createWhitePixelImg');
 import ISegmentPlace = require('./ISegmentPlace');
+import KnownImages = require('../KnownImages');
+import Images = require('../Images');
 
 let segmentRepository = new SegmentRepository();
 
@@ -16,12 +22,18 @@ class Segment implements ISegmentPlace {
     private spriteImg: HTMLImageElement;
     private width: number;
     private height: number;
+    private shelves: Array<ShelfModel>;
+    private knownImages: Array<KnownImageModel>;
+    private images: Array<ImageModel>;
     private productPositions: Array<ProductPositionModel>;
     private requestInProgressPromise: Promise<any> = null;
+    private knownImgs: KnownImages;
+    private imgs: Images;
 
     constructor(
         private viewPort: ViewPort,
         private index: number,
+        private id: number,
         private x: number
     ) {
         this.ctx = viewPort.getCanvasContext();
@@ -31,22 +43,35 @@ class Segment implements ISegmentPlace {
     public getX(): number { return this.x; }
 
     public load(): Promise<void> {
-        let getByPositionPromise = this.requestInProgressPromise = segmentRepository.getByPosition(this.index);
-        return getByPositionPromise.then((data) => {
+        return this.viewPort.getKnownImages().then((images) => {
+            this.knownImgs = images;
+            let getByIdPromise = this.requestInProgressPromise = segmentRepository.getById(this.id);
+            return getByIdPromise;
+        }).then((data) => {
             this.width = data.width;
             this.height = data.height;
+            this.shelves = data.shelves;
+            this.knownImages = data.knownImages;
+            this.images = data.images;
             this.productPositions = data.productPositions;
 
-            let loadImagePromise = this.requestInProgressPromise = loadImage(data.spriteImgUrl);
+            let loadImagePromise = this.requestInProgressPromise = this.loadImage(data.spriteImgUrl);
             return loadImagePromise;
         })
-            .then((img) => {
-                this.requestInProgressPromise = null;
-                this.spriteImg = img;
-                this.canvas = this.createCanvas();
-                this.isLoaded = true;
-                return Promise.resolve();
-            });
+        .then((img) => {
+            this.requestInProgressPromise = null;
+            this.spriteImg = img;
+            return Promise.resolve();
+        })
+        .then(() => {
+          this.imgs = new Images(this.images);
+          return this.imgs.downloadAll();
+        })
+        .then(() => {
+            this.canvas = this.createCanvas();
+            this.isLoaded = true;
+            return Promise.resolve();
+        });
     }
 
     public draw() {
@@ -81,12 +106,20 @@ class Segment implements ISegmentPlace {
         }
     }
 
+    private loadImage(url: string): Promise<HTMLImageElement> {
+        if (url) {
+            return loadImage(url);
+        } else {
+            return createWhitePixelImg();
+        }
+    }
+
     private createCanvas(): HTMLCanvasElement {
         let canvas = this.viewPort.getCanvasPool().get();
         let ctx = canvas.getContext('2d');
 
         ctx.beginPath();
-        ctx.lineWidth = 20;
+        ctx.lineWidth = 5;
         ctx.moveTo(0, 0);
         ctx.lineTo(this.width, 0);
         ctx.lineTo(this.width, this.height);
@@ -94,8 +127,29 @@ class Segment implements ISegmentPlace {
         ctx.lineTo(0, 0);
         ctx.stroke();
 
-        let positions = this.productPositions;
-        for (let p of positions) {
+        // for (let shelf of this.shelves) {
+        //     this.drawShelf(ctx, shelf.dx, shelf.dy, shelf.w, shelf.h);
+        // }
+
+        for (let image of this.knownImages) {
+            let img = this.knownImgs.getByType(image.type);
+            if (image.w && image.h) {
+                ctx.drawImage(img, image.dx, image.dy, image.w, image.h);
+            } else {
+                ctx.drawImage(img, image.dx, image.dy);
+            }
+        }
+
+        for (let image of this.images) {
+            let img = this.imgs.getByUrl(image.url);
+            if (image.w && image.h) {
+                ctx.drawImage(img, image.dx, image.dy, image.w, image.h);
+            } else {
+                ctx.drawImage(img, image.dx, image.dy);
+            }
+        }
+
+        for (let p of this.productPositions) {
             ctx.drawImage(this.spriteImg, p.sx, p.sy, p.w, p.h, p.dx, p.dy, p.w, p.h);
         }
 
@@ -107,6 +161,23 @@ class Segment implements ISegmentPlace {
 
         return canvas;
     }
+
+    // private drawShelf(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number): void {
+    //     ctx.beginPath();
+    //     ctx.lineWidth = 4;
+    //     ctx.moveTo(x, y);
+    //     ctx.lineTo(x + w, y);
+    //     ctx.lineTo(x + w, y + h);
+    //     ctx.lineTo(x, y + h);
+    //     ctx.lineTo(x, y);
+    //     ctx.fillStyle = 'rgb(' + this.random255() + ', ' + this.random255() + ', ' + this.random255() + ')';
+    //     ctx.fill();
+    //     ctx.fillStyle = '#000';
+    // }
+    //
+    // private random255(): string {
+    //     return Math.floor(Math.random() * 255).toString();
+    // }
 }
 
 export = Segment;

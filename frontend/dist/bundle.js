@@ -58,45 +58,36 @@
 	    cancellation: true
 	});
 	var ViewPort = __webpack_require__(2);
-	var SegmentRepository = __webpack_require__(6);
-	var segmentRepository = new SegmentRepository();
 	// import enableDebug = require('./debug/enableDebug');
-	//should be deleted when setAttribute on server side!
-	var downloadSegmentWidths = segmentRepository.getWidths().then(function (widths) {
-	    var shelvesContainer = document.querySelector('#shelves1');
-	    shelvesContainer.setAttribute('data-segment-widths', JSON.stringify(widths));
-	    return Promise.resolve();
-	});
 	var viewPort;
-	downloadSegmentWidths.then(function () {
+	viewPort = new ViewPort('#shelves1');
+	viewPort.start();
+	// enableDebug(); //DEBUG ONLY
+	var RESIZE_DEBOUNCED_WAIT = 200;
+	var MOBILE_CHROME_HEADER_HEIGHT = 56;
+	var lastDocumentSize = getDocumentSize();
+	window.addEventListener('resize', _.debounce(function (event) {
+	    var documentSize = getDocumentSize();
+	    var isWidthUpdated = lastDocumentSize.width !== documentSize.width;
+	    var isHeightUpdated = Math.abs(lastDocumentSize.height - documentSize.height) > MOBILE_CHROME_HEADER_HEIGHT;
+	    if (isWidthUpdated || isHeightUpdated) {
+	        resize();
+	        lastDocumentSize = documentSize;
+	    }
+	}, RESIZE_DEBOUNCED_WAIT));
+	function getDocumentSize() {
+	    'use strict';
+	    return {
+	        width: document.documentElement.clientWidth,
+	        height: document.documentElement.clientHeight
+	    };
+	}
+	function resize() {
+	    'use strict';
+	    viewPort.unbind();
 	    viewPort = new ViewPort('#shelves1');
 	    viewPort.start();
-	    // enableDebug(); //DEBUG ONLY
-	    var RESIZE_DEBOUNCED_WAIT = 200;
-	    var MOBILE_CHROME_HEADER_HEIGHT = 56;
-	    var lastDocumentSize = getDocumentSize();
-	    window.addEventListener('resize', _.debounce(function (event) {
-	        var documentSize = getDocumentSize();
-	        var isWidthUpdated = lastDocumentSize.width !== documentSize.width;
-	        var isHeightUpdated = Math.abs(lastDocumentSize.height - documentSize.height) > MOBILE_CHROME_HEADER_HEIGHT;
-	        if (isWidthUpdated || isHeightUpdated) {
-	            resize();
-	            lastDocumentSize = documentSize;
-	        }
-	    }, RESIZE_DEBOUNCED_WAIT));
-	    function getDocumentSize() {
-	        return {
-	            width: document.documentElement.clientWidth,
-	            height: document.documentElement.clientHeight
-	        };
-	    }
-	    function resize() {
-	        'use strict';
-	        viewPort.unbind();
-	        viewPort = new ViewPort('#shelves1');
-	        viewPort.start();
-	    }
-	});
+	}
 
 
 /***/ },
@@ -105,16 +96,18 @@
 
 	'use strict';
 	var Events = __webpack_require__(3);
-	var SegmentController = __webpack_require__(4);
-	var touch = __webpack_require__(12);
-	var DrawingController = __webpack_require__(13);
-	var ValueAnimatorController = __webpack_require__(14);
-	var CanvasPool = __webpack_require__(17);
+	var KnownImages = __webpack_require__(4);
+	var SegmentController = __webpack_require__(7);
+	var touch = __webpack_require__(17);
+	var DrawingController = __webpack_require__(18);
+	var ValueAnimatorController = __webpack_require__(19);
+	var CanvasPool = __webpack_require__(22);
 	var ViewPort = (function () {
 	    function ViewPort(containerId) {
 	        var _this = this;
 	        this.isDeleted = false;
 	        this.events = new Events();
+	        this.knownImagesPromise = KnownImages.downloadAll();
 	        this.xMove = 0;
 	        this.yMove = 0;
 	        this.drawingController = new DrawingController();
@@ -130,12 +123,13 @@
 	        this.fitPlaceHolder(containerId);
 	        this.container.classList.remove('loading');
 	        this.ctx = this.canvas.getContext('2d');
-	        this.segmentWidths = JSON.parse(this.container.getAttribute('data-segment-widths'));
-	        this.segmentHeight = parseInt(this.container.getAttribute('data-segment-height'), 10);
+	        this.segmentsData = JSON.parse(this.container.getAttribute('data-segment-widths'));
+	        this.segmentWidths = _.map(this.segmentsData, function (s) { return s.width; });
 	        this.maxSegmentWidth = _.max(this.segmentWidths);
+	        this.segmentHeight = parseInt(this.container.getAttribute('data-segment-height'), 10);
 	        this.canvasPool = new CanvasPool(this.maxSegmentWidth, this.segmentHeight);
 	        this.setInitialScale();
-	        this.segmentController = new SegmentController(this, this.segmentWidths);
+	        this.segmentController = new SegmentController(this, this.segmentsData, this.segmentWidths);
 	        this.bindControl();
 	        this.hammerManager = touch(this);
 	    }
@@ -151,6 +145,7 @@
 	    ViewPort.prototype.getZoomScale = function () { return this.zoomScale; };
 	    ViewPort.prototype.getScale = function () { return this.scale; };
 	    ViewPort.prototype.getY = function () { return this.y; };
+	    ViewPort.prototype.getKnownImages = function () { return this.knownImagesPromise; };
 	    ViewPort.prototype.getCanvasPool = function () { return this.canvasPool; };
 	    ViewPort.prototype.start = function () {
 	        window.requestAnimationFrame(this.frameRequestCallback);
@@ -299,14 +294,97 @@
 /* 4 */
 /***/ function(module, exports, __webpack_require__) {
 
+	var ImageType = __webpack_require__(5);
+	var loadImage = __webpack_require__(6);
+	var baseUrl = '/DesktopModules/RossmannV4Modules/Shelves2/Img/';
+	var KnownImages = (function () {
+	    function KnownImages() {
+	        this.images = new Array();
+	        this.addImage(ImageType.ShelfLeftCorner, 'shelfLeftCorner.png');
+	        this.addImage(ImageType.ShelfRightCorner, 'shelfRightCorner.png');
+	        this.addImage(ImageType.Shelf, 'shelf.png');
+	        this.addImage(ImageType.ShelfBackground, 'shelfBackground.png');
+	        this.addImage(ImageType.ShelfLeftBackground, 'shelfLeftBackground.png');
+	        this.addImage(ImageType.ShelfRightBackground, 'shelfRightBackground.png');
+	        this.addImage(ImageType.FooterBackground, 'footerBackground.png');
+	    }
+	    KnownImages.downloadAll = function () {
+	        var images = new KnownImages();
+	        var promises = new Array();
+	        for (var _i = 0, _a = images.images; _i < _a.length; _i++) {
+	            var image = _a[_i];
+	            promises.push(images.loadImage(image));
+	        }
+	        return Promise.all(promises).then(function () {
+	            return images;
+	        });
+	    };
+	    KnownImages.prototype.getByType = function (type) {
+	        return this.images[type].img;
+	    };
+	    KnownImages.prototype.loadImage = function (image) {
+	        return loadImage(image.url).then(function (img) {
+	            image.img = img;
+	        });
+	    };
+	    KnownImages.prototype.addImage = function (type, url) {
+	        this.images[type] = { type: type, url: baseUrl + url, img: null };
+	    };
+	    return KnownImages;
+	})();
+	module.exports = KnownImages;
+
+
+/***/ },
+/* 5 */
+/***/ function(module, exports) {
+
+	var ImageType;
+	(function (ImageType) {
+	    ImageType[ImageType["ShelfLeftCorner"] = 0] = "ShelfLeftCorner";
+	    ImageType[ImageType["ShelfRightCorner"] = 1] = "ShelfRightCorner";
+	    ImageType[ImageType["Shelf"] = 2] = "Shelf";
+	    ImageType[ImageType["ShelfBackground"] = 3] = "ShelfBackground";
+	    ImageType[ImageType["ShelfLeftBackground"] = 4] = "ShelfLeftBackground";
+	    ImageType[ImageType["ShelfRightBackground"] = 5] = "ShelfRightBackground";
+	    ImageType[ImageType["FooterBackground"] = 6] = "FooterBackground";
+	})(ImageType || (ImageType = {}));
+	module.exports = ImageType;
+
+
+/***/ },
+/* 6 */
+/***/ function(module, exports) {
+
+	function loadImage(url) {
+	    'use strict';
+	    return new Promise(function (resolve, reject) {
+	        var img = new Image();
+	        img.src = url;
+	        img.onload = function () {
+	            resolve(img);
+	        };
+	        img.onerror = function (err) {
+	            reject(err);
+	        };
+	    });
+	}
+	module.exports = loadImage;
+
+
+/***/ },
+/* 7 */
+/***/ function(module, exports, __webpack_require__) {
+
 	'use strict';
-	var Segment = __webpack_require__(5);
-	var SegmentPrepender = __webpack_require__(9);
-	var SegmentAppender = __webpack_require__(11);
+	var Segment = __webpack_require__(8);
+	var SegmentPrepender = __webpack_require__(14);
+	var SegmentAppender = __webpack_require__(16);
 	var SegmentController = (function () {
-	    function SegmentController(viewPort, segmentWidths) {
+	    function SegmentController(viewPort, segmentsData, segmentWidths) {
 	        var _this = this;
 	        this.viewPort = viewPort;
+	        this.segmentsData = segmentsData;
 	        this.segmentWidths = segmentWidths;
 	        this.segments = new Array();
 	        this.notDrawnSegmentCount = 0;
@@ -318,7 +396,8 @@
 	            START_X: 0,
 	            segments: this.segments,
 	            createSegment: function (index, x) {
-	                var segment = new Segment(viewPort, index, x);
+	                var id = _this.segmentsData[index].id;
+	                var segment = new Segment(viewPort, index, id, x);
 	                segment.load().then(function () {
 	                    _this.notDrawnSegmentCount++;
 	                });
@@ -378,17 +457,20 @@
 
 
 /***/ },
-/* 5 */
+/* 8 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
-	var SegmentRepository = __webpack_require__(6);
-	var loadImage = __webpack_require__(8);
+	var SegmentRepository = __webpack_require__(9);
+	var loadImage = __webpack_require__(11);
+	var createWhitePixelImg = __webpack_require__(12);
+	var Images = __webpack_require__(13);
 	var segmentRepository = new SegmentRepository();
 	var Segment = (function () {
-	    function Segment(viewPort, index, x) {
+	    function Segment(viewPort, index, id, x) {
 	        this.viewPort = viewPort;
 	        this.index = index;
+	        this.id = id;
 	        this.x = x;
 	        this.isLoaded = false;
 	        this.requestInProgressPromise = null;
@@ -398,17 +480,30 @@
 	    Segment.prototype.getX = function () { return this.x; };
 	    Segment.prototype.load = function () {
 	        var _this = this;
-	        var getByPositionPromise = this.requestInProgressPromise = segmentRepository.getByPosition(this.index);
-	        return getByPositionPromise.then(function (data) {
+	        return this.viewPort.getKnownImages().then(function (images) {
+	            _this.knownImgs = images;
+	            var getByIdPromise = _this.requestInProgressPromise = segmentRepository.getById(_this.id);
+	            return getByIdPromise;
+	        }).then(function (data) {
 	            _this.width = data.width;
 	            _this.height = data.height;
+	            _this.shelves = data.shelves;
+	            _this.knownImages = data.knownImages;
+	            _this.images = data.images;
 	            _this.productPositions = data.productPositions;
-	            var loadImagePromise = _this.requestInProgressPromise = loadImage(data.spriteImgUrl);
+	            var loadImagePromise = _this.requestInProgressPromise = _this.loadImage(data.spriteImgUrl);
 	            return loadImagePromise;
 	        })
 	            .then(function (img) {
 	            _this.requestInProgressPromise = null;
 	            _this.spriteImg = img;
+	            return Promise.resolve();
+	        })
+	            .then(function () {
+	            _this.imgs = new Images(_this.images);
+	            return _this.imgs.downloadAll();
+	        })
+	            .then(function () {
 	            _this.canvas = _this.createCanvas();
 	            _this.isLoaded = true;
 	            return Promise.resolve();
@@ -440,20 +535,50 @@
 	            this.requestInProgressPromise.cancel();
 	        }
 	    };
+	    Segment.prototype.loadImage = function (url) {
+	        if (url) {
+	            return loadImage(url);
+	        }
+	        else {
+	            return createWhitePixelImg();
+	        }
+	    };
 	    Segment.prototype.createCanvas = function () {
 	        var canvas = this.viewPort.getCanvasPool().get();
 	        var ctx = canvas.getContext('2d');
 	        ctx.beginPath();
-	        ctx.lineWidth = 20;
+	        ctx.lineWidth = 5;
 	        ctx.moveTo(0, 0);
 	        ctx.lineTo(this.width, 0);
 	        ctx.lineTo(this.width, this.height);
 	        ctx.lineTo(0, this.height);
 	        ctx.lineTo(0, 0);
 	        ctx.stroke();
-	        var positions = this.productPositions;
-	        for (var _i = 0; _i < positions.length; _i++) {
-	            var p = positions[_i];
+	        // for (let shelf of this.shelves) {
+	        //     this.drawShelf(ctx, shelf.dx, shelf.dy, shelf.w, shelf.h);
+	        // }
+	        for (var _i = 0, _a = this.knownImages; _i < _a.length; _i++) {
+	            var image = _a[_i];
+	            var img = this.knownImgs.getByType(image.type);
+	            if (image.w && image.h) {
+	                ctx.drawImage(img, image.dx, image.dy, image.w, image.h);
+	            }
+	            else {
+	                ctx.drawImage(img, image.dx, image.dy);
+	            }
+	        }
+	        for (var _b = 0, _c = this.images; _b < _c.length; _b++) {
+	            var image = _c[_b];
+	            var img = this.imgs.getByUrl(image.url);
+	            if (image.w && image.h) {
+	                ctx.drawImage(img, image.dx, image.dy, image.w, image.h);
+	            }
+	            else {
+	                ctx.drawImage(img, image.dx, image.dy);
+	            }
+	        }
+	        for (var _d = 0, _e = this.productPositions; _d < _e.length; _d++) {
+	            var p = _e[_d];
 	            ctx.drawImage(this.spriteImg, p.sx, p.sy, p.w, p.h, p.dx, p.dy, p.w, p.h);
 	        }
 	        //debug only!
@@ -469,7 +594,7 @@
 
 
 /***/ },
-/* 6 */
+/* 9 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -478,17 +603,17 @@
 	    function __() { this.constructor = d; }
 	    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 	};
-	var Repository = __webpack_require__(7);
+	var Repository = __webpack_require__(10);
 	var SegmentRepository = (function (_super) {
 	    __extends(SegmentRepository, _super);
 	    function SegmentRepository() {
 	        _super.apply(this, arguments);
 	    }
 	    SegmentRepository.prototype.getWidths = function () {
-	        return this.getJson('/shelves/segmentWidths');
+	        return this.getJson('/DesktopModules/RossmannV4Modules/Shelves2/GetSegmentWidths.ashx');
 	    };
-	    SegmentRepository.prototype.getByPosition = function (index) {
-	        return this.getJson('/shelves/segment?index=' + index);
+	    SegmentRepository.prototype.getById = function (id) {
+	        return this.getJson('/DesktopModules/RossmannV4Modules/Shelves2/GetSegment.ashx?id=' + id);
 	    };
 	    return SegmentRepository;
 	})(Repository);
@@ -496,14 +621,15 @@
 
 
 /***/ },
-/* 7 */
+/* 10 */
 /***/ function(module, exports) {
 
 	'use strict';
 	// const SERVER_URL = 'http://localhost:3000';
-	var SERVER_URL = 'http://192.168.1.104:3000';
+	// const SERVER_URL = 'http://192.168.1.104:3000';
 	// const SERVER_URL = 'http://www.api.devrossmann.pl';
 	// const SERVER_URL = 'http://www.api.localhost.pl';
+	var SERVER_URL = '';
 	var Repository = (function () {
 	    function Repository() {
 	    }
@@ -535,13 +661,13 @@
 
 
 /***/ },
-/* 8 */
+/* 11 */
 /***/ function(module, exports) {
 
-	function loadImage(url) {
+	function loadCancelableImage(url) {
 	    'use strict';
 	    return new Promise((function (resolve, reject, onCancel) {
-	        url = 'http://192.168.1.104:3000/DesktopModules/RossmannV4Modules/Shelves2/ImageProxy.ashx?src=' + encodeURIComponent(url);
+	        // url = '/DesktopModules/RossmannV4Modules/Shelves2/ImageProxy.ashx?src=' + encodeURIComponent(url);
 	        var req = new XMLHttpRequest();
 	        req.open('get', url);
 	        req.responseType = 'blob';
@@ -553,24 +679,75 @@
 	            img.onload = function () {
 	                window.URL.revokeObjectURL(imgSrc);
 	                resolve(img);
+	                img.onerror = function (err) {
+	                    reject(err);
+	                };
 	            };
-	            img.onerror = function (err) {
-	                reject(err);
-	            };
+	            onCancel(function () {
+	                req.abort();
+	            });
 	        };
-	        onCancel(function () {
-	            req.abort();
-	        });
 	    }));
 	}
-	module.exports = loadImage;
+	module.exports = loadCancelableImage;
 
 
 /***/ },
-/* 9 */
+/* 12 */
+/***/ function(module, exports) {
+
+	function createWhitePixelImg() {
+	    'use strict';
+	    return new Promise(function (resolve, reject) {
+	        var img = new Image();
+	        img.src = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
+	        img.onload = function () {
+	            resolve(img);
+	        };
+	        img.onerror = function (err) {
+	            console.log('createWhitePixelImg', err);
+	            reject(err);
+	        };
+	    });
+	}
+	module.exports = createWhitePixelImg;
+
+
+/***/ },
+/* 13 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var LoopIndex = __webpack_require__(10);
+	var loadImage = __webpack_require__(6);
+	var Images = (function () {
+	    function Images(images) {
+	        var _this = this;
+	        this.images = {};
+	        this.promises = new Array();
+	        this.promises = _.map(images, function (i) { return _this.load(i.url); });
+	    }
+	    Images.prototype.downloadAll = function () {
+	        return Promise.all(this.promises);
+	    };
+	    Images.prototype.getByUrl = function (url) {
+	        return this.images[url];
+	    };
+	    Images.prototype.load = function (url) {
+	        var _this = this;
+	        return loadImage(url).then(function (img) {
+	            _this.images[url] = img;
+	            return Promise.resolve();
+	        });
+	    };
+	    return Images;
+	})();
+	module.exports = Images;
+
+
+/***/ },
+/* 14 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var LoopIndex = __webpack_require__(15);
 	var SegmentPrepender = (function () {
 	    function SegmentPrepender(args) {
 	        this.args = args;
@@ -624,7 +801,7 @@
 
 
 /***/ },
-/* 10 */
+/* 15 */
 /***/ function(module, exports) {
 
 	var LoopIndex = (function () {
@@ -662,10 +839,10 @@
 
 
 /***/ },
-/* 11 */
+/* 16 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var LoopIndex = __webpack_require__(10);
+	var LoopIndex = __webpack_require__(15);
 	/*
 	dodaje i usuwa segmenty
 	pierwszy segment dodany jest w x = START_X i ma index START_SEGMENT_INDEX
@@ -718,7 +895,7 @@
 
 
 /***/ },
-/* 12 */
+/* 17 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -749,7 +926,7 @@
 
 
 /***/ },
-/* 13 */
+/* 18 */
 /***/ function(module, exports) {
 
 	var DrawingController = (function () {
@@ -771,11 +948,11 @@
 
 
 /***/ },
-/* 14 */
+/* 19 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var ValueAnimator = __webpack_require__(15);
-	var AnimatedValuesLock = __webpack_require__(16);
+	var ValueAnimator = __webpack_require__(20);
+	var AnimatedValuesLock = __webpack_require__(21);
 	var ValueAnimatorController = (function () {
 	    function ValueAnimatorController() {
 	        this.animators = new Array();
@@ -806,7 +983,7 @@
 
 
 /***/ },
-/* 15 */
+/* 20 */
 /***/ function(module, exports) {
 
 	var HALF_OF_PI = Math.PI / 2;
@@ -838,7 +1015,7 @@
 
 
 /***/ },
-/* 16 */
+/* 21 */
 /***/ function(module, exports) {
 
 	var AnimatedValuesLock = (function () {
@@ -860,7 +1037,7 @@
 
 
 /***/ },
-/* 17 */
+/* 22 */
 /***/ function(module, exports) {
 
 	var CanvasPool = (function () {

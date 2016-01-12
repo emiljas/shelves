@@ -2,6 +2,7 @@
 
 import Events = require('./events/Events');
 import XMoveHolder = require('./XMoveHolder');
+import KnownImages = require('./KnownImages');
 import SegmentController = require('./segments/SegmentController');
 import FpsMeasurer = require('./debug/FpsMeasurer');
 import touch = require('./touch/touch');
@@ -9,6 +10,7 @@ import TapInput = require('./touch/TapInput');
 import DrawingController = require('./animation/DrawingController');
 import ValueAnimatorController = require('./animation/ValueAnimatorController');
 import CanvasPool = require('./segments/CanvasPool');
+import SegmentWidthModel = require('./models/SegmentWidthModel');
 
 class ViewPort implements XMoveHolder {
     private isDeleted = false;
@@ -17,7 +19,9 @@ class ViewPort implements XMoveHolder {
     private container: HTMLDivElement;
     private canvas: HTMLCanvasElement;
     private ctx: CanvasRenderingContext2D;
+    private knownImagesPromise: Promise<KnownImages> = KnownImages.downloadAll();
     private segmentController: SegmentController;
+    private segmentsData: Array<SegmentWidthModel>;
     private segmentWidths: Array<number>;
     private segmentHeight: number;
     private maxSegmentWidth: number;
@@ -52,6 +56,7 @@ class ViewPort implements XMoveHolder {
     public getZoomScale() { return this.zoomScale; }
     public getScale() { return this.scale; }
     public getY() { return this.y; }
+    public getKnownImages() { return this.knownImagesPromise; }
     public getCanvasPool() { return this.canvasPool; }
 
     constructor(containerId: string) {
@@ -71,14 +76,15 @@ class ViewPort implements XMoveHolder {
 
         this.ctx = this.canvas.getContext('2d');
 
-        this.segmentWidths = JSON.parse(this.container.getAttribute('data-segment-widths'));
-        this.segmentHeight = parseInt(this.container.getAttribute('data-segment-height'), 10);
+        this.segmentsData = JSON.parse(this.container.getAttribute('data-segment-widths'));
+        this.segmentWidths = _.map(this.segmentsData, (s) => { return s.width; });
         this.maxSegmentWidth = _.max(this.segmentWidths);
+        this.segmentHeight = parseInt(this.container.getAttribute('data-segment-height'), 10);
 
         this.canvasPool = new CanvasPool(this.maxSegmentWidth, this.segmentHeight);
 
         this.setInitialScale();
-        this.segmentController = new SegmentController(this, this.segmentWidths);
+        this.segmentController = new SegmentController(this, this.segmentsData, this.segmentWidths);
         this.bindControl();
         this.hammerManager = touch(this);
     }
