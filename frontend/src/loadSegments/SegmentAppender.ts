@@ -14,6 +14,7 @@ class SegmentAppender {
     constructor(private args: SegmentAppenderArgs) {
         this.segmentCount = args.SEGMENT_WIDTHS.length;
         this.loopIndex = new LoopIndex(this.segmentCount, args.START_SEGMENT_INDEX);
+        this.nextIndex = args.START_SEGMENT_INDEX;
         this.nextX = args.START_X / this.args.INITIAL_SCALE;
     }
 

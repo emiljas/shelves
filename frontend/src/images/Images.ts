@@ -1,5 +1,5 @@
-import loadImage = require('./utils/loadImage');
-import ImageModel = require('./models/ImageModel');
+import loadImage = require('../utils/loadImage');
+import ImageModel = require('../models/ImageModel');
 
 class Images {
     private images: any = {};

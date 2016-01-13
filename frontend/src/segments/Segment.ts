@@ -1,6 +1,7 @@
 'use strict';
 
 import ViewPort = require('../ViewPort');
+import SegmentController = require('./SegmentController');
 import SegmentRepository = require('../repository/SegmentRepository');
 import ShelfModel = require('../models/ShelfModel');
 import KnownImageModel = require('../models/KnownImageModel');
@@ -10,8 +11,9 @@ import TapInput = require('../touch/TapInput');
 import loadImage = require('../utils/loadCancelableImage');
 import createWhitePixelImg = require('../utils/createWhitePixelImg');
 import ISegmentPlace = require('./ISegmentPlace');
-import KnownImages = require('../KnownImages');
-import Images = require('../Images');
+import KnownImages = require('../images/KnownImages');
+import Images = require('../images/Images');
+import FlashEffect = require('../flash/FlashEffect');
 
 let segmentRepository = new SegmentRepository();
 
@@ -29,9 +31,11 @@ class Segment implements ISegmentPlace {
     private requestInProgressPromise: Promise<any> = null;
     private knownImgs: KnownImages;
     private imgs: Images;
+    private flashEffect: FlashEffect;
 
     constructor(
         private viewPort: ViewPort,
+        private segmentController: SegmentController,
         private index: number,
         private id: number,
         private x: number
@@ -40,6 +44,7 @@ class Segment implements ISegmentPlace {
     }
 
     public getIndex(): number { return this.index; }
+    public getId(): number { return this.id; }
     public getX(): number { return this.x; }
 
     public load(): Promise<void> {
@@ -58,25 +63,34 @@ class Segment implements ISegmentPlace {
             let loadImagePromise = this.requestInProgressPromise = this.loadImage(data.spriteImgUrl);
             return loadImagePromise;
         })
-        .then((img) => {
-            this.requestInProgressPromise = null;
-            this.spriteImg = img;
-            return Promise.resolve();
-        })
-        .then(() => {
-          this.imgs = new Images(this.images);
-          return this.imgs.downloadAll();
-        })
-        .then(() => {
-            this.canvas = this.createCanvas();
-            this.isLoaded = true;
-            return Promise.resolve();
-        });
+            .then((img) => {
+                this.requestInProgressPromise = null;
+                this.spriteImg = img;
+                return Promise.resolve();
+            })
+            .then(() => {
+                this.imgs = new Images(this.images);
+                return this.imgs.downloadAll();
+            })
+            .then(() => {
+                this.canvas = this.createCanvas();
+                this.isLoaded = true;
+                this.segmentController.segmentLoaded({ segmentId: this.id });
+                return Promise.resolve();
+            });
     }
 
-    public draw() {
+    public draw(timestamp: number) {
         if (this.isLoaded) {
             this.ctx.drawImage(this.canvas, 0, 0, this.width, this.height, this.x, 0, this.width, this.height);
+
+            if (this.flashEffect) {
+                if (this.flashEffect.isEnded()) {
+                    this.flashEffect = null;
+                } else {
+                    this.flashEffect.flash(timestamp, this.x, 0, this.width, this.height);
+                }
+            }
         }
     }
 
@@ -96,6 +110,11 @@ class Segment implements ISegmentPlace {
         this.viewPort.animate('xMove', xMove);
         this.viewPort.animate('yMove', yMove);
         this.viewPort.animate('scale', zoomScale);
+    }
+
+    public flash(): void {
+        this.flashEffect = new FlashEffect(this.ctx);
+        this.segmentController.reportEffectRenderingStart();
     }
 
     public unload(): void {
@@ -127,10 +146,6 @@ class Segment implements ISegmentPlace {
         ctx.lineTo(0, 0);
         ctx.stroke();
 
-        // for (let shelf of this.shelves) {
-        //     this.drawShelf(ctx, shelf.dx, shelf.dy, shelf.w, shelf.h);
-        // }
-
         for (let image of this.knownImages) {
             let img = this.knownImgs.getByType(image.type);
             if (image.w && image.h) {
@@ -161,23 +176,6 @@ class Segment implements ISegmentPlace {
 
         return canvas;
     }
-
-    // private drawShelf(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number): void {
-    //     ctx.beginPath();
-    //     ctx.lineWidth = 4;
-    //     ctx.moveTo(x, y);
-    //     ctx.lineTo(x + w, y);
-    //     ctx.lineTo(x + w, y + h);
-    //     ctx.lineTo(x, y + h);
-    //     ctx.lineTo(x, y);
-    //     ctx.fillStyle = 'rgb(' + this.random255() + ', ' + this.random255() + ', ' + this.random255() + ')';
-    //     ctx.fill();
-    //     ctx.fillStyle = '#000';
-    // }
-    //
-    // private random255(): string {
-    //     return Math.floor(Math.random() * 255).toString();
-    // }
 }
 
 export = Segment;

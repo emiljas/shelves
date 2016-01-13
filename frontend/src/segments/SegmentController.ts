@@ -4,31 +4,39 @@ import ViewPort = require('../ViewPort');
 import Segment = require('./Segment');
 import SegmentPrepender = require('../loadSegments/SegmentPrepender');
 import SegmentAppender = require('../loadSegments/SegmentAppender');
+import FlashLoader = require('../flash/FlashLoader');
 import TapInput = require('../touch/TapInput');
 import SegmentAppenderArgs = require('../loadSegments/SegmentAppenderArgs');
 import SegmentWidthModel = require('../models/SegmentWidthModel');
+import StartPositionResult = require('../startPosition/StartPositionResult');
+import SegmentLoadedEvent = require('./SegmentLoadedEvent');
 
 class SegmentController {
     private segments = new Array<Segment>();
     private prepender: SegmentPrepender;
     private appender: SegmentAppender;
+    private flashLoader: FlashLoader;
     private notDrawnSegmentCount = 0;
+    private effectsRenderingCount = 0;
 
     constructor(
         private viewPort: ViewPort,
         private segmentsData: Array<SegmentWidthModel>,
-        private segmentWidths: Array<number>
+        private segmentWidths: Array<number>,
+        startPosition: StartPositionResult
     ) {
+      window['c'] = this;
+
         let appenderArgs: SegmentAppenderArgs = {
             INITIAL_SCALE: viewPort.getInitialScale(),
             CANVAS_WIDTH: viewPort.getCanvasWidth(),
             SEGMENT_WIDTHS: segmentWidths,
-            START_SEGMENT_INDEX: 0,
-            START_X: 0,
+            START_SEGMENT_INDEX: startPosition.segmentIndex,
+            START_X: startPosition.x,
             segments: this.segments,
             createSegment: (index, x) => {
                 let id = this.segmentsData[index].id;
-                let segment = new Segment(viewPort, index, id, x);
+                let segment = new Segment(viewPort, this, index, id, x);
                 segment.load().then(() => {
                     this.notDrawnSegmentCount++;
                 });
@@ -37,6 +45,12 @@ class SegmentController {
         };
         this.prepender = new SegmentPrepender(appenderArgs);
         this.appender = new SegmentAppender(appenderArgs);
+
+        let makeFlash = (segmentId: number) => {
+            let segment = _.find(this.segments, (s) => { return s.getId() === segmentId; });
+            segment.flash();
+        };
+        this.flashLoader = new FlashLoader(startPosition.segments, makeFlash);
     }
 
     public onClick(e: TapInput): void {
@@ -66,9 +80,21 @@ class SegmentController {
         return nonDrawnSegmentsExists;
     }
 
-    public draw(): void {
+    public checkIfAnyEffectsRendering(): boolean {
+      return this.effectsRenderingCount > 0;
+    }
+
+    public reportEffectRenderingStart(): void {
+      this.effectsRenderingCount++;
+    }
+
+    public reportEffectRenderingStop(): void {
+      this.effectsRenderingCount--;
+    }
+
+    public draw(timestamp: number): void {
         for (let segment of this.segments) {
-            segment.draw();
+            segment.draw(timestamp);
         }
     }
 
@@ -79,6 +105,17 @@ class SegmentController {
         xMove *= initialScale / scale;
         this.appender.work(xMove);
         this.prepender.work(xMove);
+
+        if (this.flashLoader && this.flashLoader.canBeFlashed()) {
+            this.flashLoader.flash();
+            this.flashLoader = null;
+        }
+    }
+
+    public segmentLoaded(event: SegmentLoadedEvent) {
+        if (this.flashLoader) {
+            this.flashLoader.segmentLoaded(event);
+        }
     }
 
     public unload(): void {

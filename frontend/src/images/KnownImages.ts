@@ -1,5 +1,5 @@
-import ImageType = require('./models/ImageType');
-import loadImage = require('./utils/loadImage');
+import ImageType = require('../models/ImageType');
+import loadImage = require('../utils/loadImage');
 
 const baseUrl = '/DesktopModules/RossmannV4Modules/Shelves2/Img/';
 

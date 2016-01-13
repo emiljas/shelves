@@ -2,15 +2,17 @@
 
 import Events = require('./events/Events');
 import XMoveHolder = require('./XMoveHolder');
-import KnownImages = require('./KnownImages');
+import KnownImages = require('./images/KnownImages');
 import SegmentController = require('./segments/SegmentController');
-import FpsMeasurer = require('./debug/FpsMeasurer');
 import touch = require('./touch/touch');
 import TapInput = require('./touch/TapInput');
 import DrawingController = require('./animation/DrawingController');
 import ValueAnimatorController = require('./animation/ValueAnimatorController');
 import CanvasPool = require('./segments/CanvasPool');
 import SegmentWidthModel = require('./models/SegmentWidthModel');
+import QueryString = require('./QueryString');
+import StartPosition = require('./startPosition/StartPosition');
+import StartPositionResult = require('./startPosition/StartPositionResult');
 
 class ViewPort implements XMoveHolder {
     private isDeleted = false;
@@ -33,6 +35,7 @@ class ViewPort implements XMoveHolder {
     private initialScale: number;
     private zoomScale: number;
     private scale: number;
+    private startPosition: StartPositionResult;
 
     private drawnXMove: number;
     private drawnYMove: number;
@@ -42,6 +45,8 @@ class ViewPort implements XMoveHolder {
     private drawingController = new DrawingController();
     private valueAnimatorController = new ValueAnimatorController();
     private canvasPool: CanvasPool;
+    private queryString: QueryString;
+
     private frameRequestCallback: FrameRequestCallback = (timestamp) => { this.onAnimationFrame(timestamp); };
 
     public getCanvas() { return this.canvas; }
@@ -58,6 +63,7 @@ class ViewPort implements XMoveHolder {
     public getY() { return this.y; }
     public getKnownImages() { return this.knownImagesPromise; }
     public getCanvasPool() { return this.canvasPool; }
+    public getQueryString() { return this.queryString; }
 
     constructor(containerId: string) {
         // (<any>window)['vp'] = this; //DEBUG ONLY
@@ -84,7 +90,17 @@ class ViewPort implements XMoveHolder {
         this.canvasPool = new CanvasPool(this.maxSegmentWidth, this.segmentHeight);
 
         this.setInitialScale();
-        this.segmentController = new SegmentController(this, this.segmentsData, this.segmentWidths);
+
+        this.queryString = new QueryString(this.container);
+        let startPosition = new StartPosition({
+            canvasWidth: this.canvasWidth,
+            initialScale: this.initialScale,
+            segmentsData: this.segmentsData,
+            queryString: this.queryString
+        });
+        this.startPosition = startPosition.calculate();
+        this.segmentController = new SegmentController(this, this.segmentsData, this.segmentWidths, this.startPosition);
+
         this.bindControl();
         this.hammerManager = touch(this);
     }
@@ -188,8 +204,6 @@ class ViewPort implements XMoveHolder {
             this.segmentController.preloadSegments();
         }
 
-        // FpsMeasurer.instance.tick(timestamp); //DEBUG ONLY
-
         if (!this.isDeleted) {
             window.requestAnimationFrame(this.frameRequestCallback);
         }
@@ -201,12 +215,28 @@ class ViewPort implements XMoveHolder {
         this.drawnScale = this.scale;
 
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-
         this.ctx.save();
         this.ctx.translate(this.xMove, this.yMove);
         this.ctx.scale(this.scale, this.scale);
 
-        this.segmentController.draw();
+        this.segmentController.draw(this.timestamp);
+
+
+
+
+
+
+        // this.ctx.rect(0, 0, this.canvas.width / this.scale, this.canvas.height / this.scale);
+        // this.ctx.fillStyle = 'rgba(255, 140, 0, ' + this.a + ')';
+        // this.ctx.fill();
+        //
+        // this.a -= 0.01;
+        // console.log(this.a);
+
+
+
+
+
 
         this.ctx.restore();
     }
@@ -215,7 +245,8 @@ class ViewPort implements XMoveHolder {
         return this.xMove !== this.drawnXMove
             || this.yMove !== this.drawnYMove
             || this.scale !== this.drawnScale
-            || this.segmentController.checkIfNonDrawnSegmentsExistsAndReset();
+            || this.segmentController.checkIfNonDrawnSegmentsExistsAndReset()
+            || this.segmentController.checkIfAnyEffectsRendering();
     }
 
     private blockVerticalMoveOutsideCanvas() {

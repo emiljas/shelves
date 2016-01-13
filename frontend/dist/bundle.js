@@ -98,10 +98,12 @@
 	var Events = __webpack_require__(3);
 	var KnownImages = __webpack_require__(4);
 	var SegmentController = __webpack_require__(7);
-	var touch = __webpack_require__(17);
-	var DrawingController = __webpack_require__(18);
-	var ValueAnimatorController = __webpack_require__(19);
-	var CanvasPool = __webpack_require__(22);
+	var touch = __webpack_require__(19);
+	var DrawingController = __webpack_require__(20);
+	var ValueAnimatorController = __webpack_require__(21);
+	var CanvasPool = __webpack_require__(24);
+	var QueryString = __webpack_require__(25);
+	var StartPosition = __webpack_require__(26);
 	var ViewPort = (function () {
 	    function ViewPort(containerId) {
 	        var _this = this;
@@ -129,7 +131,15 @@
 	        this.segmentHeight = parseInt(this.container.getAttribute('data-segment-height'), 10);
 	        this.canvasPool = new CanvasPool(this.maxSegmentWidth, this.segmentHeight);
 	        this.setInitialScale();
-	        this.segmentController = new SegmentController(this, this.segmentsData, this.segmentWidths);
+	        this.queryString = new QueryString(this.container);
+	        var startPosition = new StartPosition({
+	            canvasWidth: this.canvasWidth,
+	            initialScale: this.initialScale,
+	            segmentsData: this.segmentsData,
+	            queryString: this.queryString
+	        });
+	        this.startPosition = startPosition.calculate();
+	        this.segmentController = new SegmentController(this, this.segmentsData, this.segmentWidths, this.startPosition);
 	        this.bindControl();
 	        this.hammerManager = touch(this);
 	    }
@@ -147,6 +157,7 @@
 	    ViewPort.prototype.getY = function () { return this.y; };
 	    ViewPort.prototype.getKnownImages = function () { return this.knownImagesPromise; };
 	    ViewPort.prototype.getCanvasPool = function () { return this.canvasPool; };
+	    ViewPort.prototype.getQueryString = function () { return this.queryString; };
 	    ViewPort.prototype.start = function () {
 	        window.requestAnimationFrame(this.frameRequestCallback);
 	    };
@@ -232,7 +243,6 @@
 	        else {
 	            this.segmentController.preloadSegments();
 	        }
-	        // FpsMeasurer.instance.tick(timestamp); //DEBUG ONLY
 	        if (!this.isDeleted) {
 	            window.requestAnimationFrame(this.frameRequestCallback);
 	        }
@@ -246,14 +256,21 @@
 	        this.ctx.save();
 	        this.ctx.translate(this.xMove, this.yMove);
 	        this.ctx.scale(this.scale, this.scale);
-	        this.segmentController.draw();
+	        this.segmentController.draw(this.timestamp);
+	        // this.ctx.rect(0, 0, this.canvas.width / this.scale, this.canvas.height / this.scale);
+	        // this.ctx.fillStyle = 'rgba(255, 140, 0, ' + this.a + ')';
+	        // this.ctx.fill();
+	        //
+	        // this.a -= 0.01;
+	        // console.log(this.a);
 	        this.ctx.restore();
 	    };
 	    ViewPort.prototype.mustBeRedraw = function () {
 	        return this.xMove !== this.drawnXMove
 	            || this.yMove !== this.drawnYMove
 	            || this.scale !== this.drawnScale
-	            || this.segmentController.checkIfNonDrawnSegmentsExistsAndReset();
+	            || this.segmentController.checkIfNonDrawnSegmentsExistsAndReset()
+	            || this.segmentController.checkIfAnyEffectsRendering();
 	    };
 	    ViewPort.prototype.blockVerticalMoveOutsideCanvas = function () {
 	        this.yMove = Math.min(0, this.yMove);
@@ -378,26 +395,29 @@
 
 	'use strict';
 	var Segment = __webpack_require__(8);
-	var SegmentPrepender = __webpack_require__(14);
-	var SegmentAppender = __webpack_require__(16);
+	var SegmentPrepender = __webpack_require__(15);
+	var SegmentAppender = __webpack_require__(17);
+	var FlashLoader = __webpack_require__(18);
 	var SegmentController = (function () {
-	    function SegmentController(viewPort, segmentsData, segmentWidths) {
+	    function SegmentController(viewPort, segmentsData, segmentWidths, startPosition) {
 	        var _this = this;
 	        this.viewPort = viewPort;
 	        this.segmentsData = segmentsData;
 	        this.segmentWidths = segmentWidths;
 	        this.segments = new Array();
 	        this.notDrawnSegmentCount = 0;
+	        this.effectsRenderingCount = 0;
+	        window['c'] = this;
 	        var appenderArgs = {
 	            INITIAL_SCALE: viewPort.getInitialScale(),
 	            CANVAS_WIDTH: viewPort.getCanvasWidth(),
 	            SEGMENT_WIDTHS: segmentWidths,
-	            START_SEGMENT_INDEX: 0,
-	            START_X: 0,
+	            START_SEGMENT_INDEX: startPosition.segmentIndex,
+	            START_X: startPosition.x,
 	            segments: this.segments,
 	            createSegment: function (index, x) {
 	                var id = _this.segmentsData[index].id;
-	                var segment = new Segment(viewPort, index, id, x);
+	                var segment = new Segment(viewPort, _this, index, id, x);
 	                segment.load().then(function () {
 	                    _this.notDrawnSegmentCount++;
 	                });
@@ -406,6 +426,11 @@
 	        };
 	        this.prepender = new SegmentPrepender(appenderArgs);
 	        this.appender = new SegmentAppender(appenderArgs);
+	        var makeFlash = function (segmentId) {
+	            var segment = _.find(_this.segments, function (s) { return s.getId() === segmentId; });
+	            segment.flash();
+	        };
+	        this.flashLoader = new FlashLoader(startPosition.segments, makeFlash);
 	    }
 	    SegmentController.prototype.onClick = function (e) {
 	        var scale = this.viewPort.getScale();
@@ -431,10 +456,19 @@
 	        this.notDrawnSegmentCount = 0;
 	        return nonDrawnSegmentsExists;
 	    };
-	    SegmentController.prototype.draw = function () {
+	    SegmentController.prototype.checkIfAnyEffectsRendering = function () {
+	        return this.effectsRenderingCount > 0;
+	    };
+	    SegmentController.prototype.reportEffectRenderingStart = function () {
+	        this.effectsRenderingCount++;
+	    };
+	    SegmentController.prototype.reportEffectRenderingStop = function () {
+	        this.effectsRenderingCount--;
+	    };
+	    SegmentController.prototype.draw = function (timestamp) {
 	        for (var _i = 0, _a = this.segments; _i < _a.length; _i++) {
 	            var segment = _a[_i];
-	            segment.draw();
+	            segment.draw(timestamp);
 	        }
 	    };
 	    SegmentController.prototype.preloadSegments = function () {
@@ -444,6 +478,15 @@
 	        xMove *= initialScale / scale;
 	        this.appender.work(xMove);
 	        this.prepender.work(xMove);
+	        if (this.flashLoader && this.flashLoader.canBeFlashed()) {
+	            this.flashLoader.flash();
+	            this.flashLoader = null;
+	        }
+	    };
+	    SegmentController.prototype.segmentLoaded = function (event) {
+	        if (this.flashLoader) {
+	            this.flashLoader.segmentLoaded(event);
+	        }
 	    };
 	    SegmentController.prototype.unload = function () {
 	        for (var _i = 0, _a = this.segments; _i < _a.length; _i++) {
@@ -465,10 +508,12 @@
 	var loadImage = __webpack_require__(11);
 	var createWhitePixelImg = __webpack_require__(12);
 	var Images = __webpack_require__(13);
+	var FlashEffect = __webpack_require__(14);
 	var segmentRepository = new SegmentRepository();
 	var Segment = (function () {
-	    function Segment(viewPort, index, id, x) {
+	    function Segment(viewPort, segmentController, index, id, x) {
 	        this.viewPort = viewPort;
+	        this.segmentController = segmentController;
 	        this.index = index;
 	        this.id = id;
 	        this.x = x;
@@ -477,6 +522,7 @@
 	        this.ctx = viewPort.getCanvasContext();
 	    }
 	    Segment.prototype.getIndex = function () { return this.index; };
+	    Segment.prototype.getId = function () { return this.id; };
 	    Segment.prototype.getX = function () { return this.x; };
 	    Segment.prototype.load = function () {
 	        var _this = this;
@@ -506,12 +552,21 @@
 	            .then(function () {
 	            _this.canvas = _this.createCanvas();
 	            _this.isLoaded = true;
+	            _this.segmentController.segmentLoaded({ segmentId: _this.id });
 	            return Promise.resolve();
 	        });
 	    };
-	    Segment.prototype.draw = function () {
+	    Segment.prototype.draw = function (timestamp) {
 	        if (this.isLoaded) {
 	            this.ctx.drawImage(this.canvas, 0, 0, this.width, this.height, this.x, 0, this.width, this.height);
+	            if (this.flashEffect) {
+	                if (this.flashEffect.isEnded()) {
+	                    this.flashEffect = null;
+	                }
+	                else {
+	                    this.flashEffect.flash(timestamp, this.x, 0, this.width, this.height);
+	                }
+	            }
 	        }
 	    };
 	    Segment.prototype.isClicked = function (e) {
@@ -526,6 +581,10 @@
 	        this.viewPort.animate('xMove', xMove);
 	        this.viewPort.animate('yMove', yMove);
 	        this.viewPort.animate('scale', zoomScale);
+	    };
+	    Segment.prototype.flash = function () {
+	        this.flashEffect = new FlashEffect(this.ctx);
+	        this.segmentController.reportEffectRenderingStart();
 	    };
 	    Segment.prototype.unload = function () {
 	        if (this.isLoaded) {
@@ -554,9 +613,6 @@
 	        ctx.lineTo(0, this.height);
 	        ctx.lineTo(0, 0);
 	        ctx.stroke();
-	        // for (let shelf of this.shelves) {
-	        //     this.drawShelf(ctx, shelf.dx, shelf.dy, shelf.w, shelf.h);
-	        // }
 	        for (var _i = 0, _a = this.knownImages; _i < _a.length; _i++) {
 	            var image = _a[_i];
 	            var img = this.knownImgs.getByType(image.type);
@@ -745,9 +801,39 @@
 
 /***/ },
 /* 14 */
+/***/ function(module, exports) {
+
+	var FLASH_EFFECT_DURATION_SEC = 1;
+	var FLASH_EFFECT_MAX_OPACITY = 0.4;
+	var FlashEffect = (function () {
+	    function FlashEffect(ctx) {
+	        this.ctx = ctx;
+	        this.opacity = 0;
+	    }
+	    FlashEffect.prototype.flash = function (timestamp, x, y, width, height) {
+	        if (!this.startTimestamp) {
+	            this.startTimestamp = timestamp;
+	        }
+	        this.seconds = (timestamp - this.startTimestamp) / 1000;
+	        this.opacity = Math.sin(this.seconds / FLASH_EFFECT_DURATION_SEC * Math.PI) * FLASH_EFFECT_MAX_OPACITY;
+	        this.ctx.beginPath();
+	        this.ctx.rect(x, y, width, height);
+	        this.ctx.fillStyle = 'rgba(255, 215, 0, ' + this.opacity + ')';
+	        this.ctx.fill();
+	    };
+	    FlashEffect.prototype.isEnded = function () {
+	        return this.seconds >= FLASH_EFFECT_DURATION_SEC;
+	    };
+	    return FlashEffect;
+	})();
+	module.exports = FlashEffect;
+
+
+/***/ },
+/* 15 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var LoopIndex = __webpack_require__(15);
+	var LoopIndex = __webpack_require__(16);
 	var SegmentPrepender = (function () {
 	    function SegmentPrepender(args) {
 	        this.args = args;
@@ -801,7 +887,7 @@
 
 
 /***/ },
-/* 15 */
+/* 16 */
 /***/ function(module, exports) {
 
 	var LoopIndex = (function () {
@@ -839,10 +925,10 @@
 
 
 /***/ },
-/* 16 */
+/* 17 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var LoopIndex = __webpack_require__(15);
+	var LoopIndex = __webpack_require__(16);
 	/*
 	dodaje i usuwa segmenty
 	pierwszy segment dodany jest w x = START_X i ma index START_SEGMENT_INDEX
@@ -854,6 +940,7 @@
 	        this.nextX = 0;
 	        this.segmentCount = args.SEGMENT_WIDTHS.length;
 	        this.loopIndex = new LoopIndex(this.segmentCount, args.START_SEGMENT_INDEX);
+	        this.nextIndex = args.START_SEGMENT_INDEX;
 	        this.nextX = args.START_X / this.args.INITIAL_SCALE;
 	    }
 	    SegmentAppender.prototype.work = function (xMove) {
@@ -895,7 +982,40 @@
 
 
 /***/ },
-/* 17 */
+/* 18 */
+/***/ function(module, exports) {
+
+	var FlashLoader = (function () {
+	    function FlashLoader(segments, makeFlash) {
+	        this.segments = segments;
+	        this.makeFlash = makeFlash;
+	        this.loadedSegments = {};
+	    }
+	    FlashLoader.prototype.segmentLoaded = function (event) {
+	        this.loadedSegments[event.segmentId] = true;
+	    };
+	    FlashLoader.prototype.canBeFlashed = function () {
+	        for (var _i = 0, _a = this.segments; _i < _a.length; _i++) {
+	            var segment = _a[_i];
+	            if (this.loadedSegments[segment.id] !== true) {
+	                return false;
+	            }
+	        }
+	        return true;
+	    };
+	    FlashLoader.prototype.flash = function () {
+	        for (var _i = 0, _a = this.segments; _i < _a.length; _i++) {
+	            var segment = _a[_i];
+	            this.makeFlash(segment.id);
+	        }
+	    };
+	    return FlashLoader;
+	})();
+	module.exports = FlashLoader;
+
+
+/***/ },
+/* 19 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -926,7 +1046,7 @@
 
 
 /***/ },
-/* 18 */
+/* 20 */
 /***/ function(module, exports) {
 
 	var DrawingController = (function () {
@@ -948,11 +1068,11 @@
 
 
 /***/ },
-/* 19 */
+/* 21 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var ValueAnimator = __webpack_require__(20);
-	var AnimatedValuesLock = __webpack_require__(21);
+	var ValueAnimator = __webpack_require__(22);
+	var AnimatedValuesLock = __webpack_require__(23);
 	var ValueAnimatorController = (function () {
 	    function ValueAnimatorController() {
 	        this.animators = new Array();
@@ -983,7 +1103,7 @@
 
 
 /***/ },
-/* 20 */
+/* 22 */
 /***/ function(module, exports) {
 
 	var HALF_OF_PI = Math.PI / 2;
@@ -1015,7 +1135,7 @@
 
 
 /***/ },
-/* 21 */
+/* 23 */
 /***/ function(module, exports) {
 
 	var AnimatedValuesLock = (function () {
@@ -1037,7 +1157,7 @@
 
 
 /***/ },
-/* 22 */
+/* 24 */
 /***/ function(module, exports) {
 
 	var CanvasPool = (function () {
@@ -1078,6 +1198,82 @@
 	    return CanvasPool;
 	})();
 	module.exports = CanvasPool;
+
+
+/***/ },
+/* 25 */
+/***/ function(module, exports) {
+
+	var QueryString = (function () {
+	    function QueryString(container) {
+	        this.container = container;
+	        this.IsPlanogramIdSetUp = this.getBoolAttr('data-is-planogram-id-set-up');
+	        this.PlanogramId = this.getIntAttr('data-planogram-id');
+	        this.IsSegmentIdSetUp = this.getBoolAttr('data-is-segment-id-set-up');
+	        this.SegmentId = this.getIntAttr('data-segment-id');
+	        this.IsProductIdSetUp = this.getBoolAttr('data-is-product-id-set-up');
+	        this.ProductId = this.getIntAttr('data-product-id');
+	    }
+	    QueryString.prototype.getBoolAttr = function (key) {
+	        var value = this.container.getAttribute(key);
+	        return value === 'True';
+	    };
+	    QueryString.prototype.getIntAttr = function (key) {
+	        var value = this.container.getAttribute(key);
+	        return parseInt(value, 10);
+	    };
+	    return QueryString;
+	})();
+	module.exports = QueryString;
+
+
+/***/ },
+/* 26 */
+/***/ function(module, exports) {
+
+	var StartPosition = (function () {
+	    function StartPosition(args) {
+	        this.args = args;
+	    }
+	    StartPosition.prototype.calculate = function () {
+	        if (this.args.queryString.IsPlanogramIdSetUp) {
+	            var planogramId = this.args.queryString.PlanogramId;
+	            var segmentIndex = this.getSegmentIndexByPlanogramId(planogramId);
+	            var segments = this.getSegmentsByPlanogramId(planogramId, segmentIndex);
+	            var planogramWidth = this.calculatePlanogramWidth(segments);
+	            var x = (this.args.canvasWidth - planogramWidth) / 2;
+	            if (x < 0) {
+	                x = 0;
+	            }
+	            return { segmentIndex: segmentIndex, x: x, segments: segments };
+	        }
+	        else {
+	            return { segmentIndex: 0, x: 0, segments: [] };
+	        }
+	    };
+	    StartPosition.prototype.getSegmentIndexByPlanogramId = function (planogramId) {
+	        return _.findIndex(this.args.segmentsData, function (s) { return s.plnId === planogramId; });
+	    };
+	    StartPosition.prototype.getSegmentsByPlanogramId = function (planogramId, segmentIndex) {
+	        var segments = new Array();
+	        for (var i = segmentIndex; i < this.args.segmentsData.length; i++) {
+	            var segment = this.args.segmentsData[i];
+	            if (segment.plnId === planogramId) {
+	                segments.push(segment);
+	            }
+	            else {
+	                break;
+	            }
+	        }
+	        return segments;
+	    };
+	    StartPosition.prototype.calculatePlanogramWidth = function (segments) {
+	        var width = _.sum(segments, function (s) { return s.width; });
+	        return width * this.args.initialScale;
+	    };
+	    return StartPosition;
+	})();
+	module.exports = StartPosition;
 
 
 /***/ }
