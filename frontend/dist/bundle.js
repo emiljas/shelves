@@ -44,7 +44,7 @@
 /* 0 */
 /***/ function(module, exports, __webpack_require__) {
 
-	__webpack_require__(1);
+	module.exports = __webpack_require__(1);
 
 
 /***/ },
@@ -96,14 +96,15 @@
 
 	'use strict';
 	var Events = __webpack_require__(3);
-	var KnownImages = __webpack_require__(4);
-	var SegmentController = __webpack_require__(7);
-	var touch = __webpack_require__(19);
-	var DrawingController = __webpack_require__(20);
-	var ValueAnimatorController = __webpack_require__(21);
-	var CanvasPool = __webpack_require__(24);
-	var QueryString = __webpack_require__(25);
-	var StartPosition = __webpack_require__(26);
+	var Control = __webpack_require__(4);
+	var KnownImages = __webpack_require__(6);
+	var SegmentController = __webpack_require__(9);
+	var touch = __webpack_require__(21);
+	var DrawingController = __webpack_require__(22);
+	var ValueAnimatorController = __webpack_require__(23);
+	var CanvasPool = __webpack_require__(26);
+	var QueryString = __webpack_require__(27);
+	var StartPosition = __webpack_require__(28);
 	var ViewPort = (function () {
 	    function ViewPort(containerId) {
 	        var _this = this;
@@ -112,6 +113,7 @@
 	        this.knownImagesPromise = KnownImages.downloadAll();
 	        this.xMove = 0;
 	        this.yMove = 0;
+	        this.isMagnified = false;
 	        this.drawingController = new DrawingController();
 	        this.valueAnimatorController = new ValueAnimatorController();
 	        this.frameRequestCallback = function (timestamp) { _this.onAnimationFrame(timestamp); };
@@ -140,7 +142,7 @@
 	        });
 	        this.startPosition = startPosition.calculate();
 	        this.segmentController = new SegmentController(this, this.segmentsData, this.segmentWidths, this.startPosition);
-	        this.bindControl();
+	        this.initControl();
 	        this.hammerManager = touch(this);
 	    }
 	    ViewPort.prototype.getCanvas = function () { return this.canvas; };
@@ -158,6 +160,8 @@
 	    ViewPort.prototype.getKnownImages = function () { return this.knownImagesPromise; };
 	    ViewPort.prototype.getCanvasPool = function () { return this.canvasPool; };
 	    ViewPort.prototype.getQueryString = function () { return this.queryString; };
+	    ViewPort.prototype.getEvents = function () { return this.events; };
+	    ViewPort.prototype.checkIfMagnified = function () { return this.isMagnified; };
 	    ViewPort.prototype.start = function () {
 	        window.requestAnimationFrame(this.frameRequestCallback);
 	    };
@@ -179,6 +183,35 @@
 	    };
 	    ViewPort.prototype.endAnimation = function () {
 	        this.drawingController.endAnimation();
+	    };
+	    ViewPort.prototype.control_left = function () {
+	        this.slideLeft();
+	    };
+	    ViewPort.prototype.control_right = function () {
+	        this.slideRight();
+	    };
+	    ViewPort.prototype.control_top = function () {
+	        this.animate('yMove', this.yMove + 0.1 * this.canvasHeight);
+	    };
+	    ViewPort.prototype.control_bottom = function () {
+	        this.animate('yMove', this.yMove - 0.1 * this.canvasHeight);
+	    };
+	    ViewPort.prototype.control_zoom = function () {
+	        this.notifyAboutZoomChange(true);
+	        // let x = -this.xMove + this.canvasWidth / 2;
+	        // this.animate('xMove', this.canvasWidth / 2 - x * (this.zoomScale / this.initialScale));
+	        // this.animate('scale', this.zoomScale);
+	        this.segmentController.fitMiddleSegmentOnViewPort();
+	    };
+	    ViewPort.prototype.control_unzoom = function () {
+	        this.notifyAboutZoomChange(false);
+	        var x = -this.xMove + this.canvasWidth / 2;
+	        this.animate('xMove', this.canvasWidth / 2 - x * this.initialScale);
+	        this.animate('scale', this.initialScale);
+	    };
+	    ViewPort.prototype.notifyAboutZoomChange = function (isMagnified) {
+	        this.isMagnified = isMagnified;
+	        this.control.onZoomChange();
 	    };
 	    ViewPort.prototype.unbind = function () {
 	        this.isDeleted = true;
@@ -202,28 +235,9 @@
 	        this.zoomScale = Math.min(this.canvasWidth / (1.25 * this.maxSegmentWidth), 1);
 	        this.scale = this.initialScale;
 	    };
-	    ViewPort.prototype.bindControl = function () {
-	        var _this = this;
-	        var backBtn = this.container.querySelector('.leftSlideBtn');
-	        this.events.addEventListener(backBtn, 'click', function (e) {
-	            e.preventDefault();
-	            _this.slideLeft();
-	        });
-	        var nextBtn = this.container.querySelector('.rightSlideBtn');
-	        this.events.addEventListener(nextBtn, 'click', function (e) {
-	            e.preventDefault();
-	            _this.slideRight();
-	        });
-	        var zoomInBtn = this.container.querySelector('.zoomInBtn');
-	        this.events.addEventListener(zoomInBtn, 'click', function (e) {
-	            e.preventDefault();
-	            _this.scale += 0.01;
-	        });
-	        var zoomOutBtn = this.container.querySelector('.zoomOutBtn');
-	        this.events.addEventListener(zoomOutBtn, 'click', function (e) {
-	            e.preventDefault();
-	            _this.scale -= 0.01;
-	        });
+	    ViewPort.prototype.initControl = function () {
+	        this.control = new Control(this, this.container);
+	        this.control.init();
 	    };
 	    ViewPort.prototype.slideRight = function () {
 	        var xMove = this.xMove - this.canvasWidth;
@@ -257,12 +271,6 @@
 	        this.ctx.translate(this.xMove, this.yMove);
 	        this.ctx.scale(this.scale, this.scale);
 	        this.segmentController.draw(this.timestamp);
-	        // this.ctx.rect(0, 0, this.canvas.width / this.scale, this.canvas.height / this.scale);
-	        // this.ctx.fillStyle = 'rgba(255, 140, 0, ' + this.a + ')';
-	        // this.ctx.fill();
-	        //
-	        // this.a -= 0.01;
-	        // console.log(this.a);
 	        this.ctx.restore();
 	    };
 	    ViewPort.prototype.mustBeRedraw = function () {
@@ -311,8 +319,160 @@
 /* 4 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var ImageType = __webpack_require__(5);
-	var loadImage = __webpack_require__(6);
+	var setTimedInterval = __webpack_require__(5);
+	var BASE_IMG_URL = '/DesktopModules/RossmannV4Modules/Shelves2/Img/icons/';
+	var TOP_IMG_URL = BASE_IMG_URL + 'scroll-top.png';
+	var HOVER_TOP_IMG_URL = BASE_IMG_URL + 'scroll-top-hover.png';
+	var LEFT_IMG_URL = BASE_IMG_URL + 'scroll-left.png';
+	var HOVER_LEFT_IMG_URL = BASE_IMG_URL + 'scroll-left-hover.png';
+	var RIGHT_IMG_URL = BASE_IMG_URL + 'scroll-right.png';
+	var HOVER_RIGHT_IMG_URL = BASE_IMG_URL + 'scroll-right-hover.png';
+	var BOTTOM_IMG_URL = BASE_IMG_URL + 'scroll-bottom.png';
+	var HOVER_BOTTOM_IMG_URL = BASE_IMG_URL + 'scroll-bottom-hover.png';
+	var PLUS_IMG_URL = BASE_IMG_URL + 'zoom-plus.png';
+	var HOVER_PLUS_IMG_URL = BASE_IMG_URL + 'zoom-plus-hover.png';
+	var MINUS_IMG_URL = BASE_IMG_URL + 'zoom-minus.png';
+	var HOVER_MINUS_IMG_URL = BASE_IMG_URL + 'zoom-minus-hover.png';
+	var Control = (function () {
+	    function Control(viewPort, container) {
+	        this.viewPort = viewPort;
+	        this.container = container;
+	        this.events = viewPort.getEvents();
+	    }
+	    Control.prototype.init = function () {
+	        this.controlDiv = this.container.querySelector('.control');
+	        this.placeControl();
+	        this.bindControl();
+	    };
+	    Control.prototype.onZoomChange = function () {
+	        this.refreshZoomIcon();
+	        if (this.viewPort.checkIfMagnified()) {
+	            this.showTopAndBottomBtns();
+	        }
+	        else {
+	            this.hideTopAndBottomBtns();
+	        }
+	    };
+	    Control.prototype.placeControl = function () {
+	        var _this = this;
+	        var header = document.getElementById('header_desktop');
+	        var MAX_PAGE_LOAD = 5;
+	        var INTERVAL = 100;
+	        if (header) {
+	            setTimedInterval(function () {
+	                var left = header.getBoundingClientRect().left;
+	                _this.controlDiv.style.left = left + 'px';
+	            }, INTERVAL, MAX_PAGE_LOAD);
+	        }
+	        else {
+	            console.error('#header_desktop element doesnt exist');
+	            this.controlDiv.style.left = '0';
+	        }
+	    };
+	    Control.prototype.bindControl = function () {
+	        var _this = this;
+	        this.left = this.controlDiv.querySelector('.left');
+	        this.right = this.controlDiv.querySelector('.right');
+	        this.top = this.controlDiv.querySelector('.top');
+	        this.bottom = this.controlDiv.querySelector('.bottom');
+	        this.middle = this.controlDiv.querySelector('.middle');
+	        this.changeIconOnHover(this.left, LEFT_IMG_URL, HOVER_LEFT_IMG_URL);
+	        this.changeIconOnHover(this.right, RIGHT_IMG_URL, HOVER_RIGHT_IMG_URL);
+	        this.changeIconOnHover(this.top, TOP_IMG_URL, HOVER_TOP_IMG_URL);
+	        this.changeIconOnHover(this.bottom, BOTTOM_IMG_URL, HOVER_BOTTOM_IMG_URL);
+	        this.changeZoomIconOnHover(this.middle);
+	        this.events.addEventListener(this.left, 'click', function (e) {
+	            _this.viewPort.control_left();
+	        });
+	        this.events.addEventListener(this.right, 'click', function (e) {
+	            _this.viewPort.control_right();
+	        });
+	        this.events.addEventListener(this.top, 'click', function (e) {
+	            _this.viewPort.control_top();
+	        });
+	        this.events.addEventListener(this.bottom, 'click', function (e) {
+	            _this.viewPort.control_bottom();
+	        });
+	        this.events.addEventListener(this.middle, 'click', function (e) {
+	            if (_this.viewPort.checkIfMagnified()) {
+	                _this.viewPort.control_unzoom();
+	                _this.middle.src = HOVER_PLUS_IMG_URL;
+	            }
+	            else {
+	                _this.viewPort.control_zoom();
+	                _this.middle.src = HOVER_MINUS_IMG_URL;
+	            }
+	        });
+	    };
+	    Control.prototype.changeIconOnHover = function (img, iconUrl, hoverIconUrl) {
+	        this.events.addEventListener(img, 'mouseover', function () {
+	            img.src = hoverIconUrl;
+	        });
+	        this.events.addEventListener(img, 'mouseout', function () {
+	            img.src = iconUrl;
+	        });
+	    };
+	    Control.prototype.changeZoomIconOnHover = function (img) {
+	        var _this = this;
+	        this.events.addEventListener(img, 'mouseover', function () {
+	            if (_this.viewPort.checkIfMagnified()) {
+	                _this.middle.src = HOVER_MINUS_IMG_URL;
+	            }
+	            else {
+	                _this.middle.src = HOVER_PLUS_IMG_URL;
+	            }
+	        });
+	        this.events.addEventListener(img, 'mouseout', function () {
+	            _this.refreshZoomIcon();
+	        });
+	    };
+	    Control.prototype.refreshZoomIcon = function () {
+	        if (this.viewPort.checkIfMagnified()) {
+	            this.middle.src = MINUS_IMG_URL;
+	        }
+	        else {
+	            this.middle.src = PLUS_IMG_URL;
+	        }
+	    };
+	    Control.prototype.showTopAndBottomBtns = function () {
+	        this.top.classList.remove('disactivated');
+	        this.bottom.classList.remove('disactivated');
+	    };
+	    Control.prototype.hideTopAndBottomBtns = function () {
+	        this.top.classList.add('disactivated');
+	        this.bottom.classList.add('disactivated');
+	    };
+	    return Control;
+	})();
+	module.exports = Control;
+
+
+/***/ },
+/* 5 */
+/***/ function(module, exports) {
+
+	function setTimedInterval(f, interval, time) {
+	    'use strict';
+	    f();
+	    var startTime = Date.now();
+	    var intervalId = setInterval(function () {
+	        if ((Date.now() - startTime) / 1000 >= time) {
+	            clearInterval(intervalId);
+	        }
+	        else {
+	            f();
+	        }
+	    }, interval);
+	}
+	module.exports = setTimedInterval;
+
+
+/***/ },
+/* 6 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var ImageType = __webpack_require__(7);
+	var loadImage = __webpack_require__(8);
 	var baseUrl = '/DesktopModules/RossmannV4Modules/Shelves2/Img/';
 	var KnownImages = (function () {
 	    function KnownImages() {
@@ -353,7 +513,7 @@
 
 
 /***/ },
-/* 5 */
+/* 7 */
 /***/ function(module, exports) {
 
 	var ImageType;
@@ -370,7 +530,7 @@
 
 
 /***/ },
-/* 6 */
+/* 8 */
 /***/ function(module, exports) {
 
 	function loadImage(url) {
@@ -390,14 +550,14 @@
 
 
 /***/ },
-/* 7 */
+/* 9 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
-	var Segment = __webpack_require__(8);
-	var SegmentPrepender = __webpack_require__(15);
-	var SegmentAppender = __webpack_require__(17);
-	var FlashLoader = __webpack_require__(18);
+	var Segment = __webpack_require__(10);
+	var SegmentPrepender = __webpack_require__(17);
+	var SegmentAppender = __webpack_require__(19);
+	var FlashLoader = __webpack_require__(20);
 	var SegmentController = (function () {
 	    function SegmentController(viewPort, segmentsData, segmentWidths, startPosition) {
 	        var _this = this;
@@ -407,7 +567,6 @@
 	        this.segments = new Array();
 	        this.notDrawnSegmentCount = 0;
 	        this.effectsRenderingCount = 0;
-	        window['c'] = this;
 	        var appenderArgs = {
 	            INITIAL_SCALE: viewPort.getInitialScale(),
 	            CANVAS_WIDTH: viewPort.getCanvasWidth(),
@@ -488,6 +647,12 @@
 	            this.flashLoader.segmentLoaded(event);
 	        }
 	    };
+	    SegmentController.prototype.fitMiddleSegmentOnViewPort = function () {
+	        this.onClick({
+	            x: this.viewPort.getCanvasWidth() / 2,
+	            y: 0
+	        });
+	    };
 	    SegmentController.prototype.unload = function () {
 	        for (var _i = 0, _a = this.segments; _i < _a.length; _i++) {
 	            var segment = _a[_i];
@@ -500,15 +665,15 @@
 
 
 /***/ },
-/* 8 */
+/* 10 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
-	var SegmentRepository = __webpack_require__(9);
-	var loadImage = __webpack_require__(11);
-	var createWhitePixelImg = __webpack_require__(12);
-	var Images = __webpack_require__(13);
-	var FlashEffect = __webpack_require__(14);
+	var SegmentRepository = __webpack_require__(11);
+	var loadImage = __webpack_require__(13);
+	var createWhitePixelImg = __webpack_require__(14);
+	var Images = __webpack_require__(15);
+	var FlashEffect = __webpack_require__(16);
 	var segmentRepository = new SegmentRepository();
 	var Segment = (function () {
 	    function Segment(viewPort, segmentController, index, id, x) {
@@ -562,6 +727,7 @@
 	            if (this.flashEffect) {
 	                if (this.flashEffect.isEnded()) {
 	                    this.flashEffect = null;
+	                    this.segmentController.reportEffectRenderingStop();
 	                }
 	                else {
 	                    this.flashEffect.flash(timestamp, this.x, 0, this.width, this.height);
@@ -581,6 +747,7 @@
 	        this.viewPort.animate('xMove', xMove);
 	        this.viewPort.animate('yMove', yMove);
 	        this.viewPort.animate('scale', zoomScale);
+	        this.viewPort.notifyAboutZoomChange(true);
 	    };
 	    Segment.prototype.flash = function () {
 	        this.flashEffect = new FlashEffect(this.ctx);
@@ -605,14 +772,6 @@
 	    Segment.prototype.createCanvas = function () {
 	        var canvas = this.viewPort.getCanvasPool().get();
 	        var ctx = canvas.getContext('2d');
-	        ctx.beginPath();
-	        ctx.lineWidth = 5;
-	        ctx.moveTo(0, 0);
-	        ctx.lineTo(this.width, 0);
-	        ctx.lineTo(this.width, this.height);
-	        ctx.lineTo(0, this.height);
-	        ctx.lineTo(0, 0);
-	        ctx.stroke();
 	        for (var _i = 0, _a = this.knownImages; _i < _a.length; _i++) {
 	            var image = _a[_i];
 	            var img = this.knownImgs.getByType(image.type);
@@ -650,7 +809,7 @@
 
 
 /***/ },
-/* 9 */
+/* 11 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -659,7 +818,7 @@
 	    function __() { this.constructor = d; }
 	    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 	};
-	var Repository = __webpack_require__(10);
+	var Repository = __webpack_require__(12);
 	var SegmentRepository = (function (_super) {
 	    __extends(SegmentRepository, _super);
 	    function SegmentRepository() {
@@ -677,7 +836,7 @@
 
 
 /***/ },
-/* 10 */
+/* 12 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -717,7 +876,7 @@
 
 
 /***/ },
-/* 11 */
+/* 13 */
 /***/ function(module, exports) {
 
 	function loadCancelableImage(url) {
@@ -749,7 +908,7 @@
 
 
 /***/ },
-/* 12 */
+/* 14 */
 /***/ function(module, exports) {
 
 	function createWhitePixelImg() {
@@ -770,10 +929,10 @@
 
 
 /***/ },
-/* 13 */
+/* 15 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var loadImage = __webpack_require__(6);
+	var loadImage = __webpack_require__(8);
 	var Images = (function () {
 	    function Images(images) {
 	        var _this = this;
@@ -800,7 +959,7 @@
 
 
 /***/ },
-/* 14 */
+/* 16 */
 /***/ function(module, exports) {
 
 	var FLASH_EFFECT_DURATION_SEC = 1;
@@ -830,10 +989,10 @@
 
 
 /***/ },
-/* 15 */
+/* 17 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var LoopIndex = __webpack_require__(16);
+	var LoopIndex = __webpack_require__(18);
 	var SegmentPrepender = (function () {
 	    function SegmentPrepender(args) {
 	        this.args = args;
@@ -887,7 +1046,7 @@
 
 
 /***/ },
-/* 16 */
+/* 18 */
 /***/ function(module, exports) {
 
 	var LoopIndex = (function () {
@@ -925,10 +1084,10 @@
 
 
 /***/ },
-/* 17 */
+/* 19 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var LoopIndex = __webpack_require__(16);
+	var LoopIndex = __webpack_require__(18);
 	/*
 	dodaje i usuwa segmenty
 	pierwszy segment dodany jest w x = START_X i ma index START_SEGMENT_INDEX
@@ -982,7 +1141,7 @@
 
 
 /***/ },
-/* 18 */
+/* 20 */
 /***/ function(module, exports) {
 
 	var FlashLoader = (function () {
@@ -1015,7 +1174,7 @@
 
 
 /***/ },
-/* 19 */
+/* 21 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -1046,7 +1205,7 @@
 
 
 /***/ },
-/* 20 */
+/* 22 */
 /***/ function(module, exports) {
 
 	var DrawingController = (function () {
@@ -1068,11 +1227,11 @@
 
 
 /***/ },
-/* 21 */
+/* 23 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var ValueAnimator = __webpack_require__(22);
-	var AnimatedValuesLock = __webpack_require__(23);
+	var ValueAnimator = __webpack_require__(24);
+	var AnimatedValuesLock = __webpack_require__(25);
 	var ValueAnimatorController = (function () {
 	    function ValueAnimatorController() {
 	        this.animators = new Array();
@@ -1103,7 +1262,7 @@
 
 
 /***/ },
-/* 22 */
+/* 24 */
 /***/ function(module, exports) {
 
 	var HALF_OF_PI = Math.PI / 2;
@@ -1135,7 +1294,7 @@
 
 
 /***/ },
-/* 23 */
+/* 25 */
 /***/ function(module, exports) {
 
 	var AnimatedValuesLock = (function () {
@@ -1157,7 +1316,7 @@
 
 
 /***/ },
-/* 24 */
+/* 26 */
 /***/ function(module, exports) {
 
 	var CanvasPool = (function () {
@@ -1201,7 +1360,7 @@
 
 
 /***/ },
-/* 25 */
+/* 27 */
 /***/ function(module, exports) {
 
 	var QueryString = (function () {
@@ -1228,7 +1387,7 @@
 
 
 /***/ },
-/* 26 */
+/* 28 */
 /***/ function(module, exports) {
 
 	var StartPosition = (function () {

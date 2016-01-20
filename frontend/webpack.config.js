@@ -10,7 +10,7 @@ workerFileNames = _.map(workerFileNames, function(fileName) {
 
 module.exports = {
     context: __dirname + '/src',
-    entry: [, './main.ts'].concat(workerFileNames),
+    entry: ['./main.ts'].concat(workerFileNames),
 
     output: {
       path: __dirname,

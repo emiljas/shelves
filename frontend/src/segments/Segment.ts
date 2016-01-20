@@ -87,6 +87,7 @@ class Segment implements ISegmentPlace {
             if (this.flashEffect) {
                 if (this.flashEffect.isEnded()) {
                     this.flashEffect = null;
+                    this.segmentController.reportEffectRenderingStop();
                 } else {
                     this.flashEffect.flash(timestamp, this.x, 0, this.width, this.height);
                 }
@@ -110,6 +111,8 @@ class Segment implements ISegmentPlace {
         this.viewPort.animate('xMove', xMove);
         this.viewPort.animate('yMove', yMove);
         this.viewPort.animate('scale', zoomScale);
+
+        this.viewPort.notifyAboutZoomChange(true);
     }
 
     public flash(): void {
@@ -136,15 +139,6 @@ class Segment implements ISegmentPlace {
     private createCanvas(): HTMLCanvasElement {
         let canvas = this.viewPort.getCanvasPool().get();
         let ctx = canvas.getContext('2d');
-
-        ctx.beginPath();
-        ctx.lineWidth = 5;
-        ctx.moveTo(0, 0);
-        ctx.lineTo(this.width, 0);
-        ctx.lineTo(this.width, this.height);
-        ctx.lineTo(0, this.height);
-        ctx.lineTo(0, 0);
-        ctx.stroke();
 
         for (let image of this.knownImages) {
             let img = this.knownImgs.getByType(image.type);

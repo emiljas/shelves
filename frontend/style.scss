@@ -1,3 +1,7 @@
+.DnnModule {
+  position: static;
+}
+
 .shelvesPlaceHolder {
   //element to hold height of .shelves
   height: 1080px; // initial height, should be programatically set to .shelves height
@@ -11,50 +15,62 @@
     position: absolute;
     top: 0;
     left: 0;
+    border-radius: 0 0 10px 10px;
+    background: rgba(255, 255, 255, 0.65);
+
+    img:hover {
+      cursor: hand;
+      cursor: pointer;
+    }
+
+    img.disactivated {
+      visibility: hidden;
+    }
+
+    table {
+      margin: 0;
+    }
+
+    td {
+      padding: 3px;
+    }
   }
 
   &.loading .control {
     display: none;
   }
-
-  canvas {
-    border: 1px solid black;
-    cursor: move;
-  }
 }
 
-.debug {
-  .canvasContainer {
-    width: 100%;
-    text-align: center;
-  }
+.canvasContainer {
+  width: 100%;
+  text-align: center;
+}
 
-  .debugContainer {
-    position: fixed;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.2);
-    font-weight: bold;
-  }
+.debugContainer {
+  position: fixed;
+  top: 0;
+  background-color: rgba(0, 0, 0, 0.2);
+  font-weight: bold;
+}
 
-  .debugContainer p {
-    padding: 0;
-    margin: 0;
-  }
+.debugContainer p {
+  padding: 0;
+  margin: 0;
+}
 
-  .debugContainer.left {
-    left: 0;
-    font-size: 1em;
-  }
+.debugContainer.left {
+  left: 0;
+  font-size: 1em;
+}
 
-  .debugContainer.right {
-    right: 0;
-  }
+.debugContainer.right {
+  right: 0;
+}
 
-  .debugContainer .green {
-    color: green;
-  }
+.debugContainer .green {
+  color: green;
+}
 
-  .debugContainer .red{
-    color: red;
-  }
+.debugContainer .red{
+  color: red;
 }

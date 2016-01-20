@@ -1,3 +1,6 @@
+.DnnModule {
+  position: static; }
+
 .shelvesPlaceHolder {
   height: 1080px; }
 
@@ -7,36 +10,44 @@
   .shelves .control {
     position: absolute;
     top: 0;
-    left: 0; }
+    left: 0;
+    border-radius: 0 0 10px 10px;
+    background: rgba(255, 255, 255, 0.65); }
+    .shelves .control img:hover {
+      cursor: hand;
+      cursor: pointer; }
+    .shelves .control img.disactivated {
+      visibility: hidden; }
+    .shelves .control table {
+      margin: 0; }
+    .shelves .control td {
+      padding: 3px; }
   .shelves.loading .control {
     display: none; }
-  .shelves canvas {
-    border: 1px solid black;
-    cursor: move; }
 
-.debug .canvasContainer {
+.canvasContainer {
   width: 100%;
   text-align: center; }
 
-.debug .debugContainer {
+.debugContainer {
   position: fixed;
-  bottom: 0;
+  top: 0;
   background-color: rgba(0, 0, 0, 0.2);
   font-weight: bold; }
 
-.debug .debugContainer p {
+.debugContainer p {
   padding: 0;
   margin: 0; }
 
-.debug .debugContainer.left {
+.debugContainer.left {
   left: 0;
   font-size: 1em; }
 
-.debug .debugContainer.right {
+.debugContainer.right {
   right: 0; }
 
-.debug .debugContainer .green {
+.debugContainer .green {
   color: green; }
 
-.debug .debugContainer .red {
+.debugContainer .red {
   color: red; }

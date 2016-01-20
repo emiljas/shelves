@@ -2,6 +2,7 @@
 
 import Events = require('./events/Events');
 import XMoveHolder = require('./XMoveHolder');
+import Control = require('./control/Control');
 import KnownImages = require('./images/KnownImages');
 import SegmentController = require('./segments/SegmentController');
 import touch = require('./touch/touch');
@@ -21,6 +22,7 @@ class ViewPort implements XMoveHolder {
     private container: HTMLDivElement;
     private canvas: HTMLCanvasElement;
     private ctx: CanvasRenderingContext2D;
+    private control: Control;
     private knownImagesPromise: Promise<KnownImages> = KnownImages.downloadAll();
     private segmentController: SegmentController;
     private segmentsData: Array<SegmentWidthModel>;
@@ -35,6 +37,7 @@ class ViewPort implements XMoveHolder {
     private initialScale: number;
     private zoomScale: number;
     private scale: number;
+    private isMagnified = false;
     private startPosition: StartPositionResult;
 
     private drawnXMove: number;
@@ -64,6 +67,8 @@ class ViewPort implements XMoveHolder {
     public getKnownImages() { return this.knownImagesPromise; }
     public getCanvasPool() { return this.canvasPool; }
     public getQueryString() { return this.queryString; }
+    public getEvents() { return this.events; }
+    public checkIfMagnified() { return this.isMagnified; }
 
     constructor(containerId: string) {
         // (<any>window)['vp'] = this; //DEBUG ONLY
@@ -101,7 +106,7 @@ class ViewPort implements XMoveHolder {
         this.startPosition = startPosition.calculate();
         this.segmentController = new SegmentController(this, this.segmentsData, this.segmentWidths, this.startPosition);
 
-        this.bindControl();
+        this.initControl();
         this.hammerManager = touch(this);
     }
 
@@ -131,6 +136,44 @@ class ViewPort implements XMoveHolder {
         this.drawingController.endAnimation();
     }
 
+    public control_left() {
+      this.slideLeft();
+    }
+
+    public control_right() {
+      this.slideRight();
+    }
+
+    public control_top() {
+      this.animate('yMove', this.yMove + 0.1 * this.canvasHeight);
+    }
+
+    public control_bottom() {
+      this.animate('yMove', this.yMove - 0.1 * this.canvasHeight);
+    }
+
+    public control_zoom() {
+      this.notifyAboutZoomChange(true);
+
+      // let x = -this.xMove + this.canvasWidth / 2;
+      // this.animate('xMove', this.canvasWidth / 2 - x * (this.zoomScale / this.initialScale));
+      // this.animate('scale', this.zoomScale);
+      this.segmentController.fitMiddleSegmentOnViewPort();
+    }
+
+    public control_unzoom() {
+      this.notifyAboutZoomChange(false);
+
+      let x = -this.xMove + this.canvasWidth / 2;
+      this.animate('xMove', this.canvasWidth / 2 - x * this.initialScale);
+      this.animate('scale', this.initialScale);
+    }
+
+    public notifyAboutZoomChange(isMagnified: boolean): void {
+      this.isMagnified = isMagnified;
+      this.control.onZoomChange();
+    }
+
     public unbind(): void {
         this.isDeleted = true;
         this.segmentController.unload();
@@ -157,30 +200,9 @@ class ViewPort implements XMoveHolder {
         this.scale = this.initialScale;
     }
 
-    private bindControl(): void {
-        let backBtn = this.container.querySelector('.leftSlideBtn');
-        this.events.addEventListener(backBtn, 'click', (e) => {
-            e.preventDefault();
-            this.slideLeft();
-        });
-
-        let nextBtn = this.container.querySelector('.rightSlideBtn');
-        this.events.addEventListener(nextBtn, 'click', (e) => {
-            e.preventDefault();
-            this.slideRight();
-        });
-
-        let zoomInBtn = this.container.querySelector('.zoomInBtn');
-        this.events.addEventListener(zoomInBtn, 'click', (e) => {
-            e.preventDefault();
-            this.scale += 0.01;
-        });
-
-        let zoomOutBtn = this.container.querySelector('.zoomOutBtn');
-        this.events.addEventListener(zoomOutBtn, 'click', (e) => {
-            e.preventDefault();
-            this.scale -= 0.01;
-        });
+    private initControl(): void {
+      this.control = new Control(this, this.container);
+      this.control.init();
     }
 
     private slideRight() {
@@ -220,23 +242,6 @@ class ViewPort implements XMoveHolder {
         this.ctx.scale(this.scale, this.scale);
 
         this.segmentController.draw(this.timestamp);
-
-
-
-
-
-
-        // this.ctx.rect(0, 0, this.canvas.width / this.scale, this.canvas.height / this.scale);
-        // this.ctx.fillStyle = 'rgba(255, 140, 0, ' + this.a + ')';
-        // this.ctx.fill();
-        //
-        // this.a -= 0.01;
-        // console.log(this.a);
-
-
-
-
-
 
         this.ctx.restore();
     }

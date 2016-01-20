@@ -25,8 +25,6 @@ class SegmentController {
         private segmentWidths: Array<number>,
         startPosition: StartPositionResult
     ) {
-      window['c'] = this;
-
         let appenderArgs: SegmentAppenderArgs = {
             INITIAL_SCALE: viewPort.getInitialScale(),
             CANVAS_WIDTH: viewPort.getCanvasWidth(),
@@ -116,6 +114,13 @@ class SegmentController {
         if (this.flashLoader) {
             this.flashLoader.segmentLoaded(event);
         }
+    }
+
+    public fitMiddleSegmentOnViewPort(): void {
+      this.onClick({
+         x: this.viewPort.getCanvasWidth() / 2,
+         y: 0
+      });
     }
 
     public unload(): void {
