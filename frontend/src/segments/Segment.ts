@@ -46,6 +46,7 @@ class Segment implements ISegmentPlace {
     public getIndex(): number { return this.index; }
     public getId(): number { return this.id; }
     public getX(): number { return this.x; }
+    public getWidth(): number { return this.width; }
 
     public load(): Promise<void> {
         return this.viewPort.getKnownImages().then((images) => {
@@ -99,6 +100,18 @@ class Segment implements ISegmentPlace {
         return e.x > this.x && e.x < this.x + this.width;
     }
 
+    public isClickable(x: number, y: number) {
+      for (let product of this.productPositions) {
+        if (x >= this.x + product.dx
+         && x <= this.x + product.dx + product.w
+         && y >= product.dy
+         && y <= product.dy + product.h) {
+              return true;
+        }
+      }
+      return false;
+    }
+
     public fitOnViewPort(y: number): void {
         let zoomScale = this.viewPort.getZoomScale();
 
@@ -109,7 +122,9 @@ class Segment implements ISegmentPlace {
         let yMove = canvasHeight / 2 - y * zoomScale;
 
         this.viewPort.animate('xMove', xMove);
-        this.viewPort.animate('yMove', yMove);
+        if (y !== -1) {
+          this.viewPort.animate('yMove', yMove);
+        }
         this.viewPort.animate('scale', zoomScale);
 
         this.viewPort.notifyAboutZoomChange(true);

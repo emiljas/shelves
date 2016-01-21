@@ -15,6 +15,8 @@ import QueryString = require('./QueryString');
 import StartPosition = require('./startPosition/StartPosition');
 import StartPositionResult = require('./startPosition/StartPositionResult');
 
+const VERTICAL_SLIDE_RATIO = 0.9;
+
 class ViewPort implements XMoveHolder {
     private isDeleted = false;
     private events = new Events();
@@ -108,6 +110,7 @@ class ViewPort implements XMoveHolder {
 
         this.initControl();
         this.hammerManager = touch(this);
+        this.events.addEventListener(this.canvas, 'mousemove', (e: MouseEvent) => { this.onMouseMove(e); });
     }
 
     public start(): void {
@@ -119,6 +122,7 @@ class ViewPort implements XMoveHolder {
     }
 
     public animate(propertyName: string, endValue: number): void {
+        this.valueAnimatorController.remove(propertyName);
         this.valueAnimatorController.add({
             id: propertyName,
             start: (<any>this)[propertyName],
@@ -126,6 +130,10 @@ class ViewPort implements XMoveHolder {
             timestamp: this.timestamp,
             onChange: (value) => { (<any>this)[propertyName] = value; }
         });
+    }
+
+    public stopAnimation(propertyName: string): void {
+        this.valueAnimatorController.remove(propertyName);
     }
 
     public beginAnimation() {
@@ -137,27 +145,32 @@ class ViewPort implements XMoveHolder {
     }
 
     public control_left() {
-      this.slideLeft();
+      if (this.isMagnified) {
+        this.segmentController.fitLeftSegmentOnViewPort();
+      } else {
+        this.slideLeft();
+      }
     }
 
     public control_right() {
-      this.slideRight();
+      if (this.isMagnified) {
+        this.segmentController.fitRightSegmentOnViewPort();
+      } else {
+        this.slideRight();
+      }
     }
 
     public control_top() {
-      this.animate('yMove', this.yMove + 0.1 * this.canvasHeight);
+      this.animate('yMove', this.yMove + VERTICAL_SLIDE_RATIO * this.canvasHeight);
     }
 
     public control_bottom() {
-      this.animate('yMove', this.yMove - 0.1 * this.canvasHeight);
+      this.animate('yMove', this.yMove - VERTICAL_SLIDE_RATIO * this.canvasHeight);
     }
 
     public control_zoom() {
       this.notifyAboutZoomChange(true);
 
-      // let x = -this.xMove + this.canvasWidth / 2;
-      // this.animate('xMove', this.canvasWidth / 2 - x * (this.zoomScale / this.initialScale));
-      // this.animate('scale', this.zoomScale);
       this.segmentController.fitMiddleSegmentOnViewPort();
     }
 
@@ -165,7 +178,8 @@ class ViewPort implements XMoveHolder {
       this.notifyAboutZoomChange(false);
 
       let x = -this.xMove + this.canvasWidth / 2;
-      this.animate('xMove', this.canvasWidth / 2 - x * this.initialScale);
+      this.animate('xMove', this.canvasWidth / 2 - x * (this.initialScale / this.zoomScale));
+      this.animate('yMove', 0);
       this.animate('scale', this.initialScale);
     }
 
@@ -230,6 +244,17 @@ class ViewPort implements XMoveHolder {
             window.requestAnimationFrame(this.frameRequestCallback);
         }
     };
+
+    private onMouseMove(e: MouseEvent): void {
+      let x = e.offsetX;
+      let y = e.offsetY;
+      let isClickable = this.segmentController.isClickable(x, y);
+      if (isClickable) {
+        this.container.classList.add('pointer');
+      } else {
+        this.container.classList.remove('pointer');
+      }
+    }
 
     private draw(): void {
         this.drawnXMove = this.xMove;

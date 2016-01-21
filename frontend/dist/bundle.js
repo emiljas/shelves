@@ -102,9 +102,10 @@
 	var touch = __webpack_require__(21);
 	var DrawingController = __webpack_require__(22);
 	var ValueAnimatorController = __webpack_require__(23);
-	var CanvasPool = __webpack_require__(26);
-	var QueryString = __webpack_require__(27);
-	var StartPosition = __webpack_require__(28);
+	var CanvasPool = __webpack_require__(25);
+	var QueryString = __webpack_require__(26);
+	var StartPosition = __webpack_require__(27);
+	var VERTICAL_SLIDE_RATIO = 0.9;
 	var ViewPort = (function () {
 	    function ViewPort(containerId) {
 	        var _this = this;
@@ -144,6 +145,7 @@
 	        this.segmentController = new SegmentController(this, this.segmentsData, this.segmentWidths, this.startPosition);
 	        this.initControl();
 	        this.hammerManager = touch(this);
+	        this.events.addEventListener(this.canvas, 'mousemove', function (e) { _this.onMouseMove(e); });
 	    }
 	    ViewPort.prototype.getCanvas = function () { return this.canvas; };
 	    ViewPort.prototype.getCanvasContext = function () { return this.ctx; };
@@ -170,6 +172,7 @@
 	    };
 	    ViewPort.prototype.animate = function (propertyName, endValue) {
 	        var _this = this;
+	        this.valueAnimatorController.remove(propertyName);
 	        this.valueAnimatorController.add({
 	            id: propertyName,
 	            start: this[propertyName],
@@ -178,6 +181,9 @@
 	            onChange: function (value) { _this[propertyName] = value; }
 	        });
 	    };
+	    ViewPort.prototype.stopAnimation = function (propertyName) {
+	        this.valueAnimatorController.remove(propertyName);
+	    };
 	    ViewPort.prototype.beginAnimation = function () {
 	        this.drawingController.beginAnimation();
 	    };
@@ -185,28 +191,36 @@
 	        this.drawingController.endAnimation();
 	    };
 	    ViewPort.prototype.control_left = function () {
-	        this.slideLeft();
+	        if (this.isMagnified) {
+	            this.segmentController.fitLeftSegmentOnViewPort();
+	        }
+	        else {
+	            this.slideLeft();
+	        }
 	    };
 	    ViewPort.prototype.control_right = function () {
-	        this.slideRight();
+	        if (this.isMagnified) {
+	            this.segmentController.fitRightSegmentOnViewPort();
+	        }
+	        else {
+	            this.slideRight();
+	        }
 	    };
 	    ViewPort.prototype.control_top = function () {
-	        this.animate('yMove', this.yMove + 0.1 * this.canvasHeight);
+	        this.animate('yMove', this.yMove + VERTICAL_SLIDE_RATIO * this.canvasHeight);
 	    };
 	    ViewPort.prototype.control_bottom = function () {
-	        this.animate('yMove', this.yMove - 0.1 * this.canvasHeight);
+	        this.animate('yMove', this.yMove - VERTICAL_SLIDE_RATIO * this.canvasHeight);
 	    };
 	    ViewPort.prototype.control_zoom = function () {
 	        this.notifyAboutZoomChange(true);
-	        // let x = -this.xMove + this.canvasWidth / 2;
-	        // this.animate('xMove', this.canvasWidth / 2 - x * (this.zoomScale / this.initialScale));
-	        // this.animate('scale', this.zoomScale);
 	        this.segmentController.fitMiddleSegmentOnViewPort();
 	    };
 	    ViewPort.prototype.control_unzoom = function () {
 	        this.notifyAboutZoomChange(false);
 	        var x = -this.xMove + this.canvasWidth / 2;
-	        this.animate('xMove', this.canvasWidth / 2 - x * this.initialScale);
+	        this.animate('xMove', this.canvasWidth / 2 - x * (this.initialScale / this.zoomScale));
+	        this.animate('yMove', 0);
 	        this.animate('scale', this.initialScale);
 	    };
 	    ViewPort.prototype.notifyAboutZoomChange = function (isMagnified) {
@@ -262,6 +276,17 @@
 	        }
 	    };
 	    ;
+	    ViewPort.prototype.onMouseMove = function (e) {
+	        var x = e.offsetX;
+	        var y = e.offsetY;
+	        var isClickable = this.segmentController.isClickable(x, y);
+	        if (isClickable) {
+	            this.container.classList.add('pointer');
+	        }
+	        else {
+	            this.container.classList.remove('pointer');
+	        }
+	    };
 	    ViewPort.prototype.draw = function () {
 	        this.drawnXMove = this.xMove;
 	        this.drawnYMove = this.yMove;
@@ -558,6 +583,7 @@
 	var SegmentPrepender = __webpack_require__(17);
 	var SegmentAppender = __webpack_require__(19);
 	var FlashLoader = __webpack_require__(20);
+	var DOUBLE_COMPARISON_DIFF = 1;
 	var SegmentController = (function () {
 	    function SegmentController(viewPort, segmentsData, segmentWidths, startPosition) {
 	        var _this = this;
@@ -653,6 +679,43 @@
 	            y: 0
 	        });
 	    };
+	    SegmentController.prototype.fitLeftSegmentOnViewPort = function () {
+	        var segments = _.sortBy(this.segments, function (s) { return -s.getX(); });
+	        var canvasWidth = this.viewPort.getCanvasWidth();
+	        var middleX = (-this.viewPort.getXMove() + canvasWidth / 2) / this.viewPort.getZoomScale();
+	        for (var _i = 0; _i < segments.length; _i++) {
+	            var segment = segments[_i];
+	            var segmentMiddleX = segment.getX() + segment.getWidth() / 2;
+	            if (middleX - DOUBLE_COMPARISON_DIFF > segmentMiddleX) {
+	                segment.fitOnViewPort(-1);
+	                return;
+	            }
+	        }
+	    };
+	    SegmentController.prototype.fitRightSegmentOnViewPort = function () {
+	        var segments = _.sortBy(this.segments, function (s) { return s.getX(); });
+	        var canvasWidth = this.viewPort.getCanvasWidth();
+	        var middleX = (-this.viewPort.getXMove() + canvasWidth / 2) / this.viewPort.getZoomScale();
+	        for (var _i = 0; _i < segments.length; _i++) {
+	            var segment = segments[_i];
+	            var segmentMiddleX = segment.getX() + segment.getWidth() / 2;
+	            if (middleX + DOUBLE_COMPARISON_DIFF < segmentMiddleX) {
+	                segment.fitOnViewPort(-1);
+	                return;
+	            }
+	        }
+	    };
+	    SegmentController.prototype.isClickable = function (x, y) {
+	        x = (x - this.viewPort.getXMove()) / this.viewPort.getScale();
+	        y = (y - this.viewPort.getYMove()) / this.viewPort.getScale();
+	        for (var _i = 0, _a = this.segments; _i < _a.length; _i++) {
+	            var segment = _a[_i];
+	            if (x >= segment.getX() && x <= segment.getX() + segment.getWidth()) {
+	                return segment.isClickable(x, y);
+	            }
+	        }
+	        return false;
+	    };
 	    SegmentController.prototype.unload = function () {
 	        for (var _i = 0, _a = this.segments; _i < _a.length; _i++) {
 	            var segment = _a[_i];
@@ -689,6 +752,7 @@
 	    Segment.prototype.getIndex = function () { return this.index; };
 	    Segment.prototype.getId = function () { return this.id; };
 	    Segment.prototype.getX = function () { return this.x; };
+	    Segment.prototype.getWidth = function () { return this.width; };
 	    Segment.prototype.load = function () {
 	        var _this = this;
 	        return this.viewPort.getKnownImages().then(function (images) {
@@ -738,6 +802,18 @@
 	    Segment.prototype.isClicked = function (e) {
 	        return e.x > this.x && e.x < this.x + this.width;
 	    };
+	    Segment.prototype.isClickable = function (x, y) {
+	        for (var _i = 0, _a = this.productPositions; _i < _a.length; _i++) {
+	            var product = _a[_i];
+	            if (x >= this.x + product.dx
+	                && x <= this.x + product.dx + product.w
+	                && y >= product.dy
+	                && y <= product.dy + product.h) {
+	                return true;
+	            }
+	        }
+	        return false;
+	    };
 	    Segment.prototype.fitOnViewPort = function (y) {
 	        var zoomScale = this.viewPort.getZoomScale();
 	        var canvasWidth = this.viewPort.getCanvasWidth();
@@ -745,7 +821,9 @@
 	        var canvasHeight = this.viewPort.getCanvasHeight();
 	        var yMove = canvasHeight / 2 - y * zoomScale;
 	        this.viewPort.animate('xMove', xMove);
-	        this.viewPort.animate('yMove', yMove);
+	        if (y !== -1) {
+	            this.viewPort.animate('yMove', yMove);
+	        }
 	        this.viewPort.animate('scale', zoomScale);
 	        this.viewPort.notifyAboutZoomChange(true);
 	    };
@@ -1178,6 +1256,7 @@
 /***/ function(module, exports) {
 
 	'use strict';
+	var PAN_LAST_STEP_MAX_DURATION = 100;
 	function touch(viewPort) {
 	    'use strict';
 	    var hammer = new Hammer(viewPort.getCanvas(), {
@@ -1186,13 +1265,63 @@
 	    hammer.get('pan').set({ direction: Hammer.DIRECTION_ALL });
 	    var lastDeltaX = 0;
 	    var lastDeltaY = 0;
-	    hammer.on('pan', function (e) {
-	        viewPort.setXMove(viewPort.getXMove() + e.deltaX - lastDeltaX);
-	        lastDeltaX = e.deltaX;
-	        viewPort.setYMove(viewPort.getYMove() + e.deltaY - lastDeltaY);
-	        lastDeltaY = e.deltaY;
+	    var panSteps = new Array();
+	    hammer.on('panstart', function () {
+	        viewPort.stopAnimation('xMove');
+	        viewPort.stopAnimation('xMove');
 	    });
+	    hammer.on('pan', function (e) {
+	        var xMove = viewPort.getXMove() + e.deltaX - lastDeltaX;
+	        viewPort.setXMove(xMove);
+	        lastDeltaX = e.deltaX;
+	        var yMove = viewPort.getYMove() + e.deltaY - lastDeltaY;
+	        viewPort.setYMove(yMove);
+	        lastDeltaY = e.deltaY;
+	        panSteps.push({
+	            time: Date.now(),
+	            xMove: xMove,
+	            yMove: yMove
+	        });
+	    });
+	    function calculateLastMove() {
+	        var endStep;
+	        if (panSteps.length > 0) {
+	            endStep = panSteps[panSteps.length - 1];
+	        }
+	        else {
+	            return null;
+	        }
+	        for (var i = panSteps.length - 1; i >= 0; i--) {
+	            var step = panSteps[i];
+	            if (endStep.time - step.time > PAN_LAST_STEP_MAX_DURATION) {
+	                var lastMove = {
+	                    time: endStep.time - step.time,
+	                    x1: step.xMove,
+	                    y1: step.yMove,
+	                    x2: endStep.xMove,
+	                    y2: endStep.yMove,
+	                    xDiff: 0,
+	                    yDiff: 0,
+	                    s: 0
+	                };
+	                lastMove.xDiff = 1000 * (-(endStep.xMove - step.xMove)) / (2 * lastMove.time);
+	                lastMove.yDiff = 1000 * (-(endStep.yMove - step.yMove)) / (2 * lastMove.time);
+	                lastMove.s = Math.sqrt(Math.pow(lastMove.xDiff, 2) + Math.pow(lastMove.yDiff, 2));
+	                return lastMove;
+	            }
+	        }
+	    }
 	    hammer.on('panend', function (e) {
+	        var lastMove = calculateLastMove();
+	        if (lastMove && lastMove.s > 0) {
+	            var sinAlfa = lastMove.yDiff / lastMove.s;
+	            var cosAlfa = lastMove.xDiff / lastMove.s;
+	            var newXDiff = lastMove.s * cosAlfa;
+	            var newYDiff = lastMove.s * sinAlfa;
+	            viewPort.animate('xMove', viewPort.getXMove() - newXDiff);
+	            viewPort.animate('yMove', viewPort.getYMove() - newYDiff);
+	        }
+	        panSteps = [];
 	        lastDeltaX = 0;
 	        lastDeltaY = 0;
 	    });
@@ -1231,16 +1360,24 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var ValueAnimator = __webpack_require__(24);
-	var AnimatedValuesLock = __webpack_require__(25);
+	// import AnimatedValuesLock = require('./AnimatedValuesLock');
 	var ValueAnimatorController = (function () {
 	    function ValueAnimatorController() {
 	        this.animators = new Array();
-	        this.lock = new AnimatedValuesLock();
 	    }
+	    // private lock = new AnimatedValuesLock();
 	    ValueAnimatorController.prototype.add = function (args) {
-	        if (this.lock.isUnlock(args.id)) {
-	            this.lock.lock(args.id);
-	            this.animators.push(new ValueAnimator(args));
+	        // if (this.lock.isUnlock(args.id)) {
+	        // this.lock.lock(args.id);
+	        this.animators.push(new ValueAnimator(args));
+	        // }
+	    };
+	    ValueAnimatorController.prototype.remove = function (id) {
+	        for (var _i = 0, _a = this.animators; _i < _a.length; _i++) {
+	            var animator = _a[_i];
+	            if (animator.getId() === id) {
+	                _.pull(this.animators, animator);
+	            }
 	        }
 	    };
 	    ValueAnimatorController.prototype.onAnimationFrame = function (timestamp) {
@@ -1253,7 +1390,6 @@
 	    ValueAnimatorController.prototype.removeAnimatorIfDone = function (animator) {
 	        if (animator.isDone()) {
 	            _.pull(this.animators, animator);
-	            this.lock.unlock(animator.getId());
 	        }
 	    };
 	    return ValueAnimatorController;
@@ -1297,28 +1433,6 @@
 /* 25 */
 /***/ function(module, exports) {
 
-	var AnimatedValuesLock = (function () {
-	    function AnimatedValuesLock() {
-	        this.dict = {};
-	    }
-	    AnimatedValuesLock.prototype.lock = function (id) {
-	        this.dict[id] = true;
-	    };
-	    AnimatedValuesLock.prototype.unlock = function (id) {
-	        delete this.dict[id];
-	    };
-	    AnimatedValuesLock.prototype.isUnlock = function (id) {
-	        return !this.dict[id];
-	    };
-	    return AnimatedValuesLock;
-	})();
-	module.exports = AnimatedValuesLock;
-
-
-/***/ },
-/* 26 */
-/***/ function(module, exports) {
-
 	var CanvasPool = (function () {
 	    function CanvasPool(maxCanvasWidth, maxCanvasHeight) {
 	        this.maxCanvasWidth = maxCanvasWidth;
@@ -1360,7 +1474,7 @@
 
 
 /***/ },
-/* 27 */
+/* 26 */
 /***/ function(module, exports) {
 
 	var QueryString = (function () {
@@ -1387,7 +1501,7 @@
 
 
 /***/ },
-/* 28 */
+/* 27 */
 /***/ function(module, exports) {
 
 	var StartPosition = (function () {

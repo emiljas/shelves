@@ -11,6 +11,8 @@ import SegmentWidthModel = require('../models/SegmentWidthModel');
 import StartPositionResult = require('../startPosition/StartPositionResult');
 import SegmentLoadedEvent = require('./SegmentLoadedEvent');
 
+const DOUBLE_COMPARISON_DIFF = 1;
+
 class SegmentController {
     private segments = new Array<Segment>();
     private prepender: SegmentPrepender;
@@ -121,6 +123,44 @@ class SegmentController {
          x: this.viewPort.getCanvasWidth() / 2,
          y: 0
       });
+    }
+
+    public fitLeftSegmentOnViewPort(): void {
+      let segments = _.sortBy(this.segments, (s) => { return -s.getX(); });
+      let canvasWidth = this.viewPort.getCanvasWidth();
+      let middleX = (-this.viewPort.getXMove() + canvasWidth / 2)  / this.viewPort.getZoomScale();
+      for (let segment of segments) {
+        let segmentMiddleX = segment.getX() + segment.getWidth() / 2;
+        if (middleX - DOUBLE_COMPARISON_DIFF > segmentMiddleX) {
+          segment.fitOnViewPort(-1);
+          return;
+        }
+      }
+    }
+
+    public fitRightSegmentOnViewPort(): void {
+      let segments = _.sortBy(this.segments, (s) => { return s.getX(); });
+      let canvasWidth = this.viewPort.getCanvasWidth();
+      let middleX = (-this.viewPort.getXMove() + canvasWidth / 2)  / this.viewPort.getZoomScale();
+      for (let segment of segments) {
+        let segmentMiddleX = segment.getX() + segment.getWidth() / 2;
+        if (middleX + DOUBLE_COMPARISON_DIFF < segmentMiddleX) {
+          segment.fitOnViewPort(-1);
+          return;
+        }
+      }
+    }
+
+    public isClickable(x: number, y: number) {
+      x = (x - this.viewPort.getXMove()) / this.viewPort.getScale();
+      y = (y - this.viewPort.getYMove()) / this.viewPort.getScale();
+      for (let segment of this.segments) {
+        if (x >= segment.getX() && x <= segment.getX() + segment.getWidth()) {
+          return segment.isClickable(x, y);
+        }
+      }
+
+      return false;
     }
 
     public unload(): void {

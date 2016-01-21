@@ -6,7 +6,10 @@
 
 .shelves {
   position: absolute;
-  left: 0; }
+  left: 0;
+  cursor: move; }
+  .shelves.pointer {
+    cursor: pointer; }
   .shelves .control {
     position: absolute;
     top: 0;
