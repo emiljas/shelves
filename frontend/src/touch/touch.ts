@@ -34,8 +34,9 @@ function touch(viewPort: ViewPort) {
     let panSteps = new Array<PanStep>();
 
     hammer.on('panstart', function() {
+      moveEnd();
       viewPort.stopAnimation('xMove');
-      viewPort.stopAnimation('xMove');
+      viewPort.stopAnimation('yMove');
     });
 
     hammer.on('pan', function(e: HammerInput) {
@@ -64,8 +65,7 @@ function touch(viewPort: ViewPort) {
 
       for (let i = panSteps.length - 1; i >= 0; i--) {
         let step = panSteps[i];
-        if (/*(endStep.xMove !== step.xMove || endStep.yMove !== step.yMove)
-          ||*/ endStep.time - step.time > PAN_LAST_STEP_MAX_DURATION) {
+        if (endStep.time - step.time > PAN_LAST_STEP_MAX_DURATION) {
             let lastMove: PanLastMove = {
               time: endStep.time - step.time,
               x1: step.xMove,
@@ -86,7 +86,6 @@ function touch(viewPort: ViewPort) {
     }
 
     hammer.on('panend', function(e: HammerInput) {
-
       let lastMove = calculateLastMove();
 
       if (lastMove && lastMove.s > 0) {
@@ -100,11 +99,15 @@ function touch(viewPort: ViewPort) {
         viewPort.animate('yMove', viewPort.getYMove() - newYDiff);
       }
 
+      moveEnd();
+    });
+
+    function moveEnd() {
       panSteps = [];
 
       lastDeltaX = 0;
       lastDeltaY = 0;
-    });
+    }
 
     hammer.on('tap', function(e) {
         viewPort.onClick(e.center);

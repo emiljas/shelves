@@ -82,7 +82,7 @@ class Segment implements ISegmentPlace {
     }
 
     public draw(timestamp: number) {
-        if (this.isLoaded) {
+        if (this.isLoaded && this.isInCanvasVisibleArea()) {
             this.ctx.drawImage(this.canvas, 0, 0, this.width, this.height, this.x, 0, this.width, this.height);
 
             if (this.flashEffect) {
@@ -96,20 +96,30 @@ class Segment implements ISegmentPlace {
         }
     }
 
+    public isInCanvasVisibleArea(): boolean {
+        let xMove = this.viewPort.getXMove();
+        let scale = this.viewPort.getScale();
+        let canvasWidth = this.viewPort.getCanvasWidth();
+
+        let isBeforeVisibleArea = xMove / scale + this.x + this.width < 0;
+        let isAfterVisibleArea = xMove / scale - canvasWidth / scale + this.x > 0;
+        return !isBeforeVisibleArea && !isAfterVisibleArea;
+    }
+
     public isClicked(e: TapInput): boolean {
         return e.x > this.x && e.x < this.x + this.width;
     }
 
     public isClickable(x: number, y: number) {
-      for (let product of this.productPositions) {
-        if (x >= this.x + product.dx
-         && x <= this.x + product.dx + product.w
-         && y >= product.dy
-         && y <= product.dy + product.h) {
-              return true;
+        for (let product of this.productPositions) {
+            if (x >= this.x + product.dx
+                && x <= this.x + product.dx + product.w
+                && y >= product.dy
+                && y <= product.dy + product.h) {
+                return true;
+            }
         }
-      }
-      return false;
+        return false;
     }
 
     public fitOnViewPort(y: number): void {
@@ -123,11 +133,14 @@ class Segment implements ISegmentPlace {
 
         this.viewPort.animate('xMove', xMove);
         if (y !== -1) {
-          this.viewPort.animate('yMove', yMove);
+            this.viewPort.animate('yMove', yMove);
         }
-        this.viewPort.animate('scale', zoomScale);
 
-        this.viewPort.notifyAboutZoomChange(true);
+        let scale = this.viewPort.getScale();
+        if (scale !== zoomScale) {
+            this.viewPort.animate('scale', zoomScale);
+            this.viewPort.notifyAboutZoomChange(true);
+        }
     }
 
     public flash(): void {
@@ -155,6 +168,9 @@ class Segment implements ISegmentPlace {
         let canvas = this.viewPort.getCanvasPool().get();
         let ctx = canvas.getContext('2d');
 
+        ctx.fillStyle = '#D2D1CC';
+        ctx.fillRect(0, 0, this.width, this.height);
+
         for (let image of this.knownImages) {
             let img = this.knownImgs.getByType(image.type);
             if (image.w && image.h) {
@@ -172,6 +188,13 @@ class Segment implements ISegmentPlace {
                 ctx.drawImage(img, image.dx, image.dy);
             }
         }
+
+        // for (let s of this.shelves) {
+        //   ctx.beginPath();
+        //   ctx.fillStyle = 'yellow';
+        //   ctx.fillRect(s.dx, s.dy, s.w, s.h);
+        //   ctx.closePath();
+        // }
 
         for (let p of this.productPositions) {
             ctx.drawImage(this.spriteImg, p.sx, p.sy, p.w, p.h, p.dx, p.dy, p.w, p.h);

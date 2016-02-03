@@ -28,7 +28,6 @@ class CanvasPool {
 
     public release(canvas: HTMLCanvasElement): void {
       let item = _.find(this.items, (i) => { return i.canvas === canvas; });
-      item.canvas.getContext('2d').clearRect(0, 0, this.maxCanvasWidth, this.maxCanvasHeight);
       item.inUse = false;
     }
 

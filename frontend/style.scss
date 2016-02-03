@@ -2,6 +2,10 @@
   position: static;
 }
 
+body {
+  overflow: hidden;
+}
+
 .shelvesPlaceHolder {
   //element to hold height of .shelves
   height: 1080px; // initial height, should be programatically set to .shelves height

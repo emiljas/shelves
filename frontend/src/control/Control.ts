@@ -40,15 +40,32 @@ class Control {
         this.controlDiv = <HTMLDivElement>this.container.querySelector('.control');
         this.placeControl();
         this.bindControl();
+        this.hideTopAndBottomBtns();
     }
 
     public onZoomChange(): void {
         this.refreshZoomIcon();
         if (this.viewPort.checkIfMagnified()) {
-          this.showTopAndBottomBtns();
+            this.showTopAndBottomBtnsIfScrollUnblock();
         } else {
-          this.hideTopAndBottomBtns();
+            this.hideTopAndBottomBtns();
         }
+    }
+
+    public onTopScrollBlock(): void {
+        this.hideTopBtn();
+    }
+
+    public onTopScrollUnblock(): void {
+        this.showTopBtn();
+    }
+
+    public onBottomScrollBlock(): void {
+        this.hideBottomBtn();
+    }
+
+    public onBottomScrollUnblock(): void {
+        this.showBottomBtn();
     }
 
     private placeControl(): void {
@@ -139,14 +156,34 @@ class Control {
         }
     }
 
-    private showTopAndBottomBtns(): void {
-      this.top.classList.remove('disactivated');
-      this.bottom.classList.remove('disactivated');
+    private showTopAndBottomBtnsIfScrollUnblock(): void {
+        if (!this.viewPort.checkIfTopScrollBlock()) {
+            this.showTopBtn();
+        }
+        if (!this.viewPort.checkIfBottomScrollBlock()) {
+            this.showBottomBtn();
+        }
+    }
+
+    private showTopBtn(): void {
+        this.top.classList.remove('disactivated');
+    }
+
+    private showBottomBtn(): void {
+        this.bottom.classList.remove('disactivated');
     }
 
     private hideTopAndBottomBtns(): void {
-      this.top.classList.add('disactivated');
-      this.bottom.classList.add('disactivated');
+        this.hideTopBtn();
+        this.hideBottomBtn();
+    }
+
+    private hideTopBtn(): void {
+        this.top.classList.add('disactivated');
+    }
+
+    private hideBottomBtn(): void {
+        this.bottom.classList.add('disactivated');
     }
 }
 

@@ -16,6 +16,7 @@ import StartPosition = require('./startPosition/StartPosition');
 import StartPositionResult = require('./startPosition/StartPositionResult');
 
 const VERTICAL_SLIDE_RATIO = 0.9;
+const SCROLL_LINE_HEIGHT = 20;
 
 class ViewPort implements XMoveHolder {
     private isDeleted = false;
@@ -33,6 +34,7 @@ class ViewPort implements XMoveHolder {
     private maxSegmentWidth: number;
     private canvasWidth: number;
     private canvasHeight: number;
+    private scrollPageHeight: number;
     private y: number;
     private xMove: number = 0;
     private yMove: number = 0;
@@ -40,6 +42,8 @@ class ViewPort implements XMoveHolder {
     private zoomScale: number;
     private scale: number;
     private isMagnified = false;
+    private isTopScrollBlock = true;
+    private isBottomScrollBlock = true;
     private startPosition: StartPositionResult;
 
     private drawnXMove: number;
@@ -71,6 +75,8 @@ class ViewPort implements XMoveHolder {
     public getQueryString() { return this.queryString; }
     public getEvents() { return this.events; }
     public checkIfMagnified() { return this.isMagnified; }
+    public checkIfTopScrollBlock() { return this.isTopScrollBlock; }
+    public checkIfBottomScrollBlock() { return this.isBottomScrollBlock; }
 
     constructor(containerId: string) {
         // (<any>window)['vp'] = this; //DEBUG ONLY
@@ -111,6 +117,8 @@ class ViewPort implements XMoveHolder {
         this.initControl();
         this.hammerManager = touch(this);
         this.events.addEventListener(this.canvas, 'mousemove', (e: MouseEvent) => { this.onMouseMove(e); });
+        this.scrollPageHeight = document.documentElement.clientHeight;
+        this.events.addEventListener(this.canvas, 'wheel', (e: WheelEvent) => { e.preventDefault(); this.onScroll(e); });
     }
 
     public start(): void {
@@ -199,8 +207,7 @@ class ViewPort implements XMoveHolder {
         this.canvas.width = document.documentElement.clientWidth;
         let documentHeight = document.documentElement.clientHeight;
         let containerY = this.container.getBoundingClientRect().top;
-        let bottomMargin = 0.05 * documentHeight;
-        this.canvas.height = documentHeight - containerY - bottomMargin;
+        this.canvas.height = documentHeight - containerY;
     }
 
     private fitPlaceHolder(containerId: string): void {
@@ -236,6 +243,38 @@ class ViewPort implements XMoveHolder {
         if (this.mustBeRedraw()) {
             this.blockVerticalMoveOutsideCanvas();
             this.draw();
+
+
+
+
+
+
+            let sliderMargin = 10;
+            let sliderPadding = 2.5;
+
+            let sliderX = this.canvasWidth - 2 * sliderMargin;
+            let sliderY = sliderMargin;
+            let sliderWidth = 8;
+            let sliderHeight = this.canvasHeight - 2 * sliderMargin;
+
+            this.ctx.fillStyle = 'white';
+            this.ctx.fillRect(sliderX, sliderY, sliderWidth, sliderHeight);
+
+            let sliderZipX = sliderX + sliderPadding;
+            let sliderZipY = sliderY + sliderPadding;
+            let sliderZipWidth = sliderWidth - 2 * sliderPadding;
+            let sliderZipHeight = sliderHeight - 2 * sliderPadding;
+
+            this.ctx.fillStyle = 'black';
+            this.ctx.fillRect(sliderZipX, sliderZipY, sliderZipWidth, sliderZipHeight);
+
+            // console.log((((-this.yMove + this.canvasHeight) / this.scale) / this.segmentHeight) * 100);
+
+
+
+
+
+
         } else {
             this.segmentController.preloadSegments();
         }
@@ -253,6 +292,16 @@ class ViewPort implements XMoveHolder {
         this.container.classList.add('pointer');
       } else {
         this.container.classList.remove('pointer');
+      }
+    }
+
+    private onScroll(e: WheelEvent): void {
+      if (e.deltaMode === e.DOM_DELTA_PIXEL) {
+        this.yMove -= e.deltaY;
+      } else if (e.deltaMode === e.DOM_DELTA_LINE) {
+        this.yMove -= e.deltaY * SCROLL_LINE_HEIGHT;
+      } else if (e.deltaY === e.DOM_DELTA_PAGE) {
+        this.yMove -= e.deltaY * this.scrollPageHeight;
       }
     }
 
@@ -280,8 +329,39 @@ class ViewPort implements XMoveHolder {
     }
 
     private blockVerticalMoveOutsideCanvas() {
-        this.yMove = Math.min(0, this.yMove);
-        this.yMove = Math.max(this.yMove, this.canvasHeight - this.canvasHeight * (this.scale / this.initialScale));
+        let minYMove = 0;
+        this.yMove = Math.min(minYMove, this.yMove);
+
+        let maxYMove = this.canvasHeight - this.canvasHeight * (this.scale / this.initialScale);
+        this.yMove = Math.max(this.yMove, maxYMove);
+
+        if (this.areMovesEqual(this.yMove, minYMove)) {
+          if (!this.isTopScrollBlock) {
+            this.isTopScrollBlock = true;
+            this.control.onTopScrollBlock();
+          }
+        } else {
+          if (this.isTopScrollBlock) {
+            this.isTopScrollBlock = false;
+            this.control.onTopScrollUnblock();
+          }
+        }
+
+        if (this.areMovesEqual(this.yMove, maxYMove)) {
+          if (!this.isBottomScrollBlock) {
+            this.isBottomScrollBlock = true;
+            this.control.onBottomScrollBlock();
+          }
+        } else {
+          if (this.isBottomScrollBlock) {
+            this.isBottomScrollBlock = false;
+            this.control.onBottomScrollUnblock();
+          }
+        }
+    }
+
+    private areMovesEqual(move1: number, move2: number) {
+      return Math.abs(move1 - move2) < 1;
     }
 }
 

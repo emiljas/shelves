@@ -1,6 +1,9 @@
 .DnnModule {
   position: static; }
 
+body {
+  overflow: hidden; }
+
 .shelvesPlaceHolder {
   height: 1080px; }
 
