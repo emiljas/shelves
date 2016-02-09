@@ -152,25 +152,6 @@
 	        this.scrollPageHeight = document.documentElement.clientHeight;
 	        this.events.addEventListener(this.canvas, 'wheel', function (e) { e.preventDefault(); _this.onScroll(e); });
 	    }
-	    ViewPort.prototype.getCanvas = function () { return this.canvas; };
-	    ViewPort.prototype.getCanvasContext = function () { return this.ctx; };
-	    ViewPort.prototype.getCanvasWidth = function () { return this.canvasWidth; };
-	    ViewPort.prototype.getCanvasHeight = function () { return this.canvasHeight; };
-	    ViewPort.prototype.getXMove = function () { return this.xMove; };
-	    ViewPort.prototype.setXMove = function (value) { this.xMove = value; };
-	    ViewPort.prototype.getYMove = function () { return this.yMove; };
-	    ViewPort.prototype.setYMove = function (value) { this.yMove = value; };
-	    ViewPort.prototype.getInitialScale = function () { return this.initialScale; };
-	    ViewPort.prototype.getZoomScale = function () { return this.zoomScale; };
-	    ViewPort.prototype.getScale = function () { return this.scale; };
-	    ViewPort.prototype.getY = function () { return this.y; };
-	    ViewPort.prototype.getKnownImages = function () { return this.knownImagesPromise; };
-	    ViewPort.prototype.getCanvasPool = function () { return this.canvasPool; };
-	    ViewPort.prototype.getQueryString = function () { return this.queryString; };
-	    ViewPort.prototype.getEvents = function () { return this.events; };
-	    ViewPort.prototype.checkIfMagnified = function () { return this.isMagnified; };
-	    ViewPort.prototype.checkIfTopScrollBlock = function () { return this.isTopScrollBlock; };
-	    ViewPort.prototype.checkIfBottomScrollBlock = function () { return this.isBottomScrollBlock; };
 	    ViewPort.prototype.start = function () {
 	        window.requestAnimationFrame(this.frameRequestCallback);
 	    };
@@ -322,7 +303,8 @@
 	        this.drawnXMove = this.xMove;
 	        this.drawnYMove = this.yMove;
 	        this.drawnScale = this.scale;
-	        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+	        this.ctx.fillStyle = '#D2D1CC';
+	        this.ctx.fillRect(0, 0, this.canvasWidth, this.canvasHeight);
 	        this.ctx.save();
 	        this.ctx.translate(this.xMove, this.yMove);
 	        this.ctx.scale(this.scale, this.scale);
@@ -422,7 +404,7 @@
 	    function Control(viewPort, container) {
 	        this.viewPort = viewPort;
 	        this.container = container;
-	        this.events = viewPort.getEvents();
+	        this.events = viewPort.events;
 	    }
 	    Control.prototype.init = function () {
 	        this.controlDiv = this.container.querySelector('.control');
@@ -432,7 +414,7 @@
 	    };
 	    Control.prototype.onZoomChange = function () {
 	        this.refreshZoomIcon();
-	        if (this.viewPort.checkIfMagnified()) {
+	        if (this.viewPort.isMagnified) {
 	            this.showTopAndBottomBtnsIfScrollUnblock();
 	        }
 	        else {
@@ -492,7 +474,7 @@
 	            _this.viewPort.control_bottom();
 	        });
 	        this.events.addEventListener(this.middle, 'click', function (e) {
-	            if (_this.viewPort.checkIfMagnified()) {
+	            if (_this.viewPort.isMagnified) {
 	                _this.viewPort.control_unzoom();
 	                _this.middle.src = HOVER_PLUS_IMG_URL;
 	            }
@@ -513,7 +495,7 @@
 	    Control.prototype.changeZoomIconOnHover = function (img) {
 	        var _this = this;
 	        this.events.addEventListener(img, 'mouseover', function () {
-	            if (_this.viewPort.checkIfMagnified()) {
+	            if (_this.viewPort.isMagnified) {
 	                _this.middle.src = HOVER_MINUS_IMG_URL;
 	            }
 	            else {
@@ -525,7 +507,7 @@
 	        });
 	    };
 	    Control.prototype.refreshZoomIcon = function () {
-	        if (this.viewPort.checkIfMagnified()) {
+	        if (this.viewPort.isMagnified) {
 	            this.middle.src = MINUS_IMG_URL;
 	        }
 	        else {
@@ -533,10 +515,10 @@
 	        }
 	    };
 	    Control.prototype.showTopAndBottomBtnsIfScrollUnblock = function () {
-	        if (!this.viewPort.checkIfTopScrollBlock()) {
+	        if (!this.viewPort.isTopScrollBlock) {
 	            this.showTopBtn();
 	        }
-	        if (!this.viewPort.checkIfBottomScrollBlock()) {
+	        if (!this.viewPort.isBottomScrollBlock) {
 	            this.showBottomBtn();
 	        }
 	    };
@@ -685,8 +667,8 @@
 	        this.notDrawnSegmentCount = 0;
 	        this.effectsRenderingCount = 0;
 	        var appenderArgs = {
-	            INITIAL_SCALE: viewPort.getInitialScale(),
-	            CANVAS_WIDTH: viewPort.getCanvasWidth(),
+	            INITIAL_SCALE: viewPort.initialScale,
+	            CANVAS_WIDTH: viewPort.canvasWidth,
 	            SEGMENT_WIDTHS: segmentWidths,
 	            START_SEGMENT_INDEX: startPosition.segmentIndex,
 	            START_X: startPosition.x,
@@ -709,9 +691,9 @@
 	        this.flashLoader = new FlashLoader(startPosition.segments, makeFlash);
 	    }
 	    SegmentController.prototype.onClick = function (e) {
-	        var scale = this.viewPort.getScale();
-	        e.x = (e.x - this.viewPort.getXMove()) / scale;
-	        e.y = (e.y - this.viewPort.getYMove() - this.viewPort.getY()) / scale;
+	        var scale = this.viewPort.scale;
+	        e.x = (e.x - this.viewPort.xMove) / scale;
+	        e.y = (e.y - this.viewPort.yMove - this.viewPort.y) / scale;
 	        var clickedSegment;
 	        for (var _i = 0, _a = this.segments; _i < _a.length; _i++) {
 	            var segment = _a[_i];
@@ -748,9 +730,9 @@
 	        }
 	    };
 	    SegmentController.prototype.preloadSegments = function () {
-	        var xMove = this.viewPort.getXMove();
-	        var scale = this.viewPort.getScale();
-	        var initialScale = this.viewPort.getInitialScale();
+	        var xMove = this.viewPort.xMove;
+	        var scale = this.viewPort.scale;
+	        var initialScale = this.viewPort.initialScale;
 	        xMove *= initialScale / scale;
 	        this.appender.work(xMove);
 	        this.prepender.work(xMove);
@@ -766,14 +748,14 @@
 	    };
 	    SegmentController.prototype.fitMiddleSegmentOnViewPort = function () {
 	        this.onClick({
-	            x: this.viewPort.getCanvasWidth() / 2,
+	            x: this.viewPort.canvasWidth / 2,
 	            y: 0
 	        });
 	    };
 	    SegmentController.prototype.fitLeftSegmentOnViewPort = function () {
 	        var segments = _.sortBy(this.segments, function (s) { return -s.getX(); });
-	        var canvasWidth = this.viewPort.getCanvasWidth();
-	        var middleX = (-this.viewPort.getXMove() + canvasWidth / 2) / this.viewPort.getZoomScale();
+	        var canvasWidth = this.viewPort.canvasWidth;
+	        var middleX = (-this.viewPort.xMove + canvasWidth / 2) / this.viewPort.zoomScale;
 	        for (var _i = 0; _i < segments.length; _i++) {
 	            var segment = segments[_i];
 	            var segmentMiddleX = segment.getX() + segment.getWidth() / 2;
@@ -785,8 +767,8 @@
 	    };
 	    SegmentController.prototype.fitRightSegmentOnViewPort = function () {
 	        var segments = _.sortBy(this.segments, function (s) { return s.getX(); });
-	        var canvasWidth = this.viewPort.getCanvasWidth();
-	        var middleX = (-this.viewPort.getXMove() + canvasWidth / 2) / this.viewPort.getZoomScale();
+	        var canvasWidth = this.viewPort.canvasWidth;
+	        var middleX = (-this.viewPort.xMove + canvasWidth / 2) / this.viewPort.zoomScale;
 	        for (var _i = 0; _i < segments.length; _i++) {
 	            var segment = segments[_i];
 	            var segmentMiddleX = segment.getX() + segment.getWidth() / 2;
@@ -797,8 +779,8 @@
 	        }
 	    };
 	    SegmentController.prototype.isClickable = function (x, y) {
-	        x = (x - this.viewPort.getXMove()) / this.viewPort.getScale();
-	        y = (y - this.viewPort.getYMove()) / this.viewPort.getScale();
+	        x = (x - this.viewPort.xMove) / this.viewPort.scale;
+	        y = (y - this.viewPort.yMove) / this.viewPort.scale;
 	        for (var _i = 0, _a = this.segments; _i < _a.length; _i++) {
 	            var segment = _a[_i];
 	            if (x >= segment.getX() && x <= segment.getX() + segment.getWidth()) {
@@ -839,7 +821,7 @@
 	        this.x = x;
 	        this.isLoaded = false;
 	        this.requestInProgressPromise = null;
-	        this.ctx = viewPort.getCanvasContext();
+	        this.ctx = viewPort.ctx;
 	    }
 	    Segment.prototype.getIndex = function () { return this.index; };
 	    Segment.prototype.getId = function () { return this.id; };
@@ -847,7 +829,7 @@
 	    Segment.prototype.getWidth = function () { return this.width; };
 	    Segment.prototype.load = function () {
 	        var _this = this;
-	        return this.viewPort.getKnownImages().then(function (images) {
+	        return this.viewPort.knownImagesPromise.then(function (images) {
 	            _this.knownImgs = images;
 	            var getByIdPromise = _this.requestInProgressPromise = segmentRepository.getById(_this.id);
 	            return getByIdPromise;
@@ -892,9 +874,9 @@
 	        }
 	    };
 	    Segment.prototype.isInCanvasVisibleArea = function () {
-	        var xMove = this.viewPort.getXMove();
-	        var scale = this.viewPort.getScale();
-	        var canvasWidth = this.viewPort.getCanvasWidth();
+	        var xMove = this.viewPort.xMove;
+	        var scale = this.viewPort.scale;
+	        var canvasWidth = this.viewPort.canvasWidth;
 	        var isBeforeVisibleArea = xMove / scale + this.x + this.width < 0;
 	        var isAfterVisibleArea = xMove / scale - canvasWidth / scale + this.x > 0;
 	        return !isBeforeVisibleArea && !isAfterVisibleArea;
@@ -915,16 +897,16 @@
 	        return false;
 	    };
 	    Segment.prototype.fitOnViewPort = function (y) {
-	        var zoomScale = this.viewPort.getZoomScale();
-	        var canvasWidth = this.viewPort.getCanvasWidth();
+	        var zoomScale = this.viewPort.zoomScale;
+	        var canvasWidth = this.viewPort.canvasWidth;
 	        var xMove = (canvasWidth - this.width * zoomScale) / 2 - this.x * zoomScale;
-	        var canvasHeight = this.viewPort.getCanvasHeight();
+	        var canvasHeight = this.viewPort.canvasHeight;
 	        var yMove = canvasHeight / 2 - y * zoomScale;
 	        this.viewPort.animate('xMove', xMove);
 	        if (y !== -1) {
 	            this.viewPort.animate('yMove', yMove);
 	        }
-	        var scale = this.viewPort.getScale();
+	        var scale = this.viewPort.scale;
 	        if (scale !== zoomScale) {
 	            this.viewPort.animate('scale', zoomScale);
 	            this.viewPort.notifyAboutZoomChange(true);
@@ -936,7 +918,7 @@
 	    };
 	    Segment.prototype.unload = function () {
 	        if (this.isLoaded) {
-	            this.viewPort.getCanvasPool().release(this.canvas);
+	            this.viewPort.canvasPool.release(this.canvas);
 	        }
 	        else if (this.requestInProgressPromise !== null) {
 	            this.requestInProgressPromise.cancel();
@@ -951,7 +933,7 @@
 	        }
 	    };
 	    Segment.prototype.createCanvas = function () {
-	        var canvas = this.viewPort.getCanvasPool().get();
+	        var canvas = this.viewPort.canvasPool.get();
 	        var ctx = canvas.getContext('2d');
 	        ctx.fillStyle = '#D2D1CC';
 	        ctx.fillRect(0, 0, this.width, this.height);
@@ -1383,7 +1365,7 @@
 	var PAN_LAST_STEP_MAX_DURATION = 100;
 	function touch(viewPort) {
 	    'use strict';
-	    var hammer = new Hammer(viewPort.getCanvas(), {
+	    var hammer = new Hammer(viewPort.canvas, {
 	        touchAction: 'none'
 	    });
 	    hammer.get('pan').set({ direction: Hammer.DIRECTION_ALL });
@@ -1396,11 +1378,11 @@
 	        viewPort.stopAnimation('yMove');
 	    });
 	    hammer.on('pan', function (e) {
-	        var xMove = viewPort.getXMove() + e.deltaX - lastDeltaX;
-	        viewPort.setXMove(xMove);
+	        var xMove = viewPort.xMove + e.deltaX - lastDeltaX;
+	        viewPort.xMove = xMove;
 	        lastDeltaX = e.deltaX;
-	        var yMove = viewPort.getYMove() + e.deltaY - lastDeltaY;
-	        viewPort.setYMove(yMove);
+	        var yMove = viewPort.yMove + e.deltaY - lastDeltaY;
+	        viewPort.yMove = yMove;
 	        lastDeltaY = e.deltaY;
 	        panSteps.push({
 	            time: Date.now(),
@@ -1443,8 +1425,8 @@
 	            var cosAlfa = lastMove.xDiff / lastMove.s;
 	            var newXDiff = lastMove.s * cosAlfa;
 	            var newYDiff = lastMove.s * sinAlfa;
-	            viewPort.animate('xMove', viewPort.getXMove() - newXDiff);
-	            viewPort.animate('yMove', viewPort.getYMove() - newYDiff);
+	            viewPort.animate('xMove', viewPort.xMove - newXDiff);
+	            viewPort.animate('yMove', viewPort.yMove - newYDiff);
 	        }
 	        moveEnd();
 	    });

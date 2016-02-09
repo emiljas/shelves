@@ -28,8 +28,8 @@ class SegmentController {
         startPosition: StartPositionResult
     ) {
         let appenderArgs: SegmentAppenderArgs = {
-            INITIAL_SCALE: viewPort.getInitialScale(),
-            CANVAS_WIDTH: viewPort.getCanvasWidth(),
+            INITIAL_SCALE: viewPort.initialScale,
+            CANVAS_WIDTH: viewPort.canvasWidth,
             SEGMENT_WIDTHS: segmentWidths,
             START_SEGMENT_INDEX: startPosition.segmentIndex,
             START_X: startPosition.x,
@@ -54,10 +54,10 @@ class SegmentController {
     }
 
     public onClick(e: TapInput): void {
-        let scale = this.viewPort.getScale();
+        let scale = this.viewPort.scale;
 
-        e.x = (e.x - this.viewPort.getXMove()) / scale;
-        e.y = (e.y - this.viewPort.getYMove() - this.viewPort.getY()) / scale;
+        e.x = (e.x - this.viewPort.xMove) / scale;
+        e.y = (e.y - this.viewPort.yMove - this.viewPort.y) / scale;
 
         let clickedSegment: Segment;
         for (let segment of this.segments) {
@@ -99,9 +99,9 @@ class SegmentController {
     }
 
     public preloadSegments() {
-        let xMove = this.viewPort.getXMove();
-        let scale = this.viewPort.getScale();
-        let initialScale = this.viewPort.getInitialScale();
+        let xMove = this.viewPort.xMove;
+        let scale = this.viewPort.scale;
+        let initialScale = this.viewPort.initialScale;
         xMove *= initialScale / scale;
         this.appender.work(xMove);
         this.prepender.work(xMove);
@@ -120,15 +120,15 @@ class SegmentController {
 
     public fitMiddleSegmentOnViewPort(): void {
       this.onClick({
-         x: this.viewPort.getCanvasWidth() / 2,
+         x: this.viewPort.canvasWidth / 2,
          y: 0
       });
     }
 
     public fitLeftSegmentOnViewPort(): void {
       let segments = _.sortBy(this.segments, (s) => { return -s.getX(); });
-      let canvasWidth = this.viewPort.getCanvasWidth();
-      let middleX = (-this.viewPort.getXMove() + canvasWidth / 2)  / this.viewPort.getZoomScale();
+      let canvasWidth = this.viewPort.canvasWidth;
+      let middleX = (-this.viewPort.xMove + canvasWidth / 2)  / this.viewPort.zoomScale;
       for (let segment of segments) {
         let segmentMiddleX = segment.getX() + segment.getWidth() / 2;
         if (middleX - DOUBLE_COMPARISON_DIFF > segmentMiddleX) {
@@ -140,8 +140,8 @@ class SegmentController {
 
     public fitRightSegmentOnViewPort(): void {
       let segments = _.sortBy(this.segments, (s) => { return s.getX(); });
-      let canvasWidth = this.viewPort.getCanvasWidth();
-      let middleX = (-this.viewPort.getXMove() + canvasWidth / 2)  / this.viewPort.getZoomScale();
+      let canvasWidth = this.viewPort.canvasWidth;
+      let middleX = (-this.viewPort.xMove + canvasWidth / 2)  / this.viewPort.zoomScale;
       for (let segment of segments) {
         let segmentMiddleX = segment.getX() + segment.getWidth() / 2;
         if (middleX + DOUBLE_COMPARISON_DIFF < segmentMiddleX) {
@@ -152,8 +152,8 @@ class SegmentController {
     }
 
     public isClickable(x: number, y: number) {
-      x = (x - this.viewPort.getXMove()) / this.viewPort.getScale();
-      y = (y - this.viewPort.getYMove()) / this.viewPort.getScale();
+      x = (x - this.viewPort.xMove) / this.viewPort.scale;
+      y = (y - this.viewPort.yMove) / this.viewPort.scale;
       for (let segment of this.segments) {
         if (x >= segment.getX() && x <= segment.getX() + segment.getWidth()) {
           return segment.isClickable(x, y);

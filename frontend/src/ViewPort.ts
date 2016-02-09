@@ -20,30 +20,30 @@ const SCROLL_LINE_HEIGHT = 20;
 
 class ViewPort implements XMoveHolder {
     private isDeleted = false;
-    private events = new Events();
+    public events = new Events();
     private hammerManager: HammerManager;
     private container: HTMLDivElement;
-    private canvas: HTMLCanvasElement;
-    private ctx: CanvasRenderingContext2D;
+    public canvas: HTMLCanvasElement;
+    public ctx: CanvasRenderingContext2D;
     private control: Control;
-    private knownImagesPromise: Promise<KnownImages> = KnownImages.downloadAll();
+    public knownImagesPromise: Promise<KnownImages> = KnownImages.downloadAll();
     private segmentController: SegmentController;
     private segmentsData: Array<SegmentWidthModel>;
     private segmentWidths: Array<number>;
     private segmentHeight: number;
     private maxSegmentWidth: number;
-    private canvasWidth: number;
-    private canvasHeight: number;
+    public canvasWidth: number;
+    public canvasHeight: number;
     private scrollPageHeight: number;
-    private y: number;
-    private xMove: number = 0;
-    private yMove: number = 0;
-    private initialScale: number;
-    private zoomScale: number;
-    private scale: number;
-    private isMagnified = false;
-    private isTopScrollBlock = true;
-    private isBottomScrollBlock = true;
+    public y: number;
+    public xMove: number = 0;
+    public yMove: number = 0;
+    public initialScale: number;
+    public zoomScale: number;
+    public scale: number;
+    public isMagnified = false;
+    public isTopScrollBlock = true;
+    public isBottomScrollBlock = true;
     private startPosition: StartPositionResult;
 
     private drawnXMove: number;
@@ -53,30 +53,10 @@ class ViewPort implements XMoveHolder {
     private timestamp: number;
     private drawingController = new DrawingController();
     private valueAnimatorController = new ValueAnimatorController();
-    private canvasPool: CanvasPool;
+    public canvasPool: CanvasPool;
     private queryString: QueryString;
 
     private frameRequestCallback: FrameRequestCallback = (timestamp) => { this.onAnimationFrame(timestamp); };
-
-    public getCanvas() { return this.canvas; }
-    public getCanvasContext() { return this.ctx; }
-    public getCanvasWidth() { return this.canvasWidth; }
-    public getCanvasHeight() { return this.canvasHeight; }
-    public getXMove() { return this.xMove; }
-    public setXMove(value: number) { this.xMove = value; }
-    public getYMove() { return this.yMove; }
-    public setYMove(value: number) { this.yMove = value; }
-    public getInitialScale() { return this.initialScale; }
-    public getZoomScale() { return this.zoomScale; }
-    public getScale() { return this.scale; }
-    public getY() { return this.y; }
-    public getKnownImages() { return this.knownImagesPromise; }
-    public getCanvasPool() { return this.canvasPool; }
-    public getQueryString() { return this.queryString; }
-    public getEvents() { return this.events; }
-    public checkIfMagnified() { return this.isMagnified; }
-    public checkIfTopScrollBlock() { return this.isTopScrollBlock; }
-    public checkIfBottomScrollBlock() { return this.isBottomScrollBlock; }
 
     constructor(containerId: string) {
         // (<any>window)['vp'] = this; //DEBUG ONLY
@@ -310,7 +290,9 @@ class ViewPort implements XMoveHolder {
         this.drawnYMove = this.yMove;
         this.drawnScale = this.scale;
 
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+        this.ctx.fillStyle = '#D2D1CC';
+        this.ctx.fillRect(0, 0, this.canvasWidth, this.canvasHeight);
         this.ctx.save();
         this.ctx.translate(this.xMove, this.yMove);
         this.ctx.scale(this.scale, this.scale);
