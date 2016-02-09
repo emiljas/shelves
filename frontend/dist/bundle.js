@@ -598,6 +598,7 @@
 	        this.addImage(ImageType.ShelfLeftBackground, 'shelfLeftBackground.png');
 	        this.addImage(ImageType.ShelfRightBackground, 'shelfRightBackground.png');
 	        this.addImage(ImageType.FooterBackground, 'footerBackground.png');
+	        this.addImage(ImageType.PegboardHook, 'pegboardHook.png');
 	    }
 	    KnownImages.downloadAll = function () {
 	        var images = new KnownImages();
@@ -639,6 +640,7 @@
 	    ImageType[ImageType["ShelfLeftBackground"] = 4] = "ShelfLeftBackground";
 	    ImageType[ImageType["ShelfRightBackground"] = 5] = "ShelfRightBackground";
 	    ImageType[ImageType["FooterBackground"] = 6] = "FooterBackground";
+	    ImageType[ImageType["PegboardHook"] = 7] = "PegboardHook";
 	})(ImageType || (ImageType = {}));
 	module.exports = ImageType;
 
@@ -826,6 +828,7 @@
 	var createWhitePixelImg = __webpack_require__(14);
 	var Images = __webpack_require__(15);
 	var FlashEffect = __webpack_require__(16);
+	// import ImageType = require('../models/ImageType');
 	var segmentRepository = new SegmentRepository();
 	var Segment = (function () {
 	    function Segment(viewPort, segmentController, index, id, x) {
@@ -851,10 +854,10 @@
 	        }).then(function (data) {
 	            _this.width = data.width;
 	            _this.height = data.height;
-	            _this.shelves = data.shelves;
 	            _this.knownImages = data.knownImages;
 	            _this.images = data.images;
 	            _this.productPositions = data.productPositions;
+	            _this.debugPlaces = data.debugPlaces;
 	            var loadImagePromise = _this.requestInProgressPromise = _this.loadImage(data.spriteImgUrl);
 	            return loadImagePromise;
 	        })
@@ -954,8 +957,16 @@
 	        ctx.fillRect(0, 0, this.width, this.height);
 	        for (var _i = 0, _a = this.knownImages; _i < _a.length; _i++) {
 	            var image = _a[_i];
+	            // if(image.type == ImageType.ShelfRightCorner
+	            // || image.type == ImageType.ShelfBackground) continue;
 	            var img = this.knownImgs.getByType(image.type);
-	            if (image.w && image.h) {
+	            if (image.repeat) {
+	                ctx.beginPath();
+	                var pattern = ctx.createPattern(img, 'repeat');
+	                ctx.fillStyle = pattern;
+	                ctx.fillRect(image.dx, image.dy, image.w, image.h);
+	            }
+	            else if (image.w && image.h) {
 	                ctx.drawImage(img, image.dx, image.dy, image.w, image.h);
 	            }
 	            else {
@@ -972,16 +983,21 @@
 	                ctx.drawImage(img, image.dx, image.dy);
 	            }
 	        }
-	        // for (let s of this.shelves) {
-	        //   ctx.beginPath();
-	        //   ctx.fillStyle = 'yellow';
-	        //   ctx.fillRect(s.dx, s.dy, s.w, s.h);
-	        //   ctx.closePath();
-	        // }
 	        for (var _d = 0, _e = this.productPositions; _d < _e.length; _d++) {
 	            var p = _e[_d];
 	            ctx.drawImage(this.spriteImg, p.sx, p.sy, p.w, p.h, p.dx, p.dy, p.w, p.h);
 	        }
+	        // debug only!
+	        // let debugPlacesI = 0;
+	        // let DEBUG_PLACES_COLORS = ['rgba(0, 255, 0, 0.3)', 'rgba(0, 0, 255, 0.3)', 'rgba(255, 0, 0, 0.3)'];
+	        // for (let s of this.debugPlaces) {
+	        //   ctx.beginPath();
+	        //   ctx.fillStyle = DEBUG_PLACES_COLORS[debugPlacesI % DEBUG_PLACES_COLORS.length];
+	        //   ctx.fillRect(s.dx, s.dy, s.w, s.h);
+	        //   ctx.closePath();
+	        //
+	        //   debugPlacesI++;
+	        // }
 	        //debug only!
 	        ctx.font = 'bold 250px Ariel';
 	        ctx.fillStyle = 'black';

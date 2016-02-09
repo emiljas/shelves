@@ -20,6 +20,7 @@ class KnownImages {
         this.addImage(ImageType.ShelfLeftBackground, 'shelfLeftBackground.png');
         this.addImage(ImageType.ShelfRightBackground, 'shelfRightBackground.png');
         this.addImage(ImageType.FooterBackground, 'footerBackground.png');
+        this.addImage(ImageType.PegboardHook, 'pegboardHook.png');
     }
 
     public static downloadAll(): Promise<KnownImages> {

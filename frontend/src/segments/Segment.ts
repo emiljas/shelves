@@ -3,10 +3,10 @@
 import ViewPort = require('../ViewPort');
 import SegmentController = require('./SegmentController');
 import SegmentRepository = require('../repository/SegmentRepository');
-import ShelfModel = require('../models/ShelfModel');
 import KnownImageModel = require('../models/KnownImageModel');
 import ImageModel = require('../models/ImageModel');
 import ProductPositionModel = require('../models/ProductPositionModel');
+import DebugPlaceModel = require('../models/DebugPlaceModel');
 import TapInput = require('../touch/TapInput');
 import loadImage = require('../utils/loadCancelableImage');
 import createWhitePixelImg = require('../utils/createWhitePixelImg');
@@ -14,6 +14,7 @@ import ISegmentPlace = require('./ISegmentPlace');
 import KnownImages = require('../images/KnownImages');
 import Images = require('../images/Images');
 import FlashEffect = require('../flash/FlashEffect');
+// import ImageType = require('../models/ImageType');
 
 let segmentRepository = new SegmentRepository();
 
@@ -24,10 +25,10 @@ class Segment implements ISegmentPlace {
     private spriteImg: HTMLImageElement;
     private width: number;
     private height: number;
-    private shelves: Array<ShelfModel>;
     private knownImages: Array<KnownImageModel>;
     private images: Array<ImageModel>;
     private productPositions: Array<ProductPositionModel>;
+    private debugPlaces: Array<DebugPlaceModel>;
     private requestInProgressPromise: Promise<any> = null;
     private knownImgs: KnownImages;
     private imgs: Images;
@@ -56,10 +57,10 @@ class Segment implements ISegmentPlace {
         }).then((data) => {
             this.width = data.width;
             this.height = data.height;
-            this.shelves = data.shelves;
             this.knownImages = data.knownImages;
             this.images = data.images;
             this.productPositions = data.productPositions;
+            this.debugPlaces = data.debugPlaces;
 
             let loadImagePromise = this.requestInProgressPromise = this.loadImage(data.spriteImgUrl);
             return loadImagePromise;
@@ -172,8 +173,16 @@ class Segment implements ISegmentPlace {
         ctx.fillRect(0, 0, this.width, this.height);
 
         for (let image of this.knownImages) {
+          // if(image.type == ImageType.ShelfRightCorner
+          // || image.type == ImageType.ShelfBackground) continue;
             let img = this.knownImgs.getByType(image.type);
-            if (image.w && image.h) {
+
+            if (image.repeat) {
+              ctx.beginPath();
+              let pattern = ctx.createPattern(img, 'repeat');
+              ctx.fillStyle = pattern;
+              ctx.fillRect(image.dx, image.dy, image.w, image.h);
+            } else if (image.w && image.h) {
                 ctx.drawImage(img, image.dx, image.dy, image.w, image.h);
             } else {
                 ctx.drawImage(img, image.dx, image.dy);
@@ -189,16 +198,21 @@ class Segment implements ISegmentPlace {
             }
         }
 
-        // for (let s of this.shelves) {
-        //   ctx.beginPath();
-        //   ctx.fillStyle = 'yellow';
-        //   ctx.fillRect(s.dx, s.dy, s.w, s.h);
-        //   ctx.closePath();
-        // }
-
         for (let p of this.productPositions) {
             ctx.drawImage(this.spriteImg, p.sx, p.sy, p.w, p.h, p.dx, p.dy, p.w, p.h);
         }
+
+        // debug only!
+        // let debugPlacesI = 0;
+        // let DEBUG_PLACES_COLORS = ['rgba(0, 255, 0, 0.3)', 'rgba(0, 0, 255, 0.3)', 'rgba(255, 0, 0, 0.3)'];
+        // for (let s of this.debugPlaces) {
+        //   ctx.beginPath();
+        //   ctx.fillStyle = DEBUG_PLACES_COLORS[debugPlacesI % DEBUG_PLACES_COLORS.length];
+        //   ctx.fillRect(s.dx, s.dy, s.w, s.h);
+        //   ctx.closePath();
+        //
+        //   debugPlacesI++;
+        // }
 
         //debug only!
         ctx.font = 'bold 250px Ariel';
