@@ -33,7 +33,7 @@ class Control {
     private middle: HTMLImageElement;
 
     constructor(private viewPort: ViewPort, private container: HTMLDivElement) {
-        this.events = viewPort.events;
+        this.events = viewPort.getEvents();
     }
 
     public init() {
@@ -45,7 +45,7 @@ class Control {
 
     public onZoomChange(): void {
         this.refreshZoomIcon();
-        if (this.viewPort.isMagnified) {
+        if (this.viewPort.checkIfMagnified()) {
             this.showTopAndBottomBtnsIfScrollUnblock();
         } else {
             this.hideTopAndBottomBtns();
@@ -114,7 +114,7 @@ class Control {
         });
 
         this.events.addEventListener(this.middle, 'click', (e) => {
-            if (this.viewPort.isMagnified) {
+            if (this.viewPort.checkIfMagnified()) {
                 this.viewPort.control_unzoom();
                 this.middle.src = HOVER_PLUS_IMG_URL;
             } else {
@@ -136,7 +136,7 @@ class Control {
 
     private changeZoomIconOnHover(img: HTMLImageElement) {
         this.events.addEventListener(img, 'mouseover', () => {
-            if (this.viewPort.isMagnified) {
+            if (this.viewPort.checkIfMagnified()) {
                 this.middle.src = HOVER_MINUS_IMG_URL;
             } else {
                 this.middle.src = HOVER_PLUS_IMG_URL;
@@ -149,7 +149,7 @@ class Control {
     }
 
     private refreshZoomIcon(): void {
-        if (this.viewPort.isMagnified) {
+        if (this.viewPort.checkIfMagnified()) {
             this.middle.src = MINUS_IMG_URL;
         } else {
             this.middle.src = PLUS_IMG_URL;
@@ -157,10 +157,10 @@ class Control {
     }
 
     private showTopAndBottomBtnsIfScrollUnblock(): void {
-        if (!this.viewPort.isTopScrollBlock) {
+        if (!this.viewPort.checkIfTopScrollBlock()) {
             this.showTopBtn();
         }
-        if (!this.viewPort.isBottomScrollBlock) {
+        if (!this.viewPort.checkIfBottomScrollBlock()) {
             this.showBottomBtn();
         }
     }

@@ -41,7 +41,7 @@ class Segment implements ISegmentPlace {
         private id: number,
         private x: number
     ) {
-        this.ctx = viewPort.ctx;
+        this.ctx = viewPort.getCanvasContext();
     }
 
     public getIndex(): number { return this.index; }
@@ -50,7 +50,7 @@ class Segment implements ISegmentPlace {
     public getWidth(): number { return this.width; }
 
     public load(): Promise<void> {
-        return this.viewPort.knownImagesPromise.then((images) => {
+        return this.viewPort.getKnownImages().then((images) => {
             this.knownImgs = images;
             let getByIdPromise = this.requestInProgressPromise = segmentRepository.getById(this.id);
             return getByIdPromise;
@@ -98,9 +98,9 @@ class Segment implements ISegmentPlace {
     }
 
     public isInCanvasVisibleArea(): boolean {
-        let xMove = this.viewPort.xMove;
-        let scale = this.viewPort.scale;
-        let canvasWidth = this.viewPort.canvasWidth;
+        let xMove = this.viewPort.getXMove();
+        let scale = this.viewPort.getScale();
+        let canvasWidth = this.viewPort.getCanvasWidth();
 
         let isBeforeVisibleArea = xMove / scale + this.x + this.width < 0;
         let isAfterVisibleArea = xMove / scale - canvasWidth / scale + this.x > 0;
@@ -124,12 +124,12 @@ class Segment implements ISegmentPlace {
     }
 
     public fitOnViewPort(y: number): void {
-        let zoomScale = this.viewPort.zoomScale;
+        let zoomScale = this.viewPort.getZoomScale();
 
-        let canvasWidth = this.viewPort.canvasWidth;
+        let canvasWidth = this.viewPort.getCanvasWidth();
         let xMove = (canvasWidth - this.width * zoomScale) / 2 - this.x * zoomScale;
 
-        let canvasHeight = this.viewPort.canvasHeight;
+        let canvasHeight = this.viewPort.getCanvasHeight();
         let yMove = canvasHeight / 2 - y * zoomScale;
 
         this.viewPort.animate('xMove', xMove);
@@ -137,7 +137,7 @@ class Segment implements ISegmentPlace {
             this.viewPort.animate('yMove', yMove);
         }
 
-        let scale = this.viewPort.scale;
+        let scale = this.viewPort.getScale();
         if (scale !== zoomScale) {
             this.viewPort.animate('scale', zoomScale);
             this.viewPort.notifyAboutZoomChange(true);
@@ -151,7 +151,7 @@ class Segment implements ISegmentPlace {
 
     public unload(): void {
         if (this.isLoaded) {
-            this.viewPort.canvasPool.release(this.canvas);
+            this.viewPort.getCanvasPool().release(this.canvas);
         } else if (this.requestInProgressPromise !== null) {
             this.requestInProgressPromise.cancel();
         }
@@ -166,7 +166,7 @@ class Segment implements ISegmentPlace {
     }
 
     private createCanvas(): HTMLCanvasElement {
-        let canvas = this.viewPort.canvasPool.get();
+        let canvas = this.viewPort.getCanvasPool().get();
         let ctx = canvas.getContext('2d');
 
         ctx.fillStyle = '#D2D1CC';

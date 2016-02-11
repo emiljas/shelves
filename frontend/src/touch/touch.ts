@@ -24,7 +24,7 @@ interface PanLastMove {
 function touch(viewPort: ViewPort) {
     'use strict';
 
-    let hammer = new Hammer(viewPort.canvas, {
+    let hammer = new Hammer(viewPort.getCanvas(), {
         touchAction: 'none'
     });
     hammer.get('pan').set({ direction: Hammer.DIRECTION_ALL });
@@ -40,12 +40,12 @@ function touch(viewPort: ViewPort) {
     });
 
     hammer.on('pan', function(e: HammerInput) {
-        let xMove = viewPort.xMove + e.deltaX - lastDeltaX;
-        viewPort.xMove = xMove;
+        let xMove = viewPort.getXMove() + e.deltaX - lastDeltaX;
+        viewPort.setXMove(xMove);
         lastDeltaX = e.deltaX;
 
-        let yMove = viewPort.yMove + e.deltaY - lastDeltaY;
-        viewPort.yMove = yMove;
+        let yMove = viewPort.getYMove() + e.deltaY - lastDeltaY;
+        viewPort.setYMove(yMove);
         lastDeltaY = e.deltaY;
 
         panSteps.push({
@@ -95,8 +95,8 @@ function touch(viewPort: ViewPort) {
         let newXDiff = lastMove.s * cosAlfa;
         let newYDiff = lastMove.s * sinAlfa;
 
-        viewPort.animate('xMove', viewPort.xMove - newXDiff);
-        viewPort.animate('yMove', viewPort.yMove - newYDiff);
+        viewPort.animate('xMove', viewPort.getXMove() - newXDiff);
+        viewPort.animate('yMove', viewPort.getYMove() - newYDiff);
       }
 
       moveEnd();

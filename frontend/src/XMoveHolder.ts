@@ -1,5 +1,5 @@
 interface XMoveHolder {
-  xMove: number;
+    setXMove(value: number): void;
 }
 
 export = XMoveHolder;

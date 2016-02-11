@@ -14,7 +14,7 @@ class SlideController {
     public onAnimationFrame(timestamp: number): void {
         if (this.slide) {
             let result = this.slide.animationFrame(timestamp);
-            this.xMoveHolder.xMove = result.xMove;
+            this.xMoveHolder.setXMove(result.xMove);
 
             this.distanceLeft = result.distanceLeft;
 

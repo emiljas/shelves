@@ -3,7 +3,11 @@ import XMoveHolder = require('../../src/XMoveHolder');
 import SlideController = require('../../src/animation/SlideController');
 
 class XMoveHolderMock implements XMoveHolder {
-    public xMove: number;
+    public XMove: number;
+
+    public setXMove(value: number): void {
+        this.XMove = value;
+    }
 }
 
 describe('SlideController', function() {
@@ -14,21 +18,21 @@ describe('SlideController', function() {
         createController();
         startSlide();
         controller.onAnimationFrame(1000);
-        assert.equal(xMoveHolderMock.xMove, 1000);
+        assert.equal(xMoveHolderMock.XMove, 1000);
     });
 
     it('1000ms - moved by distance', function() {
         createController();
         startSlide();
         controller.onAnimationFrame(2000);
-        assert.equal(xMoveHolderMock.xMove, 1100);
+        assert.equal(xMoveHolderMock.XMove, 1100);
     });
 
     it('1500ms - still moved by distance', function() {
         createController();
         startSlide();
         controller.onAnimationFrame(2500);
-        assert.equal(xMoveHolderMock.xMove, 1100);
+        assert.equal(xMoveHolderMock.XMove, 1100);
     });
 
     it('add distance left to next slide', function() {
@@ -37,12 +41,12 @@ describe('SlideController', function() {
         controller.onAnimationFrame(1500);
         startSecondSlide();
         controller.onAnimationFrame(2500);
-        assert.equal(xMoveHolderMock.xMove, 1300);
+        assert.equal(xMoveHolderMock.XMove, 1300);
     });
 
     function startSecondSlide() {
         controller.startSlide({
-            xMove: xMoveHolderMock.xMove,
+            xMove: xMoveHolderMock.XMove,
             distance: 200,
             timestamp: 1500
         });
