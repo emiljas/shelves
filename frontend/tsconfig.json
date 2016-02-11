@@ -77,7 +77,8 @@
     "test/threads/sum.worker.ts",
     "test/threads/SumResult.ts",
     "test/threads/SumThreadClient.ts",
-    "test/threads/ThreadTests.ts"
+    "test/threads/ThreadTests.ts",
+    "typings/tsd.d.ts"
   ],
   "atom": {
     "rewriteTsconfig": true
