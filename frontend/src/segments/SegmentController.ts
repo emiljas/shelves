@@ -37,9 +37,7 @@ class SegmentController {
             createSegment: (index, x) => {
                 let id = this.segmentsData[index].id;
                 let segment = new Segment(viewPort, this, index, id, x);
-                segment.load().then(() => {
-                    this.notDrawnSegmentCount++;
-                });
+                segment.load();
                 return segment;
             }
         };
@@ -99,6 +97,11 @@ class SegmentController {
     }
 
     public preloadSegments() {
+      for (let segment of this.segments) {
+        segment.createCanvasIfNecessary();
+      }
+
+
         let xMove = this.viewPort.getXMove();
         let scale = this.viewPort.getScale();
         let initialScale = this.viewPort.getInitialScale();
@@ -116,6 +119,7 @@ class SegmentController {
         if (this.flashLoader) {
             this.flashLoader.segmentLoaded(event);
         }
+        this.notDrawnSegmentCount++;
     }
 
     public fitMiddleSegmentOnViewPort(): void {

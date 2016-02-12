@@ -100,9 +100,12 @@ class ViewPort implements XMoveHolder {
         this.maxSegmentWidth = _.max(this.segmentWidths);
         this.segmentHeight = parseInt(this.container.getAttribute('data-segment-height'), 10);
 
-        this.canvasPool = new CanvasPool(this.maxSegmentWidth, this.segmentHeight);
+        this.calculateScales();
 
-        this.setInitialScale();
+        let maxCanvasWidth = Math.round(this.maxSegmentWidth * this.zoomScale);
+        let maxCanvasHeight = Math.round(this.segmentHeight * this.zoomScale);
+        console.log(maxCanvasWidth, maxCanvasHeight);
+        this.canvasPool = new CanvasPool(maxCanvasWidth, maxCanvasHeight);
 
         this.queryString = new QueryString(this.container);
         let startPosition = new StartPosition({
@@ -215,7 +218,7 @@ class ViewPort implements XMoveHolder {
         placeHolder.style.height = this.container.getBoundingClientRect().height + 'px';
     }
 
-    private setInitialScale(): void {
+    private calculateScales(): void {
         this.initialScale = this.canvasHeight / this.segmentHeight;
         this.zoomScale = Math.min(this.canvasWidth / (1.25 * this.maxSegmentWidth), 1);
         this.scale = this.initialScale;

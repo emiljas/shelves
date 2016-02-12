@@ -135,8 +135,11 @@
 	        this.segmentWidths = _.map(this.segmentsData, function (s) { return s.width; });
 	        this.maxSegmentWidth = _.max(this.segmentWidths);
 	        this.segmentHeight = parseInt(this.container.getAttribute('data-segment-height'), 10);
-	        this.canvasPool = new CanvasPool(this.maxSegmentWidth, this.segmentHeight);
-	        this.setInitialScale();
+	        this.calculateScales();
+	        var maxCanvasWidth = Math.round(this.maxSegmentWidth * this.zoomScale);
+	        var maxCanvasHeight = Math.round(this.segmentHeight * this.zoomScale);
+	        console.log(maxCanvasWidth, maxCanvasHeight);
+	        this.canvasPool = new CanvasPool(maxCanvasWidth, maxCanvasHeight);
 	        this.queryString = new QueryString(this.container);
 	        var startPosition = new StartPosition({
 	            canvasWidth: this.canvasWidth,
@@ -250,7 +253,7 @@
 	        var placeHolder = document.querySelector('.shelvesPlaceHolder[data-place-holder-for="' + containerId + '"]');
 	        placeHolder.style.height = this.container.getBoundingClientRect().height + 'px';
 	    };
-	    ViewPort.prototype.setInitialScale = function () {
+	    ViewPort.prototype.calculateScales = function () {
 	        this.initialScale = this.canvasHeight / this.segmentHeight;
 	        this.zoomScale = Math.min(this.canvasWidth / (1.25 * this.maxSegmentWidth), 1);
 	        this.scale = this.initialScale;
@@ -694,9 +697,7 @@
 	            createSegment: function (index, x) {
 	                var id = _this.segmentsData[index].id;
 	                var segment = new Segment(viewPort, _this, index, id, x);
-	                segment.load().then(function () {
-	                    _this.notDrawnSegmentCount++;
-	                });
+	                segment.load();
 	                return segment;
 	            }
 	        };
@@ -748,6 +749,10 @@
 	        }
 	    };
 	    SegmentController.prototype.preloadSegments = function () {
+	        for (var _i = 0, _a = this.segments; _i < _a.length; _i++) {
+	            var segment = _a[_i];
+	            segment.createCanvasIfNecessary();
+	        }
 	        var xMove = this.viewPort.getXMove();
 	        var scale = this.viewPort.getScale();
 	        var initialScale = this.viewPort.getInitialScale();
@@ -763,6 +768,7 @@
 	        if (this.flashLoader) {
 	            this.flashLoader.segmentLoaded(event);
 	        }
+	        this.notDrawnSegmentCount++;
 	    };
 	    SegmentController.prototype.fitMiddleSegmentOnViewPort = function () {
 	        this.onClick({
@@ -838,6 +844,7 @@
 	        this.id = id;
 	        this.x = x;
 	        this.isLoaded = false;
+	        this.canDrawCanvas = false;
 	        this.requestInProgressPromise = null;
 	        this.ctx = viewPort.getCanvasContext();
 	    }
@@ -847,7 +854,7 @@
 	    Segment.prototype.getWidth = function () { return this.width; };
 	    Segment.prototype.load = function () {
 	        var _this = this;
-	        return this.viewPort.getKnownImages().then(function (images) {
+	        this.viewPort.getKnownImages().then(function (images) {
 	            _this.knownImgs = images;
 	            var getByIdPromise = _this.requestInProgressPromise = segmentRepository.getById(_this.id);
 	            return getByIdPromise;
@@ -871,15 +878,12 @@
 	            return _this.imgs.downloadAll();
 	        })
 	            .then(function () {
-	            _this.canvas = _this.createCanvas();
-	            _this.isLoaded = true;
-	            _this.segmentController.segmentLoaded({ segmentId: _this.id });
-	            return Promise.resolve();
+	            _this.canDrawCanvas = true;
 	        });
 	    };
 	    Segment.prototype.draw = function (timestamp) {
 	        if (this.isLoaded && this.isInCanvasVisibleArea()) {
-	            this.ctx.drawImage(this.canvas, 0, 0, this.width, this.height, this.x, 0, this.width, this.height);
+	            this.ctx.drawImage(this.canvas, 0, 0, this.width * this.viewPort.getZoomScale(), this.height * this.viewPort.getZoomScale(), this.x, 0, this.width, this.height);
 	            if (this.flashEffect) {
 	                if (this.flashEffect.isEnded()) {
 	                    this.flashEffect = null;
@@ -890,6 +894,72 @@
 	                }
 	            }
 	        }
+	    };
+	    Segment.prototype.createCanvasIfNecessary = function () {
+	        if (this.canDrawCanvas && !this.canvas && this.isInCanvasVisibleArea()) {
+	            this.canvas = this.createCanvas();
+	            console.log('createCanvas ' + this.id);
+	            this.spriteImg = null;
+	            this.isLoaded = true;
+	            this.segmentController.segmentLoaded({ segmentId: this.id });
+	        }
+	    };
+	    Segment.prototype.createCanvas = function () {
+	        console.log('createCavas');
+	        var canvas = this.viewPort.getCanvasPool().get();
+	        var ctx = canvas.getContext('2d');
+	        ctx.save();
+	        ctx.scale(this.viewPort.getZoomScale(), this.viewPort.getZoomScale());
+	        ctx.fillStyle = '#D2D1CC';
+	        ctx.fillRect(0, 0, this.width, this.height);
+	        for (var _i = 0, _a = this.knownImages; _i < _a.length; _i++) {
+	            var image = _a[_i];
+	            var img = this.knownImgs.getByType(image.type);
+	            if (image.repeat) {
+	                ctx.beginPath();
+	                var pattern = ctx.createPattern(img, 'repeat');
+	                ctx.fillStyle = pattern;
+	                ctx.fillRect(image.dx, image.dy, image.w, image.h);
+	            }
+	            else if (image.w && image.h) {
+	                ctx.drawImage(img, image.dx, image.dy, image.w, image.h);
+	            }
+	            else {
+	                ctx.drawImage(img, image.dx, image.dy);
+	            }
+	        }
+	        for (var _b = 0, _c = this.images; _b < _c.length; _b++) {
+	            var image = _c[_b];
+	            var img = this.imgs.getByUrl(image.url);
+	            if (image.w && image.h) {
+	                ctx.drawImage(img, image.dx, image.dy, image.w, image.h);
+	            }
+	            else {
+	                ctx.drawImage(img, image.dx, image.dy);
+	            }
+	        }
+	        for (var _d = 0, _e = this.productPositions; _d < _e.length; _d++) {
+	            var p = _e[_d];
+	            ctx.drawImage(this.spriteImg, p.sx, p.sy, p.w, p.h, p.dx, p.dy, p.w, p.h);
+	        }
+	        // debug only!
+	        // let debugPlacesI = 0;
+	        // let DEBUG_PLACES_COLORS = ['rgba(0, 255, 0, 0.3)', 'rgba(0, 0, 255, 0.3)', 'rgba(255, 0, 0, 0.3)'];
+	        // for (let s of this.debugPlaces) {
+	        //   ctx.beginPath();
+	        //   ctx.fillStyle = DEBUG_PLACES_COLORS[debugPlacesI % DEBUG_PLACES_COLORS.length];
+	        //   ctx.fillRect(s.dx, s.dy, s.w, s.h);
+	        //   ctx.closePath();
+	        //
+	        //   debugPlacesI++;
+	        // }
+	        //debug only!
+	        ctx.font = 'bold 250px Ariel';
+	        ctx.fillStyle = 'black';
+	        ctx.textAlign = 'center';
+	        ctx.fillText(this.getIndex().toString(), this.width / 2, 600);
+	        ctx.restore();
+	        return canvas;
 	    };
 	    Segment.prototype.isInCanvasVisibleArea = function () {
 	        var xMove = this.viewPort.getXMove();
@@ -949,61 +1019,6 @@
 	        else {
 	            return createWhitePixelImg();
 	        }
-	    };
-	    Segment.prototype.createCanvas = function () {
-	        var canvas = this.viewPort.getCanvasPool().get();
-	        var ctx = canvas.getContext('2d');
-	        ctx.fillStyle = '#D2D1CC';
-	        ctx.fillRect(0, 0, this.width, this.height);
-	        for (var _i = 0, _a = this.knownImages; _i < _a.length; _i++) {
-	            var image = _a[_i];
-	            // if(image.type == ImageType.ShelfRightCorner
-	            // || image.type == ImageType.ShelfBackground) continue;
-	            var img = this.knownImgs.getByType(image.type);
-	            if (image.repeat) {
-	                ctx.beginPath();
-	                var pattern = ctx.createPattern(img, 'repeat');
-	                ctx.fillStyle = pattern;
-	                ctx.fillRect(image.dx, image.dy, image.w, image.h);
-	            }
-	            else if (image.w && image.h) {
-	                ctx.drawImage(img, image.dx, image.dy, image.w, image.h);
-	            }
-	            else {
-	                ctx.drawImage(img, image.dx, image.dy);
-	            }
-	        }
-	        for (var _b = 0, _c = this.images; _b < _c.length; _b++) {
-	            var image = _c[_b];
-	            var img = this.imgs.getByUrl(image.url);
-	            if (image.w && image.h) {
-	                ctx.drawImage(img, image.dx, image.dy, image.w, image.h);
-	            }
-	            else {
-	                ctx.drawImage(img, image.dx, image.dy);
-	            }
-	        }
-	        for (var _d = 0, _e = this.productPositions; _d < _e.length; _d++) {
-	            var p = _e[_d];
-	            ctx.drawImage(this.spriteImg, p.sx, p.sy, p.w, p.h, p.dx, p.dy, p.w, p.h);
-	        }
-	        // debug only!
-	        // let debugPlacesI = 0;
-	        // let DEBUG_PLACES_COLORS = ['rgba(0, 255, 0, 0.3)', 'rgba(0, 0, 255, 0.3)', 'rgba(255, 0, 0, 0.3)'];
-	        // for (let s of this.debugPlaces) {
-	        //   ctx.beginPath();
-	        //   ctx.fillStyle = DEBUG_PLACES_COLORS[debugPlacesI % DEBUG_PLACES_COLORS.length];
-	        //   ctx.fillRect(s.dx, s.dy, s.w, s.h);
-	        //   ctx.closePath();
-	        //
-	        //   debugPlacesI++;
-	        // }
-	        //debug only!
-	        ctx.font = 'bold 250px Ariel';
-	        ctx.fillStyle = 'black';
-	        ctx.textAlign = 'center';
-	        ctx.fillText(this.getIndex().toString(), this.width / 2, 600);
-	        return canvas;
 	    };
 	    return Segment;
 	})();
