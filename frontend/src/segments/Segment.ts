@@ -14,7 +14,6 @@ import ISegmentPlace = require('./ISegmentPlace');
 import KnownImages = require('../images/KnownImages');
 import Images = require('../images/Images');
 import FlashEffect = require('../flash/FlashEffect');
-// import ImageType = require('../models/ImageType');
 
 let segmentRepository = new SegmentRepository();
 
@@ -85,18 +84,24 @@ class Segment implements ISegmentPlace {
     }
 
     public draw(timestamp: number) {
-        if (this.isLoaded && this.isInCanvasVisibleArea()) {
-            this.ctx.drawImage(this.canvas, 0, 0, this.zoomWidth, this.zoomHeight, this.x, 0, this.width, this.height);
+        if (this.isInCanvasVisibleArea()) {
+          if (this.isLoaded) {
+              this.ctx.drawImage(this.canvas, 0, 0, this.zoomWidth, this.zoomHeight, this.x, 0, this.width, this.height);
 
-            if (this.flashEffect) {
-                if (this.flashEffect.isEnded()) {
-                    this.flashEffect = null;
-                    this.segmentController.reportEffectRenderingStop();
-                } else {
-                    this.flashEffect.flash(timestamp, this.x, 0, this.width, this.height);
-                }
-            }
-        }
+              if (this.flashEffect) {
+                  if (this.flashEffect.isEnded()) {
+                      this.flashEffect = null;
+                      this.segmentController.reportEffectRenderingStop();
+                  } else {
+                      this.flashEffect.flash(timestamp, this.x, 0, this.width, this.height);
+                  }
+              }
+          } else {
+            this.ctx.strokeStyle = 'lightgrey';
+            this.ctx.lineWidth = 4;
+            this.ctx.strokeRect(this.x, 0, this.width, this.height);
+          }
+      }
     }
 
     public createCanvasIfNecessary(): void {
@@ -177,6 +182,10 @@ class Segment implements ISegmentPlace {
         return canvas;
     }
 
+    public isClicked(e: TapInput): boolean {
+        return e.x > this.x && e.x < this.x + this.width;
+    }
+
     private isInCanvasVisibleArea(): boolean {
         let xMove = this.viewPort.getXMove();
         let scale = this.viewPort.getScale();
@@ -185,10 +194,6 @@ class Segment implements ISegmentPlace {
         let isBeforeVisibleArea = xMove / scale + this.x + this.width < 0;
         let isAfterVisibleArea = xMove / scale - canvasWidth / scale + this.x > 0;
         return !isBeforeVisibleArea && !isAfterVisibleArea;
-    }
-
-    public isClicked(e: TapInput): boolean {
-        return e.x > this.x && e.x < this.x + this.width;
     }
 
     public isClickable(x: number, y: number) {

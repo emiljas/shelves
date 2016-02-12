@@ -838,7 +838,6 @@
 	var createWhitePixelImg = __webpack_require__(14);
 	var Images = __webpack_require__(15);
 	var FlashEffect = __webpack_require__(16);
-	// import ImageType = require('../models/ImageType');
 	var segmentRepository = new SegmentRepository();
 	var Segment = (function () {
 	    function Segment(viewPort, segmentController, index, id, x) {
@@ -888,16 +887,23 @@
 	        });
 	    };
 	    Segment.prototype.draw = function (timestamp) {
-	        if (this.isLoaded && this.isInCanvasVisibleArea()) {
-	            this.ctx.drawImage(this.canvas, 0, 0, this.zoomWidth, this.zoomHeight, this.x, 0, this.width, this.height);
-	            if (this.flashEffect) {
-	                if (this.flashEffect.isEnded()) {
-	                    this.flashEffect = null;
-	                    this.segmentController.reportEffectRenderingStop();
+	        if (this.isInCanvasVisibleArea()) {
+	            if (this.isLoaded) {
+	                this.ctx.drawImage(this.canvas, 0, 0, this.zoomWidth, this.zoomHeight, this.x, 0, this.width, this.height);
+	                if (this.flashEffect) {
+	                    if (this.flashEffect.isEnded()) {
+	                        this.flashEffect = null;
+	                        this.segmentController.reportEffectRenderingStop();
+	                    }
+	                    else {
+	                        this.flashEffect.flash(timestamp, this.x, 0, this.width, this.height);
+	                    }
 	                }
-	                else {
-	                    this.flashEffect.flash(timestamp, this.x, 0, this.width, this.height);
-	                }
+	            }
+	            else {
+	                this.ctx.strokeStyle = 'lightgrey';
+	                this.ctx.lineWidth = 4;
+	                this.ctx.strokeRect(this.x, 0, this.width, this.height);
 	            }
 	        }
 	    };
@@ -971,6 +977,9 @@
 	        ctx.restore();
 	        return canvas;
 	    };
+	    Segment.prototype.isClicked = function (e) {
+	        return e.x > this.x && e.x < this.x + this.width;
+	    };
 	    Segment.prototype.isInCanvasVisibleArea = function () {
 	        var xMove = this.viewPort.getXMove();
 	        var scale = this.viewPort.getScale();
@@ -978,9 +987,6 @@
 	        var isBeforeVisibleArea = xMove / scale + this.x + this.width < 0;
 	        var isAfterVisibleArea = xMove / scale - canvasWidth / scale + this.x > 0;
 	        return !isBeforeVisibleArea && !isAfterVisibleArea;
-	    };
-	    Segment.prototype.isClicked = function (e) {
-	        return e.x > this.x && e.x < this.x + this.width;
 	    };
 	    Segment.prototype.isClickable = function (x, y) {
 	        for (var _i = 0, _a = this.productPositions; _i < _a.length; _i++) {
