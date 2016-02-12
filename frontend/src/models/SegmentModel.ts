@@ -11,6 +11,7 @@ interface SegmentModel {
   images: Array<ImageModel>;
   productPositions: Array<ProductPositionModel>;
   debugPlaces: Array<DebugPlaceModel>;
+  plnId: number;
 }
 
 export = SegmentModel;

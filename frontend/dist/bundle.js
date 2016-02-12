@@ -138,7 +138,6 @@
 	        this.calculateScales();
 	        var maxCanvasWidth = Math.round(this.maxSegmentWidth * this.zoomScale);
 	        var maxCanvasHeight = Math.round(this.segmentHeight * this.zoomScale);
-	        console.log(maxCanvasWidth, maxCanvasHeight);
 	        this.canvasPool = new CanvasPool(maxCanvasWidth, maxCanvasHeight);
 	        this.queryString = new QueryString(this.container);
 	        var startPosition = new StartPosition({
@@ -763,9 +762,19 @@
 	        xMove *= initialScale / scale;
 	        this.appender.work(xMove);
 	        this.prepender.work(xMove);
-	        if (this.flashLoader && this.flashLoader.canBeFlashed()) {
-	            this.flashLoader.flash();
-	            this.flashLoader = null;
+	        if (this.flashLoader) {
+	            if (this.flashLoader.canBeFlashed()) {
+	                this.flashLoader.flash();
+	                this.flashLoader = null;
+	            }
+	            else {
+	                for (var _d = 0, _e = this.segments; _d < _e.length; _d++) {
+	                    var segment = _e[_d];
+	                    if (!segment.isInCanvasVisibleArea()) {
+	                        this.flashLoader.segmentUnvisibled(segment.getId());
+	                    }
+	                }
+	            }
 	        }
 	    };
 	    SegmentController.prototype.segmentLoaded = function (event) {
@@ -870,6 +879,7 @@
 	            _this.images = data.images;
 	            _this.productPositions = data.productPositions;
 	            _this.debugPlaces = data.debugPlaces;
+	            _this.plnId = data.plnId;
 	            var loadImagePromise = _this.requestInProgressPromise = _this.loadImage(data.spriteImgUrl);
 	            return loadImagePromise;
 	        })
@@ -919,6 +929,57 @@
 	            this.isLoaded = false;
 	            this.viewPort.getCanvasPool().release(this.canvas);
 	            this.canvas = null;
+	        }
+	    };
+	    Segment.prototype.isClicked = function (e) {
+	        return e.x > this.x && e.x < this.x + this.width;
+	    };
+	    Segment.prototype.isClickable = function (x, y) {
+	        for (var _i = 0, _a = this.productPositions; _i < _a.length; _i++) {
+	            var product = _a[_i];
+	            if (x >= this.x + product.dx
+	                && x <= this.x + product.dx + product.w
+	                && y >= product.dy
+	                && y <= product.dy + product.h) {
+	                return true;
+	            }
+	        }
+	        return false;
+	    };
+	    Segment.prototype.isInCanvasVisibleArea = function () {
+	        var xMove = this.viewPort.getXMove();
+	        var scale = this.viewPort.getScale();
+	        var canvasWidth = this.viewPort.getCanvasWidth();
+	        var isBeforeVisibleArea = xMove / scale + this.x + this.width < 0;
+	        var isAfterVisibleArea = xMove / scale - canvasWidth / scale + this.x > 0;
+	        return !isBeforeVisibleArea && !isAfterVisibleArea;
+	    };
+	    Segment.prototype.fitOnViewPort = function (y) {
+	        var zoomScale = this.viewPort.getZoomScale();
+	        var canvasWidth = this.viewPort.getCanvasWidth();
+	        var xMove = (canvasWidth - this.width * zoomScale) / 2 - this.x * zoomScale;
+	        var canvasHeight = this.viewPort.getCanvasHeight();
+	        var yMove = canvasHeight / 2 - y * zoomScale;
+	        this.viewPort.animate('xMove', xMove);
+	        if (y !== -1) {
+	            this.viewPort.animate('yMove', yMove);
+	        }
+	        var scale = this.viewPort.getScale();
+	        if (scale !== zoomScale) {
+	            this.viewPort.animate('scale', zoomScale);
+	            this.viewPort.notifyAboutZoomChange(true);
+	        }
+	    };
+	    Segment.prototype.flash = function () {
+	        this.flashEffect = new FlashEffect(this.ctx);
+	        this.segmentController.reportEffectRenderingStart();
+	    };
+	    Segment.prototype.unload = function () {
+	        if (this.isLoaded) {
+	            this.viewPort.getCanvasPool().release(this.canvas);
+	        }
+	        else if (this.requestInProgressPromise !== null) {
+	            this.requestInProgressPromise.cancel();
 	        }
 	    };
 	    Segment.prototype.createCanvas = function () {
@@ -973,60 +1034,9 @@
 	        ctx.font = 'bold 250px Ariel';
 	        ctx.fillStyle = 'black';
 	        ctx.textAlign = 'center';
-	        ctx.fillText(this.getIndex().toString(), this.width / 2, 600);
+	        ctx.fillText(this.plnId.toString(), this.width / 2, 600);
 	        ctx.restore();
 	        return canvas;
-	    };
-	    Segment.prototype.isClicked = function (e) {
-	        return e.x > this.x && e.x < this.x + this.width;
-	    };
-	    Segment.prototype.isInCanvasVisibleArea = function () {
-	        var xMove = this.viewPort.getXMove();
-	        var scale = this.viewPort.getScale();
-	        var canvasWidth = this.viewPort.getCanvasWidth();
-	        var isBeforeVisibleArea = xMove / scale + this.x + this.width < 0;
-	        var isAfterVisibleArea = xMove / scale - canvasWidth / scale + this.x > 0;
-	        return !isBeforeVisibleArea && !isAfterVisibleArea;
-	    };
-	    Segment.prototype.isClickable = function (x, y) {
-	        for (var _i = 0, _a = this.productPositions; _i < _a.length; _i++) {
-	            var product = _a[_i];
-	            if (x >= this.x + product.dx
-	                && x <= this.x + product.dx + product.w
-	                && y >= product.dy
-	                && y <= product.dy + product.h) {
-	                return true;
-	            }
-	        }
-	        return false;
-	    };
-	    Segment.prototype.fitOnViewPort = function (y) {
-	        var zoomScale = this.viewPort.getZoomScale();
-	        var canvasWidth = this.viewPort.getCanvasWidth();
-	        var xMove = (canvasWidth - this.width * zoomScale) / 2 - this.x * zoomScale;
-	        var canvasHeight = this.viewPort.getCanvasHeight();
-	        var yMove = canvasHeight / 2 - y * zoomScale;
-	        this.viewPort.animate('xMove', xMove);
-	        if (y !== -1) {
-	            this.viewPort.animate('yMove', yMove);
-	        }
-	        var scale = this.viewPort.getScale();
-	        if (scale !== zoomScale) {
-	            this.viewPort.animate('scale', zoomScale);
-	            this.viewPort.notifyAboutZoomChange(true);
-	        }
-	    };
-	    Segment.prototype.flash = function () {
-	        this.flashEffect = new FlashEffect(this.ctx);
-	        this.segmentController.reportEffectRenderingStart();
-	    };
-	    Segment.prototype.unload = function () {
-	        if (this.isLoaded) {
-	            this.viewPort.getCanvasPool().release(this.canvas);
-	        }
-	        else if (this.requestInProgressPromise !== null) {
-	            this.requestInProgressPromise.cancel();
-	        }
 	    };
 	    Segment.prototype.loadImage = function (url) {
 	        if (url) {
@@ -1385,6 +1395,11 @@
 	    }
 	    FlashLoader.prototype.segmentLoaded = function (event) {
 	        this.loadedSegments[event.segmentId] = true;
+	    };
+	    FlashLoader.prototype.segmentUnvisibled = function (segmentId) {
+	        _.remove(this.segments, function (segment) {
+	            return segment.id === segmentId;
+	        });
 	    };
 	    FlashLoader.prototype.canBeFlashed = function () {
 	        for (var _i = 0, _a = this.segments; _i < _a.length; _i++) {

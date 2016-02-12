@@ -31,6 +31,7 @@ class Segment implements ISegmentPlace {
     private images: Array<ImageModel>;
     private productPositions: Array<ProductPositionModel>;
     private debugPlaces: Array<DebugPlaceModel>;
+    private plnId: number;
     private requestInProgressPromise: Promise<any> = null;
     private knownImgs: KnownImages;
     private imgs: Images;
@@ -65,6 +66,7 @@ class Segment implements ISegmentPlace {
             this.images = data.images;
             this.productPositions = data.productPositions;
             this.debugPlaces = data.debugPlaces;
+            this.plnId = data.plnId;
 
             let loadImagePromise = this.requestInProgressPromise = this.loadImage(data.spriteImgUrl);
             return loadImagePromise;
@@ -121,6 +123,66 @@ class Segment implements ISegmentPlace {
       }
     }
 
+    public isClicked(e: TapInput): boolean {
+        return e.x > this.x && e.x < this.x + this.width;
+    }
+
+    public isClickable(x: number, y: number) {
+        for (let product of this.productPositions) {
+            if (x >= this.x + product.dx
+                && x <= this.x + product.dx + product.w
+                && y >= product.dy
+                && y <= product.dy + product.h) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public isInCanvasVisibleArea(): boolean {
+        let xMove = this.viewPort.getXMove();
+        let scale = this.viewPort.getScale();
+        let canvasWidth = this.viewPort.getCanvasWidth();
+
+        let isBeforeVisibleArea = xMove / scale + this.x + this.width < 0;
+        let isAfterVisibleArea = xMove / scale - canvasWidth / scale + this.x > 0;
+        return !isBeforeVisibleArea && !isAfterVisibleArea;
+    }
+
+    public fitOnViewPort(y: number): void {
+        let zoomScale = this.viewPort.getZoomScale();
+
+        let canvasWidth = this.viewPort.getCanvasWidth();
+        let xMove = (canvasWidth - this.width * zoomScale) / 2 - this.x * zoomScale;
+
+        let canvasHeight = this.viewPort.getCanvasHeight();
+        let yMove = canvasHeight / 2 - y * zoomScale;
+
+        this.viewPort.animate('xMove', xMove);
+        if (y !== -1) {
+            this.viewPort.animate('yMove', yMove);
+        }
+
+        let scale = this.viewPort.getScale();
+        if (scale !== zoomScale) {
+            this.viewPort.animate('scale', zoomScale);
+            this.viewPort.notifyAboutZoomChange(true);
+        }
+    }
+
+    public flash(): void {
+        this.flashEffect = new FlashEffect(this.ctx);
+        this.segmentController.reportEffectRenderingStart();
+    }
+
+    public unload(): void {
+        if (this.isLoaded) {
+            this.viewPort.getCanvasPool().release(this.canvas);
+        } else if (this.requestInProgressPromise !== null) {
+            this.requestInProgressPromise.cancel();
+        }
+    }
+
     private createCanvas(): HTMLCanvasElement {
         let canvas = this.viewPort.getCanvasPool().get();
         let ctx = canvas.getContext('2d');
@@ -175,71 +237,11 @@ class Segment implements ISegmentPlace {
         ctx.font = 'bold 250px Ariel';
         ctx.fillStyle = 'black';
         ctx.textAlign = 'center';
-        ctx.fillText(this.getIndex().toString(), this.width / 2, 600);
+        ctx.fillText(this.plnId.toString(), this.width / 2, 600);
 
         ctx.restore();
 
         return canvas;
-    }
-
-    public isClicked(e: TapInput): boolean {
-        return e.x > this.x && e.x < this.x + this.width;
-    }
-
-    private isInCanvasVisibleArea(): boolean {
-        let xMove = this.viewPort.getXMove();
-        let scale = this.viewPort.getScale();
-        let canvasWidth = this.viewPort.getCanvasWidth();
-
-        let isBeforeVisibleArea = xMove / scale + this.x + this.width < 0;
-        let isAfterVisibleArea = xMove / scale - canvasWidth / scale + this.x > 0;
-        return !isBeforeVisibleArea && !isAfterVisibleArea;
-    }
-
-    public isClickable(x: number, y: number) {
-        for (let product of this.productPositions) {
-            if (x >= this.x + product.dx
-                && x <= this.x + product.dx + product.w
-                && y >= product.dy
-                && y <= product.dy + product.h) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public fitOnViewPort(y: number): void {
-        let zoomScale = this.viewPort.getZoomScale();
-
-        let canvasWidth = this.viewPort.getCanvasWidth();
-        let xMove = (canvasWidth - this.width * zoomScale) / 2 - this.x * zoomScale;
-
-        let canvasHeight = this.viewPort.getCanvasHeight();
-        let yMove = canvasHeight / 2 - y * zoomScale;
-
-        this.viewPort.animate('xMove', xMove);
-        if (y !== -1) {
-            this.viewPort.animate('yMove', yMove);
-        }
-
-        let scale = this.viewPort.getScale();
-        if (scale !== zoomScale) {
-            this.viewPort.animate('scale', zoomScale);
-            this.viewPort.notifyAboutZoomChange(true);
-        }
-    }
-
-    public flash(): void {
-        this.flashEffect = new FlashEffect(this.ctx);
-        this.segmentController.reportEffectRenderingStart();
-    }
-
-    public unload(): void {
-        if (this.isLoaded) {
-            this.viewPort.getCanvasPool().release(this.canvas);
-        } else if (this.requestInProgressPromise !== null) {
-            this.requestInProgressPromise.cancel();
-        }
     }
 
     private loadImage(url: string): Promise<HTMLImageElement> {

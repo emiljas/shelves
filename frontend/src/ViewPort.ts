@@ -104,7 +104,6 @@ class ViewPort implements XMoveHolder {
 
         let maxCanvasWidth = Math.round(this.maxSegmentWidth * this.zoomScale);
         let maxCanvasHeight = Math.round(this.segmentHeight * this.zoomScale);
-        console.log(maxCanvasWidth, maxCanvasHeight);
         this.canvasPool = new CanvasPool(maxCanvasWidth, maxCanvasHeight);
 
         this.queryString = new QueryString(this.container);

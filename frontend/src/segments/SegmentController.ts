@@ -97,14 +97,13 @@ class SegmentController {
     }
 
     public preloadSegments() {
-      for (let segment of this.segments) {
-        segment.releaseCanvasIfNotInUse();
-      }
+        for (let segment of this.segments) {
+          segment.releaseCanvasIfNotInUse();
+        }
 
-      for (let segment of this.segments) {
-        segment.createCanvasIfNecessary();
-      }
-
+        for (let segment of this.segments) {
+          segment.createCanvasIfNecessary();
+        }
 
         let xMove = this.viewPort.getXMove();
         let scale = this.viewPort.getScale();
@@ -113,9 +112,17 @@ class SegmentController {
         this.appender.work(xMove);
         this.prepender.work(xMove);
 
-        if (this.flashLoader && this.flashLoader.canBeFlashed()) {
+        if (this.flashLoader) {
+          if (this.flashLoader.canBeFlashed()) {
             this.flashLoader.flash();
             this.flashLoader = null;
+          } else {
+            for (let segment of this.segments) {
+              if (!segment.isInCanvasVisibleArea()) {
+                this.flashLoader.segmentUnvisibled(segment.getId());
+              }
+            }
+          }
         }
     }
 

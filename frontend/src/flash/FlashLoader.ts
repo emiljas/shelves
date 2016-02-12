@@ -14,6 +14,12 @@ class FlashLoader {
         this.loadedSegments[event.segmentId] = true;
     }
 
+    public segmentUnvisibled(segmentId: number): void {
+      _.remove(this.segments, (segment) => {
+        return segment.id === segmentId;
+      });
+    }
+
     public canBeFlashed(): boolean {
       for (let segment of this.segments) {
           if (this.loadedSegments[segment.id] !== true) {
