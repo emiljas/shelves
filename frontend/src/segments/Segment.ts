@@ -26,6 +26,8 @@ class Segment implements ISegmentPlace {
     private spriteImg: HTMLImageElement;
     private width: number;
     private height: number;
+    private zoomWidth: number;
+    private zoomHeight: number;
     private knownImages: Array<KnownImageModel>;
     private images: Array<ImageModel>;
     private productPositions: Array<ProductPositionModel>;
@@ -58,6 +60,8 @@ class Segment implements ISegmentPlace {
         }).then((data) => {
             this.width = data.width;
             this.height = data.height;
+            this.zoomWidth = this.width * this.viewPort.getZoomScale();
+            this.zoomHeight = this.height * this.viewPort.getZoomScale();
             this.knownImages = data.knownImages;
             this.images = data.images;
             this.productPositions = data.productPositions;
@@ -82,7 +86,7 @@ class Segment implements ISegmentPlace {
 
     public draw(timestamp: number) {
         if (this.isLoaded && this.isInCanvasVisibleArea()) {
-            this.ctx.drawImage(this.canvas, 0, 0, this.width * this.viewPort.getZoomScale(), this.height * this.viewPort.getZoomScale(), this.x, 0, this.width, this.height);
+            this.ctx.drawImage(this.canvas, 0, 0, this.zoomWidth, this.zoomHeight, this.x, 0, this.width, this.height);
 
             if (this.flashEffect) {
                 if (this.flashEffect.isEnded()) {
@@ -98,19 +102,21 @@ class Segment implements ISegmentPlace {
     public createCanvasIfNecessary(): void {
       if (this.canDrawCanvas && !this.canvas && this.isInCanvasVisibleArea()) {
         this.canvas = this.createCanvas();
-        console.log('createCanvas ' + this.id);
 
-        this.spriteImg = null;
         this.isLoaded = true;
         this.segmentController.segmentLoaded({ segmentId: this.id });
+      }
+    }
 
-        // Promise.resolve(this.loadPromise);
+    public releaseCanvasIfNotInUse(): void {
+      if (this.isLoaded && !this.isInCanvasVisibleArea()) {
+        this.isLoaded = false;
+        this.viewPort.getCanvasPool().release(this.canvas);
+        this.canvas = null;
       }
     }
 
     private createCanvas(): HTMLCanvasElement {
-      console.log('createCavas');
-
         let canvas = this.viewPort.getCanvasPool().get();
         let ctx = canvas.getContext('2d');
 
@@ -171,7 +177,7 @@ class Segment implements ISegmentPlace {
         return canvas;
     }
 
-    public isInCanvasVisibleArea(): boolean {
+    private isInCanvasVisibleArea(): boolean {
         let xMove = this.viewPort.getXMove();
         let scale = this.viewPort.getScale();
         let canvasWidth = this.viewPort.getCanvasWidth();

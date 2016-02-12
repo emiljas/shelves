@@ -98,6 +98,10 @@ class SegmentController {
 
     public preloadSegments() {
       for (let segment of this.segments) {
+        segment.releaseCanvasIfNotInUse();
+      }
+
+      for (let segment of this.segments) {
         segment.createCanvasIfNecessary();
       }
 

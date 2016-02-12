@@ -751,6 +751,10 @@
 	    SegmentController.prototype.preloadSegments = function () {
 	        for (var _i = 0, _a = this.segments; _i < _a.length; _i++) {
 	            var segment = _a[_i];
+	            segment.releaseCanvasIfNotInUse();
+	        }
+	        for (var _b = 0, _c = this.segments; _b < _c.length; _b++) {
+	            var segment = _c[_b];
 	            segment.createCanvasIfNecessary();
 	        }
 	        var xMove = this.viewPort.getXMove();
@@ -861,6 +865,8 @@
 	        }).then(function (data) {
 	            _this.width = data.width;
 	            _this.height = data.height;
+	            _this.zoomWidth = _this.width * _this.viewPort.getZoomScale();
+	            _this.zoomHeight = _this.height * _this.viewPort.getZoomScale();
 	            _this.knownImages = data.knownImages;
 	            _this.images = data.images;
 	            _this.productPositions = data.productPositions;
@@ -883,7 +889,7 @@
 	    };
 	    Segment.prototype.draw = function (timestamp) {
 	        if (this.isLoaded && this.isInCanvasVisibleArea()) {
-	            this.ctx.drawImage(this.canvas, 0, 0, this.width * this.viewPort.getZoomScale(), this.height * this.viewPort.getZoomScale(), this.x, 0, this.width, this.height);
+	            this.ctx.drawImage(this.canvas, 0, 0, this.zoomWidth, this.zoomHeight, this.x, 0, this.width, this.height);
 	            if (this.flashEffect) {
 	                if (this.flashEffect.isEnded()) {
 	                    this.flashEffect = null;
@@ -898,14 +904,18 @@
 	    Segment.prototype.createCanvasIfNecessary = function () {
 	        if (this.canDrawCanvas && !this.canvas && this.isInCanvasVisibleArea()) {
 	            this.canvas = this.createCanvas();
-	            console.log('createCanvas ' + this.id);
-	            this.spriteImg = null;
 	            this.isLoaded = true;
 	            this.segmentController.segmentLoaded({ segmentId: this.id });
 	        }
 	    };
+	    Segment.prototype.releaseCanvasIfNotInUse = function () {
+	        if (this.isLoaded && !this.isInCanvasVisibleArea()) {
+	            this.isLoaded = false;
+	            this.viewPort.getCanvasPool().release(this.canvas);
+	            this.canvas = null;
+	        }
+	    };
 	    Segment.prototype.createCanvas = function () {
-	        console.log('createCavas');
 	        var canvas = this.viewPort.getCanvasPool().get();
 	        var ctx = canvas.getContext('2d');
 	        ctx.save();
