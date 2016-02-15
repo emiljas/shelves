@@ -29,6 +29,7 @@ class Segment implements ISegmentPlace {
     private height: number;
     private zoomWidth: number;
     private zoomHeight: number;
+    private middleX: number;
     private knownImages1: Array<KnownImageModel>;
     private knownImages2: Array<KnownImageModel>;
     private images: Array<ImageModel>;
@@ -50,6 +51,7 @@ class Segment implements ISegmentPlace {
     ) {
         this.height = this.viewPort.getSegmentHeight();
         this.ctx = viewPort.getCanvasContext();
+        this.middleX = this.x + this.width / 2;
     }
 
     public getIndex(): number { return this.index; }
@@ -110,10 +112,11 @@ class Segment implements ISegmentPlace {
               this.ctx.fillStyle = SEGMENT_COLOR;
               this.ctx.fillRect(this.x, 0, this.width, this.height);
 
-              this.ctx.font = 'bold 30px Ariel';
+              let middleY = (this.viewPort.getCanvasHeight() / 2 - this.viewPort.getYMove()) / this.viewPort.getScale();
+              this.ctx.font = 'bold ' + this.viewPort.getFontSize() + 'px Ariel';
               this.ctx.fillStyle = 'black';
               this.ctx.textAlign = 'center';
-              this.ctx.fillText('Trwa ładowanie..', this.x + this.width / 2, (this.viewPort.getCanvasHeight() - this.viewPort.getYMove() * 2) / (2 * this.viewPort.getScale()));
+              this.ctx.fillText('Trwa ładowanie..', this.middleX, middleY);
             }
         }
     }

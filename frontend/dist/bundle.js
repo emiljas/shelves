@@ -105,6 +105,7 @@
 	var CanvasPool = __webpack_require__(25);
 	var QueryString = __webpack_require__(26);
 	var StartPosition = __webpack_require__(27);
+	var ResolutionType = __webpack_require__(28);
 	var VERTICAL_SLIDE_RATIO = 0.9;
 	var SCROLL_LINE_HEIGHT = 20;
 	var ViewPort = (function () {
@@ -153,6 +154,8 @@
 	        this.events.addEventListener(this.canvas, 'mousemove', function (e) { _this.onMouseMove(e); });
 	        this.scrollPageHeight = document.documentElement.clientHeight;
 	        this.events.addEventListener(this.canvas, 'wheel', function (e) { e.preventDefault(); _this.onScroll(e); });
+	        this.setResolutionType();
+	        this.setFontSize();
 	    }
 	    ViewPort.prototype.getCanvas = function () { return this.canvas; };
 	    ViewPort.prototype.getCanvasContext = function () { return this.ctx; };
@@ -174,6 +177,7 @@
 	    ViewPort.prototype.checkIfMagnified = function () { return this.isMagnified; };
 	    ViewPort.prototype.checkIfTopScrollBlock = function () { return this.isTopScrollBlock; };
 	    ViewPort.prototype.checkIfBottomScrollBlock = function () { return this.isBottomScrollBlock; };
+	    ViewPort.prototype.getFontSize = function () { return this.fontSize; };
 	    ViewPort.prototype.start = function () {
 	        window.requestAnimationFrame(this.frameRequestCallback);
 	    };
@@ -269,6 +273,28 @@
 	    ViewPort.prototype.slideLeft = function () {
 	        var xMove = this.xMove + this.canvasWidth;
 	        this.animate('xMove', xMove);
+	    };
+	    ViewPort.prototype.setResolutionType = function () {
+	        if (this.canvasWidth <= 480) {
+	            this.resolutionType = ResolutionType.Phone;
+	        }
+	        else if (this.canvasWidth <= 768) {
+	            this.resolutionType = ResolutionType.Tablet;
+	        }
+	        else {
+	            this.resolutionType = ResolutionType.Desktop;
+	        }
+	    };
+	    ViewPort.prototype.setFontSize = function () {
+	        if (this.resolutionType === ResolutionType.Phone) {
+	            this.fontSize = 60;
+	        }
+	        else if (this.resolutionType === ResolutionType.Tablet) {
+	            this.fontSize = 55;
+	        }
+	        else {
+	            this.fontSize = 40;
+	        }
 	    };
 	    ViewPort.prototype.onAnimationFrame = function (timestamp) {
 	        this.timestamp = timestamp;
@@ -425,6 +451,7 @@
 	var UP_ARROW_KEY_CODE = 38;
 	var RIGHT_ARROW_KEY_CODE = 39;
 	var DOWN_ARROW_KEY_CODE = 40;
+	var SPACE_KEY_CODE = 32;
 	var Control = (function () {
 	    function Control(viewPort, container) {
 	        this.viewPort = viewPort;
@@ -499,14 +526,7 @@
 	            _this.viewPort.control_bottom();
 	        });
 	        this.events.addEventListener(this.middle, 'click', function (e) {
-	            if (_this.viewPort.checkIfMagnified()) {
-	                _this.viewPort.control_unzoom();
-	                _this.middle.src = HOVER_PLUS_IMG_URL;
-	            }
-	            else {
-	                _this.viewPort.control_zoom();
-	                _this.middle.src = HOVER_MINUS_IMG_URL;
-	            }
+	            _this.handleMiddle();
 	        });
 	        this.events.addEventListener(document, 'keydown', function (e) {
 	            if (e.keyCode) {
@@ -522,8 +542,21 @@
 	                else if (e.keyCode === DOWN_ARROW_KEY_CODE) {
 	                    _this.viewPort.control_bottom();
 	                }
+	                else if (e.keyCode === SPACE_KEY_CODE) {
+	                    _this.handleMiddle();
+	                }
 	            }
 	        });
+	    };
+	    Control.prototype.handleMiddle = function () {
+	        if (this.viewPort.checkIfMagnified()) {
+	            this.viewPort.control_unzoom();
+	            this.middle.src = HOVER_PLUS_IMG_URL;
+	        }
+	        else {
+	            this.viewPort.control_zoom();
+	            this.middle.src = HOVER_MINUS_IMG_URL;
+	        }
 	    };
 	    Control.prototype.changeIconOnHover = function (img, iconUrl, hoverIconUrl) {
 	        this.events.addEventListener(img, 'mouseover', function () {
@@ -909,6 +942,7 @@
 	        this.requestInProgressPromise = null;
 	        this.height = this.viewPort.getSegmentHeight();
 	        this.ctx = viewPort.getCanvasContext();
+	        this.middleX = this.x + this.width / 2;
 	    }
 	    Segment.prototype.getIndex = function () { return this.index; };
 	    Segment.prototype.getId = function () { return this.id; };
@@ -965,10 +999,11 @@
 	            else {
 	                this.ctx.fillStyle = SEGMENT_COLOR;
 	                this.ctx.fillRect(this.x, 0, this.width, this.height);
-	                this.ctx.font = 'bold 30px Ariel';
+	                var middleY = (this.viewPort.getCanvasHeight() / 2 - this.viewPort.getYMove()) / this.viewPort.getScale();
+	                this.ctx.font = 'bold ' + this.viewPort.getFontSize() + 'px Ariel';
 	                this.ctx.fillStyle = 'black';
 	                this.ctx.textAlign = 'center';
-	                this.ctx.fillText('Trwa ładowanie..', this.x + this.width / 2, (this.viewPort.getCanvasHeight() - this.viewPort.getYMove() * 2) / (2 * this.viewPort.getScale()));
+	                this.ctx.fillText('Trwa ładowanie..', this.middleX, middleY);
 	            }
 	        }
 	    };
@@ -1782,6 +1817,19 @@
 	    return StartPosition;
 	})();
 	module.exports = StartPosition;
+
+
+/***/ },
+/* 28 */
+/***/ function(module, exports) {
+
+	var ResolutionType;
+	(function (ResolutionType) {
+	    ResolutionType[ResolutionType["Phone"] = 0] = "Phone";
+	    ResolutionType[ResolutionType["Tablet"] = 1] = "Tablet";
+	    ResolutionType[ResolutionType["Desktop"] = 2] = "Desktop";
+	})(ResolutionType || (ResolutionType = {}));
+	module.exports = ResolutionType;
 
 
 /***/ }

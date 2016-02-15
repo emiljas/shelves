@@ -26,6 +26,7 @@ const LEFT_ARROW_KEY_CODE = 37;
 const UP_ARROW_KEY_CODE = 38;
 const RIGHT_ARROW_KEY_CODE = 39;
 const DOWN_ARROW_KEY_CODE = 40;
+const SPACE_KEY_CODE = 32;
 
 class Control {
     private events: Events;
@@ -119,13 +120,7 @@ class Control {
         });
 
         this.events.addEventListener(this.middle, 'click', (e) => {
-            if (this.viewPort.checkIfMagnified()) {
-                this.viewPort.control_unzoom();
-                this.middle.src = HOVER_PLUS_IMG_URL;
-            } else {
-                this.viewPort.control_zoom();
-                this.middle.src = HOVER_MINUS_IMG_URL;
-            }
+          this.handleMiddle();
         });
 
         this.events.addEventListener(document, 'keydown', (e: KeyboardEvent) => {
@@ -138,9 +133,21 @@ class Control {
               this.viewPort.control_top();
             } else if (e.keyCode === DOWN_ARROW_KEY_CODE) {
               this.viewPort.control_bottom();
+            } else if (e.keyCode === SPACE_KEY_CODE) {
+              this.handleMiddle();
             }
           }
         });
+    }
+
+    private handleMiddle() {
+            if (this.viewPort.checkIfMagnified()) {
+                this.viewPort.control_unzoom();
+                this.middle.src = HOVER_PLUS_IMG_URL;
+            } else {
+                this.viewPort.control_zoom();
+                this.middle.src = HOVER_MINUS_IMG_URL;
+            }
     }
 
     private changeIconOnHover(img: HTMLImageElement, iconUrl: string, hoverIconUrl: string) {

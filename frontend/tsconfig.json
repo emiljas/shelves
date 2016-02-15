@@ -45,6 +45,7 @@
     "src/QueryString.ts",
     "src/repository/Repository.ts",
     "src/repository/SegmentRepository.ts",
+    "src/ResolutionType.ts",
     "src/segments/CanvasPool.ts",
     "src/segments/ISegmentPlace.ts",
     "src/segments/Segment.ts",

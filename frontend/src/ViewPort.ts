@@ -14,6 +14,7 @@ import SegmentWidthModel = require('./models/SegmentWidthModel');
 import QueryString = require('./QueryString');
 import StartPosition = require('./startPosition/StartPosition');
 import StartPositionResult = require('./startPosition/StartPositionResult');
+import ResolutionType = require('./ResolutionType');
 
 const VERTICAL_SLIDE_RATIO = 0.9;
 const SCROLL_LINE_HEIGHT = 20;
@@ -45,6 +46,8 @@ class ViewPort implements XMoveHolder {
     private isTopScrollBlock = true;
     private isBottomScrollBlock = true;
     private startPosition: StartPositionResult;
+    private fontSize: number;
+    private resolutionType: ResolutionType;
 
     private drawnXMove: number;
     private drawnYMove: number;
@@ -78,6 +81,7 @@ class ViewPort implements XMoveHolder {
     public checkIfMagnified() { return this.isMagnified; }
     public checkIfTopScrollBlock() { return this.isTopScrollBlock; }
     public checkIfBottomScrollBlock() { return this.isBottomScrollBlock; }
+    public getFontSize(): number { return this.fontSize; }
 
     constructor(containerId: string) {
         // (<any>window)['vp'] = this; //DEBUG ONLY
@@ -122,6 +126,9 @@ class ViewPort implements XMoveHolder {
         this.events.addEventListener(this.canvas, 'mousemove', (e: MouseEvent) => { this.onMouseMove(e); });
         this.scrollPageHeight = document.documentElement.clientHeight;
         this.events.addEventListener(this.canvas, 'wheel', (e: WheelEvent) => { e.preventDefault(); this.onScroll(e); });
+
+        this.setResolutionType();
+        this.setFontSize();
     }
 
     public start(): void {
@@ -237,6 +244,26 @@ class ViewPort implements XMoveHolder {
     private slideLeft() {
         let xMove = this.xMove + this.canvasWidth;
         this.animate('xMove', xMove);
+    }
+
+    private setResolutionType(): void {
+        if (this.canvasWidth <= 480) {
+          this.resolutionType = ResolutionType.Phone;
+        } else if (this.canvasWidth <= 768) {
+          this.resolutionType = ResolutionType.Tablet;
+        } else {
+          this.resolutionType = ResolutionType.Desktop;
+        }
+    }
+
+    private setFontSize(): void {
+        if (this.resolutionType === ResolutionType.Phone) {
+          this.fontSize = 60;
+        } else if (this.resolutionType === ResolutionType.Tablet) {
+          this.fontSize = 55;
+        } else {
+          this.fontSize = 40;
+        }
     }
 
     private onAnimationFrame(timestamp: number) {
