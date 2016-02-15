@@ -22,6 +22,11 @@ const HOVER_PLUS_IMG_URL = BASE_IMG_URL + 'zoom-plus-hover.png';
 const MINUS_IMG_URL = BASE_IMG_URL + 'zoom-minus.png';
 const HOVER_MINUS_IMG_URL = BASE_IMG_URL + 'zoom-minus-hover.png';
 
+const LEFT_ARROW_KEY_CODE = 37;
+const UP_ARROW_KEY_CODE = 38;
+const RIGHT_ARROW_KEY_CODE = 39;
+const DOWN_ARROW_KEY_CODE = 40;
+
 class Control {
     private events: Events;
     private controlDiv: HTMLDivElement;
@@ -121,6 +126,20 @@ class Control {
                 this.viewPort.control_zoom();
                 this.middle.src = HOVER_MINUS_IMG_URL;
             }
+        });
+
+        this.events.addEventListener(document, 'keydown', (e: KeyboardEvent) => {
+          if (e.keyCode) {
+            if (e.keyCode === LEFT_ARROW_KEY_CODE) {
+              this.viewPort.control_left();
+            } else if (e.keyCode === RIGHT_ARROW_KEY_CODE) {
+              this.viewPort.control_right();
+            } else if (e.keyCode === UP_ARROW_KEY_CODE) {
+              this.viewPort.control_top();
+            } else if (e.keyCode === DOWN_ARROW_KEY_CODE) {
+              this.viewPort.control_bottom();
+            }
+          }
         });
     }
 

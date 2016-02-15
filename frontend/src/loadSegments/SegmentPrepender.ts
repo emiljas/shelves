@@ -14,12 +14,15 @@ class SegmentPrepender {
         this.currentX = args.START_X / args.INITIAL_SCALE;
     }
 
-    public work(xMove: number): void {
+    public work(xMove: number): boolean {
+      let wasSegmentsAppended = false;
         while (this.shouldPrepend(xMove)) {
             this.prepend();
+            wasSegmentsAppended = true;
         }
 
         this.unloadUnvisibleSegments(xMove);
+        return wasSegmentsAppended;
     }
 
     private shouldPrepend(xMove: number): boolean {
@@ -31,7 +34,7 @@ class SegmentPrepender {
         this.currentIndex = this.loopIndex.prev();
         let segmentWidth = this.args.SEGMENT_WIDTHS[this.currentIndex];
         this.currentX -= segmentWidth;
-        let segment = this.args.createSegment(this.currentIndex, this.currentX);
+        let segment = this.args.createSegment(this.currentIndex, this.currentX, segmentWidth);
         this.args.segments.push(segment);
     }
 

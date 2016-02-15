@@ -17,17 +17,19 @@ import FlashEffect = require('../flash/FlashEffect');
 
 let segmentRepository = new SegmentRepository();
 
+const SEGMENT_COLOR = '#D2D1CC';
+
 class Segment implements ISegmentPlace {
     private isLoaded = false;
     private canDrawCanvas = false;
     private canvas: HTMLCanvasElement;
     private ctx: CanvasRenderingContext2D;
     private spriteImg: HTMLImageElement;
-    private width: number;
     private height: number;
     private zoomWidth: number;
     private zoomHeight: number;
-    private knownImages: Array<KnownImageModel>;
+    private knownImages1: Array<KnownImageModel>;
+    private knownImages2: Array<KnownImageModel>;
     private images: Array<ImageModel>;
     private productPositions: Array<ProductPositionModel>;
     private debugPlaces: Array<DebugPlaceModel>;
@@ -42,8 +44,10 @@ class Segment implements ISegmentPlace {
         private segmentController: SegmentController,
         private index: number,
         private id: number,
-        private x: number
+        private x: number,
+        private width: number
     ) {
+        this.height = this.viewPort.getSegmentHeight();
         this.ctx = viewPort.getCanvasContext();
     }
 
@@ -58,11 +62,10 @@ class Segment implements ISegmentPlace {
             let getByIdPromise = this.requestInProgressPromise = segmentRepository.getById(this.id);
             return getByIdPromise;
         }).then((data) => {
-            this.width = data.width;
-            this.height = data.height;
             this.zoomWidth = this.width * this.viewPort.getZoomScale();
             this.zoomHeight = this.height * this.viewPort.getZoomScale();
-            this.knownImages = data.knownImages;
+            this.knownImages1 = data.knownImages1;
+            this.knownImages2 = data.knownImages2;
             this.images = data.images;
             this.productPositions = data.productPositions;
             this.debugPlaces = data.debugPlaces;
@@ -87,7 +90,7 @@ class Segment implements ISegmentPlace {
 
     public draw(timestamp: number) {
         if (this.isInCanvasVisibleArea()) {
-          if (this.isLoaded) {
+            if (this.isLoaded) {
               this.ctx.drawImage(this.canvas, 0, 0, this.zoomWidth, this.zoomHeight, this.x, 0, this.width, this.height);
 
               if (this.flashEffect) {
@@ -98,12 +101,16 @@ class Segment implements ISegmentPlace {
                       this.flashEffect.flash(timestamp, this.x, 0, this.width, this.height);
                   }
               }
-          } else {
-            this.ctx.strokeStyle = 'lightgrey';
-            this.ctx.lineWidth = 4;
-            this.ctx.strokeRect(this.x, 0, this.width, this.height);
-          }
-      }
+            } else {
+              this.ctx.fillStyle = SEGMENT_COLOR;
+              this.ctx.fillRect(this.x, 0, this.width, this.height);
+
+              this.ctx.font = 'bold 30px Ariel';
+              this.ctx.fillStyle = 'black';
+              this.ctx.textAlign = 'center';
+              this.ctx.fillText('Trwa ładowanie..', this.x + this.width / 2, (this.viewPort.getCanvasHeight() - this.viewPort.getYMove() * 2) / (2 * this.viewPort.getScale()));
+            }
+        }
     }
 
     public createCanvasIfNecessary(): void {
@@ -190,23 +197,10 @@ class Segment implements ISegmentPlace {
         ctx.save();
         ctx.scale(this.viewPort.getZoomScale(), this.viewPort.getZoomScale());
 
-        ctx.fillStyle = '#D2D1CC';
+        ctx.fillStyle = SEGMENT_COLOR;
         ctx.fillRect(0, 0, this.width, this.height);
 
-        for (let image of this.knownImages) {
-            let img = this.knownImgs.getByType(image.type);
-
-            if (image.repeat) {
-              ctx.beginPath();
-              let pattern = ctx.createPattern(img, 'repeat');
-              ctx.fillStyle = pattern;
-              ctx.fillRect(image.dx, image.dy, image.w, image.h);
-            } else if (image.w && image.h) {
-                ctx.drawImage(img, image.dx, image.dy, image.w, image.h);
-            } else {
-                ctx.drawImage(img, image.dx, image.dy);
-            }
-        }
+        this.drawKnownImages(ctx, this.knownImages1);
 
         for (let image of this.images) {
             let img = this.imgs.getByUrl(image.url);
@@ -216,6 +210,8 @@ class Segment implements ISegmentPlace {
                 ctx.drawImage(img, image.dx, image.dy);
             }
         }
+
+        this.drawKnownImages(ctx, this.knownImages2);
 
         for (let p of this.productPositions) {
             ctx.drawImage(this.spriteImg, p.sx, p.sy, p.w, p.h, p.dx, p.dy, p.w, p.h);
@@ -242,6 +238,23 @@ class Segment implements ISegmentPlace {
         ctx.restore();
 
         return canvas;
+    }
+
+    private drawKnownImages(ctx: CanvasRenderingContext2D, images: Array<KnownImageModel>): void {
+        for (let image of images) {
+            let img = this.knownImgs.getByType(image.type);
+
+            if (image.repeat) {
+              ctx.beginPath();
+              let pattern = ctx.createPattern(img, 'repeat');
+              ctx.fillStyle = pattern;
+              ctx.fillRect(image.dx, image.dy, image.w, image.h);
+            } else if (image.w && image.h) {
+                ctx.drawImage(img, image.dx, image.dy, image.w, image.h);
+            } else {
+                ctx.drawImage(img, image.dx, image.dy);
+            }
+        }
     }
 
     private loadImage(url: string): Promise<HTMLImageElement> {

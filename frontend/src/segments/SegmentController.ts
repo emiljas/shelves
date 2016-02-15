@@ -34,9 +34,9 @@ class SegmentController {
             START_SEGMENT_INDEX: startPosition.segmentIndex,
             START_X: startPosition.x,
             segments: this.segments,
-            createSegment: (index, x) => {
+            createSegment: (index, x, width) => {
                 let id = this.segmentsData[index].id;
-                let segment = new Segment(viewPort, this, index, id, x);
+                let segment = new Segment(viewPort, this, index, id, x, width);
                 segment.load();
                 return segment;
             }
@@ -109,8 +109,13 @@ class SegmentController {
         let scale = this.viewPort.getScale();
         let initialScale = this.viewPort.getInitialScale();
         xMove *= initialScale / scale;
-        this.appender.work(xMove);
-        this.prepender.work(xMove);
+
+        let mustBeRedraw = this.appender.work(xMove);
+        mustBeRedraw = mustBeRedraw || this.prepender.work(xMove);
+
+        if (mustBeRedraw) {
+          this.notDrawnSegmentCount++;
+        }
 
         if (this.flashLoader) {
           if (this.flashLoader.canBeFlashed()) {

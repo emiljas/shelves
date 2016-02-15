@@ -7,7 +7,7 @@ interface SegmentAppenderArgs {
     START_SEGMENT_INDEX: number;
     START_X: number;
     segments: Array<ISegmentPlace>;
-    createSegment: (index: number, x: number) => ISegmentPlace;
+    createSegment: (index: number, x: number, width: number) => ISegmentPlace;
 }
 
 export = SegmentAppenderArgs;

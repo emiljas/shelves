@@ -7,7 +7,8 @@ interface SegmentModel {
   width: number;
   height: number;
   spriteImgUrl: string;
-  knownImages: Array<KnownImageModel>;
+  knownImages1: Array<KnownImageModel>;
+  knownImages2: Array<KnownImageModel>;
   images: Array<ImageModel>;
   productPositions: Array<ProductPositionModel>;
   debugPlaces: Array<DebugPlaceModel>;

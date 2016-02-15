@@ -1,5 +1,5 @@
 interface EventArgs {
-  element: Element;
+  element: Element | Document;
   type: string;
   listener: (e: UIEvent) => any;
 }

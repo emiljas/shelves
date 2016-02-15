@@ -18,12 +18,15 @@ class SegmentAppender {
         this.nextX = args.START_X / this.args.INITIAL_SCALE;
     }
 
-    public work(xMove: number): void {
+    public work(xMove: number): boolean {
+        let wasSegmentsAppended = false;
         while (this.shouldAppend(xMove)) {
             this.append();
+            wasSegmentsAppended = true;
         }
 
         this.unloadUnvisibleSegments(xMove);
+        return wasSegmentsAppended;
     }
 
     private shouldAppend(xMove: number): boolean {
@@ -33,7 +36,7 @@ class SegmentAppender {
 
     private append(): void {
         let segmentWidth = this.args.SEGMENT_WIDTHS[this.nextIndex];
-        let segment = this.args.createSegment(this.nextIndex, this.nextX);
+        let segment = this.args.createSegment(this.nextIndex, this.nextX, segmentWidth);
         this.args.segments.push(segment);
         this.nextX += segmentWidth;
         this.nextIndex = this.loopIndex.next();

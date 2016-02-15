@@ -70,6 +70,7 @@ class ViewPort implements XMoveHolder {
     public getZoomScale() { return this.zoomScale; }
     public getScale() { return this.scale; }
     public getY() { return this.y; }
+    public getSegmentHeight() { return this.segmentHeight; }
     public getKnownImages() { return this.knownImagesPromise; }
     public getCanvasPool() { return this.canvasPool; }
     public getQueryString() { return this.queryString; }
