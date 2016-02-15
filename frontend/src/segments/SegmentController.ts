@@ -37,7 +37,7 @@ class SegmentController {
             createSegment: (index, x, width) => {
                 let id = this.segmentsData[index].id;
                 let segment = new Segment(viewPort, this, index, id, x, width);
-                segment.load();
+                // segment.load();
                 return segment;
             }
         };
@@ -97,6 +97,17 @@ class SegmentController {
     }
 
     public preloadSegments() {
+        let visibleAndNotReadySegmentsExists = this.visibleAndNotReadySegmentsExists();
+        for (let segment of this.segments) {
+          if (!segment.checkIfLoading()) {
+            if (segment.isInCanvasVisibleArea()) {
+              segment.load();
+            } else if (!visibleAndNotReadySegmentsExists) {
+              segment.load();
+            }
+          }
+        }
+
         for (let segment of this.segments) {
           segment.releaseCanvasIfNotInUse();
         }
@@ -110,8 +121,9 @@ class SegmentController {
         let initialScale = this.viewPort.getInitialScale();
         xMove *= initialScale / scale;
 
-        let mustBeRedraw = this.appender.work(xMove);
-        mustBeRedraw = mustBeRedraw || this.prepender.work(xMove);
+        let wasSegmentsAppended = this.appender.work(xMove);
+        let wasSegmentsPrepended = this.prepender.work(xMove);
+        let mustBeRedraw = wasSegmentsAppended || wasSegmentsPrepended;
 
         if (mustBeRedraw) {
           this.notDrawnSegmentCount++;
@@ -129,6 +141,15 @@ class SegmentController {
             }
           }
         }
+    }
+
+    public visibleAndNotReadySegmentsExists(): boolean {
+      for (let segment of this.segments) {
+        if (segment.isInCanvasVisibleArea() && !segment.checkIfCanDrawCanvas()) {
+          return true;
+        }
+      }
+      return false;
     }
 
     public segmentLoaded(event: SegmentLoadedEvent) {

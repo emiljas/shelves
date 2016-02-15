@@ -717,7 +717,7 @@
 	            createSegment: function (index, x, width) {
 	                var id = _this.segmentsData[index].id;
 	                var segment = new Segment(viewPort, _this, index, id, x, width);
-	                segment.load();
+	                // segment.load();
 	                return segment;
 	            }
 	        };
@@ -769,20 +769,33 @@
 	        }
 	    };
 	    SegmentController.prototype.preloadSegments = function () {
+	        var visibleAndNotReadySegmentsExists = this.visibleAndNotReadySegmentsExists();
 	        for (var _i = 0, _a = this.segments; _i < _a.length; _i++) {
 	            var segment = _a[_i];
-	            segment.releaseCanvasIfNotInUse();
+	            if (!segment.checkIfLoading()) {
+	                if (segment.isInCanvasVisibleArea()) {
+	                    segment.load();
+	                }
+	                else if (!visibleAndNotReadySegmentsExists) {
+	                    segment.load();
+	                }
+	            }
 	        }
 	        for (var _b = 0, _c = this.segments; _b < _c.length; _b++) {
 	            var segment = _c[_b];
+	            segment.releaseCanvasIfNotInUse();
+	        }
+	        for (var _d = 0, _e = this.segments; _d < _e.length; _d++) {
+	            var segment = _e[_d];
 	            segment.createCanvasIfNecessary();
 	        }
 	        var xMove = this.viewPort.getXMove();
 	        var scale = this.viewPort.getScale();
 	        var initialScale = this.viewPort.getInitialScale();
 	        xMove *= initialScale / scale;
-	        var mustBeRedraw = this.appender.work(xMove);
-	        mustBeRedraw = mustBeRedraw || this.prepender.work(xMove);
+	        var wasSegmentsAppended = this.appender.work(xMove);
+	        var wasSegmentsPrepended = this.prepender.work(xMove);
+	        var mustBeRedraw = wasSegmentsAppended || wasSegmentsPrepended;
 	        if (mustBeRedraw) {
 	            this.notDrawnSegmentCount++;
 	        }
@@ -792,14 +805,23 @@
 	                this.flashLoader = null;
 	            }
 	            else {
-	                for (var _d = 0, _e = this.segments; _d < _e.length; _d++) {
-	                    var segment = _e[_d];
+	                for (var _f = 0, _g = this.segments; _f < _g.length; _f++) {
+	                    var segment = _g[_f];
 	                    if (!segment.isInCanvasVisibleArea()) {
 	                        this.flashLoader.segmentUnvisibled(segment.getId());
 	                    }
 	                }
 	            }
 	        }
+	    };
+	    SegmentController.prototype.visibleAndNotReadySegmentsExists = function () {
+	        for (var _i = 0, _a = this.segments; _i < _a.length; _i++) {
+	            var segment = _a[_i];
+	            if (segment.isInCanvasVisibleArea() && !segment.checkIfCanDrawCanvas()) {
+	                return true;
+	            }
+	        }
+	        return false;
 	    };
 	    SegmentController.prototype.segmentLoaded = function (event) {
 	        if (this.flashLoader) {
@@ -881,6 +903,7 @@
 	        this.id = id;
 	        this.x = x;
 	        this.width = width;
+	        this.isLoading = false;
 	        this.isLoaded = false;
 	        this.canDrawCanvas = false;
 	        this.requestInProgressPromise = null;
@@ -891,8 +914,11 @@
 	    Segment.prototype.getId = function () { return this.id; };
 	    Segment.prototype.getX = function () { return this.x; };
 	    Segment.prototype.getWidth = function () { return this.width; };
+	    Segment.prototype.checkIfLoading = function () { return this.isLoading; };
+	    Segment.prototype.checkIfCanDrawCanvas = function () { return this.canDrawCanvas; };
 	    Segment.prototype.load = function () {
 	        var _this = this;
+	        this.isLoading = true;
 	        this.viewPort.getKnownImages().then(function (images) {
 	            _this.knownImgs = images;
 	            var getByIdPromise = _this.requestInProgressPromise = segmentRepository.getById(_this.id);
@@ -964,13 +990,15 @@
 	        return e.x > this.x && e.x < this.x + this.width;
 	    };
 	    Segment.prototype.isClickable = function (x, y) {
-	        for (var _i = 0, _a = this.productPositions; _i < _a.length; _i++) {
-	            var product = _a[_i];
-	            if (x >= this.x + product.dx
-	                && x <= this.x + product.dx + product.w
-	                && y >= product.dy
-	                && y <= product.dy + product.h) {
-	                return true;
+	        if (this.isLoaded) {
+	            for (var _i = 0, _a = this.productPositions; _i < _a.length; _i++) {
+	                var product = _a[_i];
+	                if (x >= this.x + product.dx
+	                    && x <= this.x + product.dx + product.w
+	                    && y >= product.dy
+	                    && y <= product.dy + product.h) {
+	                    return true;
+	                }
 	            }
 	        }
 	        return false;
@@ -979,8 +1007,8 @@
 	        var xMove = this.viewPort.getXMove();
 	        var scale = this.viewPort.getScale();
 	        var canvasWidth = this.viewPort.getCanvasWidth();
-	        var isBeforeVisibleArea = xMove / scale + this.x + this.width < 0;
-	        var isAfterVisibleArea = xMove / scale - canvasWidth / scale + this.x > 0;
+	        var isBeforeVisibleArea = xMove / scale + this.x + this.width <= 0;
+	        var isAfterVisibleArea = xMove / scale - canvasWidth / scale + this.x >= 0;
 	        return !isBeforeVisibleArea && !isAfterVisibleArea;
 	    };
 	    Segment.prototype.fitOnViewPort = function (y) {

@@ -20,6 +20,7 @@ let segmentRepository = new SegmentRepository();
 const SEGMENT_COLOR = '#D2D1CC';
 
 class Segment implements ISegmentPlace {
+    private isLoading = false;
     private isLoaded = false;
     private canDrawCanvas = false;
     private canvas: HTMLCanvasElement;
@@ -55,8 +56,12 @@ class Segment implements ISegmentPlace {
     public getId(): number { return this.id; }
     public getX(): number { return this.x; }
     public getWidth(): number { return this.width; }
+    public checkIfLoading(): boolean { return this.isLoading; }
+    public checkIfCanDrawCanvas(): boolean { return this.canDrawCanvas; }
 
     public load(): void {
+      this.isLoading = true;
+
         this.viewPort.getKnownImages().then((images) => {
             this.knownImgs = images;
             let getByIdPromise = this.requestInProgressPromise = segmentRepository.getById(this.id);
@@ -135,6 +140,7 @@ class Segment implements ISegmentPlace {
     }
 
     public isClickable(x: number, y: number) {
+      if (this.isLoaded) {
         for (let product of this.productPositions) {
             if (x >= this.x + product.dx
                 && x <= this.x + product.dx + product.w
@@ -143,7 +149,9 @@ class Segment implements ISegmentPlace {
                 return true;
             }
         }
-        return false;
+      }
+
+      return false;
     }
 
     public isInCanvasVisibleArea(): boolean {
@@ -151,8 +159,8 @@ class Segment implements ISegmentPlace {
         let scale = this.viewPort.getScale();
         let canvasWidth = this.viewPort.getCanvasWidth();
 
-        let isBeforeVisibleArea = xMove / scale + this.x + this.width < 0;
-        let isAfterVisibleArea = xMove / scale - canvasWidth / scale + this.x > 0;
+        let isBeforeVisibleArea = xMove / scale + this.x + this.width <= 0;
+        let isAfterVisibleArea = xMove / scale - canvasWidth / scale + this.x >= 0;
         return !isBeforeVisibleArea && !isAfterVisibleArea;
     }
 
