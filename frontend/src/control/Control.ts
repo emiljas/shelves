@@ -141,13 +141,13 @@ class Control {
     }
 
     private handleMiddle() {
-            if (this.viewPort.checkIfMagnified()) {
-                this.viewPort.control_unzoom();
-                this.middle.src = HOVER_PLUS_IMG_URL;
-            } else {
-                this.viewPort.control_zoom();
-                this.middle.src = HOVER_MINUS_IMG_URL;
-            }
+      if (this.viewPort.checkIfMagnified()) {
+          this.viewPort.control_unzoom();
+          this.middle.src = HOVER_PLUS_IMG_URL;
+      } else {
+          this.viewPort.control_zoom();
+          this.middle.src = HOVER_MINUS_IMG_URL;
+      }
     }
 
     private changeIconOnHover(img: HTMLImageElement, iconUrl: string, hoverIconUrl: string) {

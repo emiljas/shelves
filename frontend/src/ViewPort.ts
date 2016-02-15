@@ -273,38 +273,7 @@ class ViewPort implements XMoveHolder {
         if (this.mustBeRedraw()) {
             this.blockVerticalMoveOutsideCanvas();
             this.draw();
-
-
-
-
-
-
-            let sliderMargin = 10;
-            let sliderPadding = 2.5;
-
-            let sliderX = this.canvasWidth - 2 * sliderMargin;
-            let sliderY = sliderMargin;
-            let sliderWidth = 8;
-            let sliderHeight = this.canvasHeight - 2 * sliderMargin;
-
-            this.ctx.fillStyle = 'white';
-            this.ctx.fillRect(sliderX, sliderY, sliderWidth, sliderHeight);
-
-            let sliderZipX = sliderX + sliderPadding;
-            let sliderZipY = sliderY + sliderPadding;
-            let sliderZipWidth = sliderWidth - 2 * sliderPadding;
-            let sliderZipHeight = sliderHeight - 2 * sliderPadding;
-
-            this.ctx.fillStyle = 'black';
-            this.ctx.fillRect(sliderZipX, sliderZipY, sliderZipWidth, sliderZipHeight);
-
-            // console.log((((-this.yMove + this.canvasHeight) / this.scale) / this.segmentHeight) * 100);
-
-
-
-
-
-
+            this.drawSlider();
         } else {
             this.segmentController.preloadSegments();
         }
@@ -313,6 +282,32 @@ class ViewPort implements XMoveHolder {
             window.requestAnimationFrame(this.frameRequestCallback);
         }
     };
+
+    private drawSlider() {
+      if (this.isMagnified) {
+        let sliderMargin = 10;
+        let sliderPadding = 2.5;
+
+        let sliderX = this.canvasWidth - 2 * sliderMargin;
+        let sliderY = sliderMargin;
+        let sliderWidth = 8;
+        let sliderHeight = this.canvasHeight - 2 * sliderMargin;
+
+        this.ctx.fillStyle = 'white';
+        this.ctx.fillRect(sliderX, sliderY, sliderWidth, sliderHeight);
+
+        let sliderZipX = sliderX + sliderPadding;
+        let sliderZipY = sliderY + sliderPadding;
+        let sliderZipWidth = sliderWidth - 2 * sliderPadding;
+        let sliderZipEndY = (sliderHeight - 2 * sliderPadding)
+           * (((-this.yMove + this.canvasHeight) / this.scale) / this.segmentHeight);
+        let scrollZipHeight = (sliderHeight - 2 * sliderPadding)
+           * (((this.canvasHeight) / this.scale) / this.segmentHeight);
+
+        this.ctx.fillStyle = 'black';
+        this.ctx.fillRect(sliderZipX, sliderZipY + sliderZipEndY - scrollZipHeight, sliderZipWidth, scrollZipHeight);
+      }
+    }
 
     private onMouseMove(e: MouseEvent): void {
       let x = e.offsetX;

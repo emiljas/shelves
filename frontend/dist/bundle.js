@@ -302,6 +302,18 @@
 	        if (this.mustBeRedraw()) {
 	            this.blockVerticalMoveOutsideCanvas();
 	            this.draw();
+	            this.drawSlider();
+	        }
+	        else {
+	            this.segmentController.preloadSegments();
+	        }
+	        if (!this.isDeleted) {
+	            window.requestAnimationFrame(this.frameRequestCallback);
+	        }
+	    };
+	    ;
+	    ViewPort.prototype.drawSlider = function () {
+	        if (this.isMagnified) {
 	            var sliderMargin = 10;
 	            var sliderPadding = 2.5;
 	            var sliderX = this.canvasWidth - 2 * sliderMargin;
@@ -313,18 +325,14 @@
 	            var sliderZipX = sliderX + sliderPadding;
 	            var sliderZipY = sliderY + sliderPadding;
 	            var sliderZipWidth = sliderWidth - 2 * sliderPadding;
-	            var sliderZipHeight = sliderHeight - 2 * sliderPadding;
+	            var sliderZipEndY = (sliderHeight - 2 * sliderPadding)
+	                * (((-this.yMove + this.canvasHeight) / this.scale) / this.segmentHeight);
+	            var scrollZipHeight = (sliderHeight - 2 * sliderPadding)
+	                * (((this.canvasHeight) / this.scale) / this.segmentHeight);
 	            this.ctx.fillStyle = 'black';
-	            this.ctx.fillRect(sliderZipX, sliderZipY, sliderZipWidth, sliderZipHeight);
-	        }
-	        else {
-	            this.segmentController.preloadSegments();
-	        }
-	        if (!this.isDeleted) {
-	            window.requestAnimationFrame(this.frameRequestCallback);
+	            this.ctx.fillRect(sliderZipX, sliderZipY + sliderZipEndY - scrollZipHeight, sliderZipWidth, scrollZipHeight);
 	        }
 	    };
-	    ;
 	    ViewPort.prototype.onMouseMove = function (e) {
 	        var x = e.offsetX;
 	        var y = e.offsetY;
