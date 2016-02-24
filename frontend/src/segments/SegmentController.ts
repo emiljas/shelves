@@ -67,7 +67,7 @@ class SegmentController {
 
         if (clickedSegment) {
             clickedSegment.fitOnViewPort(e.y);
-            clickedSegment.showProductIfUnderCursor();
+            clickedSegment.showProductIfClicked(e);
         } else {
             console.error('cannot find clicked segment');
         }
@@ -193,12 +193,14 @@ class SegmentController {
       }
     }
 
-    public handleMouseMove(x: number, y: number) {
+    public handleMouseMove(x: number, y: number): void {
       x = (x - this.viewPort.getXMove()) / this.viewPort.getScale();
       y = (y - this.viewPort.getYMove()) / this.viewPort.getScale();
       for (let segment of this.segments) {
         if (x >= segment.getX() && x <= segment.getX() + segment.getWidth()) {
-          return segment.handleMouseMove(x, y);
+          segment.handleMouseMove(x, y);
+        } else {
+          segment.handleMouseOut();
         }
       }
     }

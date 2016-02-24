@@ -789,7 +789,7 @@
 	        }
 	        if (clickedSegment) {
 	            clickedSegment.fitOnViewPort(e.y);
-	            clickedSegment.showProductIfUnderCursor();
+	            clickedSegment.showProductIfClicked(e);
 	        }
 	        else {
 	            console.error('cannot find clicked segment');
@@ -914,7 +914,10 @@
 	        for (var _i = 0, _a = this.segments; _i < _a.length; _i++) {
 	            var segment = _a[_i];
 	            if (x >= segment.getX() && x <= segment.getX() + segment.getWidth()) {
-	                return segment.handleMouseMove(x, y);
+	                segment.handleMouseMove(x, y);
+	            }
+	            else {
+	                segment.handleMouseOut();
 	            }
 	        }
 	    };
@@ -1116,6 +1119,25 @@
 	                this.drawCanvas(this.canvas);
 	                this.segmentController.segmentLoaded({ segmentId: this.id });
 	            }
+	        }
+	    };
+	    Segment.prototype.handleMouseOut = function () {
+	        if (this.isLoaded) {
+	            var tempHighlightedPrice = this.highlightedPrice;
+	            var tempHighlightedProductPositions = this.hightlightedProductPositions;
+	            this.highlightedPrice = null;
+	            this.hightlightedProductPositions = null;
+	            if (this.hightlightedProductPositions !== tempHighlightedProductPositions
+	                || this.highlightedPrice !== tempHighlightedPrice) {
+	                this.drawCanvas(this.canvas);
+	                this.segmentController.segmentLoaded({ segmentId: this.id });
+	            }
+	        }
+	    };
+	    Segment.prototype.showProductIfClicked = function (e) {
+	        var product = this.getProductUnderCursor(e.x, e.y);
+	        if (product) {
+	            console.log('product cliecked: ' + product.priceId);
 	        }
 	    };
 	    Segment.prototype.isInCanvasVisibleArea = function () {

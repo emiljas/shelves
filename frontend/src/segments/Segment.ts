@@ -203,9 +203,8 @@ class Segment implements ISegmentPlace {
       return false;
     }
 
-    public handleMouseMove(x: number, y: number) {
+    public handleMouseMove(x: number, y: number): void {
       if (this.isLoaded) {
-
         let product = this.getProductUnderCursor(x, y);
         let tempHighlightedPrice = this.highlightedPrice;
         let tempHighlightedProductPositions = this.hightlightedProductPositions;
@@ -228,6 +227,28 @@ class Segment implements ISegmentPlace {
           this.drawCanvas(this.canvas);
           this.segmentController.segmentLoaded({segmentId: this.id});
         }
+      }
+    }
+
+    public handleMouseOut() {
+        if (this.isLoaded) {
+          let tempHighlightedPrice = this.highlightedPrice;
+          let tempHighlightedProductPositions = this.hightlightedProductPositions;
+
+          this.highlightedPrice = null;
+          this.hightlightedProductPositions = null;
+
+          if (this.hightlightedProductPositions !== tempHighlightedProductPositions
+            || this.highlightedPrice !== tempHighlightedPrice) {
+            this.drawCanvas(this.canvas);
+            this.segmentController.segmentLoaded({segmentId: this.id});
+          }
+        }
+    }
+    public showProductIfClicked(e: TapInput): void {
+      let product = this.getProductUnderCursor(e.x, e.y);
+      if (product) {
+        console.log('product cliecked: ' + product.priceId);
       }
     }
 
