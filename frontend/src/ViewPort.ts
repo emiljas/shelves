@@ -312,6 +312,9 @@ class ViewPort implements XMoveHolder {
     private onMouseMove(e: MouseEvent): void {
       let x = e.offsetX;
       let y = e.offsetY;
+
+      this.segmentController.handleMouseMove(x, y);
+
       let isClickable = this.segmentController.isClickable(x, y);
       if (isClickable) {
         this.container.classList.add('pointer');

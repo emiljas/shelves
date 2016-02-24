@@ -6,7 +6,9 @@ enum ImageType {
   ShelfLeftBackground = 4,
   ShelfRightBackground = 5,
   FooterBackground = 6,
-  PegboardHook = 7
+  PegboardHook = 7,
+  PriceBackground = 8,
+  PromoPriceBackground = 9
 }
 
 export = ImageType;

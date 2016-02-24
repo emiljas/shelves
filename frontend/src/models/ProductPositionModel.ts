@@ -5,6 +5,7 @@ interface ProductPositionModel {
     h: number; //height
     dx: number; //destination x
     dy: number; //destincation y
+    priceId: number;
 }
 
 export = ProductPositionModel;

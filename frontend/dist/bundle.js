@@ -99,13 +99,13 @@
 	var Control = __webpack_require__(4);
 	var KnownImages = __webpack_require__(6);
 	var SegmentController = __webpack_require__(9);
-	var touch = __webpack_require__(21);
-	var DrawingController = __webpack_require__(22);
-	var ValueAnimatorController = __webpack_require__(23);
-	var CanvasPool = __webpack_require__(25);
-	var QueryString = __webpack_require__(26);
-	var StartPosition = __webpack_require__(27);
-	var ResolutionType = __webpack_require__(28);
+	var touch = __webpack_require__(22);
+	var DrawingController = __webpack_require__(23);
+	var ValueAnimatorController = __webpack_require__(24);
+	var CanvasPool = __webpack_require__(26);
+	var QueryString = __webpack_require__(27);
+	var StartPosition = __webpack_require__(28);
+	var ResolutionType = __webpack_require__(29);
 	var VERTICAL_SLIDE_RATIO = 0.9;
 	var SCROLL_LINE_HEIGHT = 20;
 	var ViewPort = (function () {
@@ -336,6 +336,7 @@
 	    ViewPort.prototype.onMouseMove = function (e) {
 	        var x = e.offsetX;
 	        var y = e.offsetY;
+	        this.segmentController.handleMouseMove(x, y);
 	        var isClickable = this.segmentController.isClickable(x, y);
 	        if (isClickable) {
 	            this.container.classList.add('pointer');
@@ -663,6 +664,8 @@
 	        this.addImage(ImageType.ShelfRightBackground, 'shelfRightBackground.png');
 	        this.addImage(ImageType.FooterBackground, 'footerBackground.png');
 	        this.addImage(ImageType.PegboardHook, 'pegboardHook.png');
+	        this.addImage(ImageType.PriceBackground, 'priceBackground.png');
+	        this.addImage(ImageType.PromoPriceBackground, 'promoPriceBackground.png');
 	    }
 	    KnownImages.downloadAll = function () {
 	        var images = new KnownImages();
@@ -705,6 +708,8 @@
 	    ImageType[ImageType["ShelfRightBackground"] = 5] = "ShelfRightBackground";
 	    ImageType[ImageType["FooterBackground"] = 6] = "FooterBackground";
 	    ImageType[ImageType["PegboardHook"] = 7] = "PegboardHook";
+	    ImageType[ImageType["PriceBackground"] = 8] = "PriceBackground";
+	    ImageType[ImageType["PromoPriceBackground"] = 9] = "PromoPriceBackground";
 	})(ImageType || (ImageType = {}));
 	module.exports = ImageType;
 
@@ -735,9 +740,9 @@
 
 	'use strict';
 	var Segment = __webpack_require__(10);
-	var SegmentPrepender = __webpack_require__(17);
-	var SegmentAppender = __webpack_require__(19);
-	var FlashLoader = __webpack_require__(20);
+	var SegmentPrepender = __webpack_require__(18);
+	var SegmentAppender = __webpack_require__(20);
+	var FlashLoader = __webpack_require__(21);
 	var DOUBLE_COMPARISON_DIFF = 1;
 	var SegmentController = (function () {
 	    function SegmentController(viewPort, segmentsData, segmentWidths, startPosition) {
@@ -784,6 +789,7 @@
 	        }
 	        if (clickedSegment) {
 	            clickedSegment.fitOnViewPort(e.y);
+	            clickedSegment.showProductIfUnderCursor();
 	        }
 	        else {
 	            console.error('cannot find clicked segment');
@@ -902,6 +908,16 @@
 	            }
 	        }
 	    };
+	    SegmentController.prototype.handleMouseMove = function (x, y) {
+	        x = (x - this.viewPort.getXMove()) / this.viewPort.getScale();
+	        y = (y - this.viewPort.getYMove()) / this.viewPort.getScale();
+	        for (var _i = 0, _a = this.segments; _i < _a.length; _i++) {
+	            var segment = _a[_i];
+	            if (x >= segment.getX() && x <= segment.getX() + segment.getWidth()) {
+	                return segment.handleMouseMove(x, y);
+	            }
+	        }
+	    };
 	    SegmentController.prototype.isClickable = function (x, y) {
 	        x = (x - this.viewPort.getXMove()) / this.viewPort.getScale();
 	        y = (y - this.viewPort.getYMove()) / this.viewPort.getScale();
@@ -930,12 +946,37 @@
 
 	'use strict';
 	var SegmentRepository = __webpack_require__(11);
-	var loadImage = __webpack_require__(13);
-	var createWhitePixelImg = __webpack_require__(14);
-	var Images = __webpack_require__(15);
-	var FlashEffect = __webpack_require__(16);
+	var TextType = __webpack_require__(13);
+	var ImageType = __webpack_require__(7);
+	var loadImage = __webpack_require__(14);
+	var createWhitePixelImg = __webpack_require__(15);
+	var Images = __webpack_require__(16);
+	var FlashEffect = __webpack_require__(17);
 	var segmentRepository = new SegmentRepository();
 	var SEGMENT_COLOR = '#D2D1CC';
+	var DARK_SEGMENT_COLOR = '#666666';
+	var SEGMENT_BORDER_LINE_WIDTH = 2;
+	var CURVE_R = 5;
+	var TEXT_TYPE_FONT = {};
+	TEXT_TYPE_FONT[TextType.Price] = 'bold 11px Arial';
+	TEXT_TYPE_FONT[TextType.PromoPrice] = 'bold 11px Arial';
+	TEXT_TYPE_FONT[TextType.OldPrice] = 'bold 9px Arial';
+	TEXT_TYPE_FONT[TextType.Header] = '27px Arial';
+	var TEXT_TYPE_COLOR = {};
+	TEXT_TYPE_COLOR[TextType.Price] = '#333333';
+	TEXT_TYPE_COLOR[TextType.PromoPrice] = '#333333';
+	TEXT_TYPE_COLOR[TextType.OldPrice] = '#333333';
+	TEXT_TYPE_COLOR[TextType.Header] = '#0067B2';
+	var TEXT_TYPE_ALIGN = {};
+	TEXT_TYPE_ALIGN[TextType.Price] = 'right';
+	TEXT_TYPE_ALIGN[TextType.PromoPrice] = 'right';
+	TEXT_TYPE_ALIGN[TextType.OldPrice] = 'left';
+	TEXT_TYPE_ALIGN[TextType.Header] = 'center';
+	var TEXT_TYPE_BASE_LINE = {};
+	TEXT_TYPE_BASE_LINE[TextType.Price] = 'middle';
+	TEXT_TYPE_BASE_LINE[TextType.Price] = 'middle';
+	TEXT_TYPE_BASE_LINE[TextType.OldPrice] = 'middle';
+	TEXT_TYPE_BASE_LINE[TextType.Header] = 'middle';
 	var Segment = (function () {
 	    function Segment(viewPort, segmentController, index, id, x, width) {
 	        this.viewPort = viewPort;
@@ -971,6 +1012,10 @@
 	            _this.knownImages1 = data.knownImages1;
 	            _this.knownImages2 = data.knownImages2;
 	            _this.images = data.images;
+	            _this.headerTitleFrames = data.headerTitleFrames;
+	            _this.prices = data.prices;
+	            _this.hookPrices = data.hookPrices;
+	            _this.texts = data.texts;
 	            _this.productPositions = data.productPositions;
 	            _this.debugPlaces = data.debugPlaces;
 	            _this.plnId = data.plnId;
@@ -1007,6 +1052,9 @@
 	            else {
 	                this.ctx.fillStyle = SEGMENT_COLOR;
 	                this.ctx.fillRect(this.x, 0, this.width, this.height);
+	                this.ctx.strokeStyle = DARK_SEGMENT_COLOR;
+	                this.ctx.lineWidth = SEGMENT_BORDER_LINE_WIDTH;
+	                this.ctx.strokeRect(this.x, 0, this.width, this.height);
 	                var middleY = (this.viewPort.getCanvasHeight() / 2 - this.viewPort.getYMove()) / this.viewPort.getScale();
 	                this.ctx.font = 'bold ' + this.viewPort.getFontSize() + 'px Ariel';
 	                this.ctx.fillStyle = 'black';
@@ -1030,7 +1078,7 @@
 	        }
 	    };
 	    Segment.prototype.isClicked = function (e) {
-	        return e.x > this.x && e.x < this.x + this.width;
+	        return e.x >= this.x && e.x <= this.x + this.width;
 	    };
 	    Segment.prototype.isClickable = function (x, y) {
 	        if (this.isLoaded) {
@@ -1045,6 +1093,30 @@
 	            }
 	        }
 	        return false;
+	    };
+	    Segment.prototype.handleMouseMove = function (x, y) {
+	        if (this.isLoaded) {
+	            var product = this.getProductUnderCursor(x, y);
+	            var tempHighlightedPrice = this.highlightedPrice;
+	            var tempHighlightedProductPositions = this.hightlightedProductPositions;
+	            if (product) {
+	                this.hightlightedProductPositions = [product];
+	                var price = _.find(this.prices, function (p) { return p.priceId === product.priceId; });
+	                if (!price) {
+	                    price = _.find(this.hookPrices, function (p) { return p.priceId === product.priceId; });
+	                }
+	                this.highlightedPrice = price;
+	            }
+	            else {
+	                this.hightlightedProductPositions = null;
+	                this.highlightedPrice = null;
+	            }
+	            if (this.hightlightedProductPositions !== tempHighlightedProductPositions
+	                || this.highlightedPrice !== tempHighlightedPrice) {
+	                this.drawCanvas(this.canvas);
+	                this.segmentController.segmentLoaded({ segmentId: this.id });
+	            }
+	        }
 	    };
 	    Segment.prototype.isInCanvasVisibleArea = function () {
 	        var xMove = this.viewPort.getXMove();
@@ -1084,6 +1156,10 @@
 	    };
 	    Segment.prototype.createCanvas = function () {
 	        var canvas = this.viewPort.getCanvasPool().get();
+	        this.drawCanvas(canvas);
+	        return canvas;
+	    };
+	    Segment.prototype.drawCanvas = function (canvas) {
 	        var ctx = canvas.getContext('2d');
 	        ctx.save();
 	        ctx.scale(this.viewPort.getZoomScale(), this.viewPort.getZoomScale());
@@ -1101,9 +1177,54 @@
 	            }
 	        }
 	        this.drawKnownImages(ctx, this.knownImages2);
-	        for (var _b = 0, _c = this.productPositions; _b < _c.length; _b++) {
-	            var p = _c[_b];
+	        ctx.font = TEXT_TYPE_FONT[TextType.Header];
+	        var maxHeaderTitleWidth = 0;
+	        for (var _b = 0, _c = this.headerTitleFrames; _b < _c.length; _b++) {
+	            var f = _c[_b];
+	            maxHeaderTitleWidth = Math.max(ctx.measureText(' ' + f.value + ' ').width, maxHeaderTitleWidth);
+	        }
+	        ctx.fillStyle = 'white';
+	        for (var _d = 0, _e = this.headerTitleFrames; _d < _e.length; _d++) {
+	            var f = _e[_d];
+	            ctx.shadowColor = 'black';
+	            ctx.shadowBlur = 20;
+	            ctx.shadowOffsetX = 0;
+	            ctx.shadowOffsetY = 0;
+	            var w = maxHeaderTitleWidth;
+	            var h = f.h;
+	            var dx = (f.headerWidth - w) / 2;
+	            var dy = f.dy;
+	            ctx.beginPath();
+	            ctx.moveTo(dx + CURVE_R, dy);
+	            ctx.lineTo(dx + w - CURVE_R, dy);
+	            ctx.quadraticCurveTo(dx + w, dy, dx + w, dy + CURVE_R);
+	            ctx.lineTo(dx + w, dy + h - CURVE_R);
+	            ctx.quadraticCurveTo(dx + w, dy + h, dx + w - CURVE_R, dy + h);
+	            ctx.lineTo(dx + CURVE_R, dy + h);
+	            ctx.quadraticCurveTo(dx, dy + h, dx, dy + h - CURVE_R);
+	            ctx.lineTo(dx, dy + CURVE_R);
+	            ctx.quadraticCurveTo(dx, dy, dx + CURVE_R, dy);
+	            ctx.closePath();
+	            ctx.fill();
+	        }
+	        ctx.shadowBlur = 0;
+	        ctx.shadowOffsetX = 0;
+	        ctx.shadowOffsetY = 0;
+	        for (var _f = 0, _g = this.texts; _f < _g.length; _f++) {
+	            var text = _g[_f];
+	            this.drawText(ctx, text);
+	        }
+	        for (var _h = 0, _j = this.productPositions; _h < _j.length; _h++) {
+	            var p = _j[_h];
 	            ctx.drawImage(this.spriteImg, p.sx, p.sy, p.w, p.h, p.dx, p.dy, p.w, p.h);
+	        }
+	        for (var _k = 0, _l = this.prices; _k < _l.length; _k++) {
+	            var price = _l[_k];
+	            this.drawPrice(ctx, price);
+	        }
+	        for (var _m = 0, _o = this.hookPrices; _m < _o.length; _m++) {
+	            var price = _o[_m];
+	            this.drawPrice(ctx, price);
 	        }
 	        // debug only!
 	        // let debugPlacesI = 0;
@@ -1121,26 +1242,106 @@
 	        ctx.fillStyle = 'black';
 	        ctx.textAlign = 'center';
 	        ctx.fillText(this.plnId.toString(), this.width / 2, 600);
+	        this.drawHighlightedProductAndPrice(ctx);
+	        ctx.strokeStyle = DARK_SEGMENT_COLOR;
+	        ctx.lineWidth = SEGMENT_BORDER_LINE_WIDTH;
+	        ctx.strokeRect(0, 0, this.width, this.height);
 	        ctx.restore();
-	        return canvas;
+	    };
+	    Segment.prototype.drawHighlightedProductAndPrice = function (ctx) {
+	        if (this.hightlightedProductPositions && this.highlightedPrice) {
+	            ctx.shadowColor = '#ffd700';
+	            ctx.shadowBlur = 20;
+	            ctx.shadowOffsetX = 0;
+	            ctx.shadowOffsetY = 0;
+	            for (var _i = 0, _a = this.hightlightedProductPositions; _i < _a.length; _i++) {
+	                var p = _a[_i];
+	                ctx.drawImage(this.spriteImg, p.sx, p.sy, p.w, p.h, p.dx, p.dy, p.w, p.h);
+	            }
+	            this.drawPrice(ctx, this.highlightedPrice);
+	            ctx.shadowBlur = 0;
+	            ctx.shadowOffsetX = 0;
+	            ctx.shadowOffsetY = 0;
+	        }
+	    };
+	    Segment.prototype.drawPrice = function (ctx, price) {
+	        if (price.imageType === ImageType.PromoPriceBackground) {
+	            this.drawKnownImage(ctx, {
+	                type: price.imageType,
+	                dx: price.promoImageDx,
+	                dy: price.imageDy
+	            });
+	            this.drawStrikethroughText(ctx, {
+	                value: price.oldTextValue,
+	                type: price.oldTextType,
+	                dx: price.oldTextDx,
+	                dy: price.oldTextDy
+	            });
+	            this.drawText(ctx, {
+	                value: price.textValue,
+	                type: price.promoTextType,
+	                dx: price.promoTextDx,
+	                dy: price.promoTextDy
+	            });
+	        }
+	        else {
+	            this.drawKnownImage(ctx, {
+	                type: price.imageType,
+	                dx: price.imageDx,
+	                dy: price.imageDy
+	            });
+	            this.drawText(ctx, {
+	                value: price.textValue,
+	                type: price.textType,
+	                dx: price.textDx,
+	                dy: price.textDy
+	            });
+	        }
 	    };
 	    Segment.prototype.drawKnownImages = function (ctx, images) {
 	        for (var _i = 0; _i < images.length; _i++) {
 	            var image = images[_i];
-	            var img = this.knownImgs.getByType(image.type);
-	            if (image.repeat) {
-	                ctx.beginPath();
-	                var pattern = ctx.createPattern(img, 'repeat');
-	                ctx.fillStyle = pattern;
-	                ctx.fillRect(image.dx, image.dy, image.w, image.h);
-	            }
-	            else if (image.w && image.h) {
-	                ctx.drawImage(img, image.dx, image.dy, image.w, image.h);
-	            }
-	            else {
-	                ctx.drawImage(img, image.dx, image.dy);
-	            }
+	            this.drawKnownImage(ctx, image);
 	        }
+	    };
+	    Segment.prototype.drawKnownImage = function (ctx, image) {
+	        var img = this.knownImgs.getByType(image.type);
+	        if (image.repeat) {
+	            ctx.beginPath();
+	            var pattern = ctx.createPattern(img, 'repeat');
+	            ctx.fillStyle = pattern;
+	            ctx.fillRect(image.dx, image.dy, image.w, image.h);
+	        }
+	        else if (image.w && image.h) {
+	            ctx.drawImage(img, image.dx, image.dy, image.w, image.h);
+	        }
+	        else {
+	            ctx.drawImage(img, image.dx, image.dy);
+	        }
+	    };
+	    Segment.prototype.drawText = function (ctx, text) {
+	        ctx.font = TEXT_TYPE_FONT[text.type];
+	        ctx.fillStyle = TEXT_TYPE_COLOR[text.type];
+	        ctx.textAlign = TEXT_TYPE_ALIGN[text.type];
+	        ctx.textBaseline = TEXT_TYPE_BASE_LINE[text.type];
+	        ctx.fillText(text.value, text.dx, text.dy);
+	    };
+	    //tylko dla czcionki 9px
+	    Segment.prototype.drawStrikethroughText = function (ctx, text) {
+	        ctx.fillStyle = TEXT_TYPE_COLOR[text.type];
+	        ctx.font = TEXT_TYPE_FONT[text.type];
+	        ctx.textAlign = TEXT_TYPE_ALIGN[text.type];
+	        ctx.textBaseline = TEXT_TYPE_BASE_LINE[text.type];
+	        ctx.fillText(text.value, text.dx, text.dy);
+	        var width = ctx.measureText(text.value).width;
+	        ctx.beginPath();
+	        ctx.strokeStyle = '1px ' + TEXT_TYPE_COLOR[text.type];
+	        ctx.moveTo(text.dx, text.dy + 4.5);
+	        ctx.lineTo(text.dx + width, text.dy - 4.5);
+	        // console.log(text.value, width);
+	        // console.log(text.dx, text.dy + 4.5, text.dx + width, text.dy - 4.5);
+	        ctx.closePath();
+	        ctx.stroke();
 	    };
 	    Segment.prototype.loadImage = function (url) {
 	        if (url) {
@@ -1149,6 +1350,20 @@
 	        else {
 	            return createWhitePixelImg();
 	        }
+	    };
+	    Segment.prototype.getProductUnderCursor = function (x, y) {
+	        if (this.isLoaded) {
+	            for (var i = this.productPositions.length - 1; i >= 0; i--) {
+	                var product = this.productPositions[i];
+	                if (x >= this.x + product.dx
+	                    && x <= this.x + product.dx + product.w
+	                    && y >= product.dy
+	                    && y <= product.dy + product.h) {
+	                    return product;
+	                }
+	            }
+	        }
+	        return null;
 	    };
 	    return Segment;
 	})();
@@ -1226,6 +1441,20 @@
 /* 13 */
 /***/ function(module, exports) {
 
+	var TextType;
+	(function (TextType) {
+	    TextType[TextType["Price"] = 0] = "Price";
+	    TextType[TextType["PromoPrice"] = 1] = "PromoPrice";
+	    TextType[TextType["OldPrice"] = 2] = "OldPrice";
+	    TextType[TextType["Header"] = 3] = "Header";
+	})(TextType || (TextType = {}));
+	module.exports = TextType;
+
+
+/***/ },
+/* 14 */
+/***/ function(module, exports) {
+
 	function loadCancelableImage(url) {
 	    'use strict';
 	    return new Promise((function (resolve, reject, onCancel) {
@@ -1255,7 +1484,7 @@
 
 
 /***/ },
-/* 14 */
+/* 15 */
 /***/ function(module, exports) {
 
 	function createWhitePixelImg() {
@@ -1276,7 +1505,7 @@
 
 
 /***/ },
-/* 15 */
+/* 16 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var loadImage = __webpack_require__(8);
@@ -1306,7 +1535,7 @@
 
 
 /***/ },
-/* 16 */
+/* 17 */
 /***/ function(module, exports) {
 
 	var FLASH_EFFECT_DURATION_SEC = 1;
@@ -1336,10 +1565,10 @@
 
 
 /***/ },
-/* 17 */
+/* 18 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var LoopIndex = __webpack_require__(18);
+	var LoopIndex = __webpack_require__(19);
 	var SegmentPrepender = (function () {
 	    function SegmentPrepender(args) {
 	        this.args = args;
@@ -1396,7 +1625,7 @@
 
 
 /***/ },
-/* 18 */
+/* 19 */
 /***/ function(module, exports) {
 
 	var LoopIndex = (function () {
@@ -1434,10 +1663,10 @@
 
 
 /***/ },
-/* 19 */
+/* 20 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var LoopIndex = __webpack_require__(18);
+	var LoopIndex = __webpack_require__(19);
 	/*
 	dodaje i usuwa segmenty
 	pierwszy segment dodany jest w x = START_X i ma index START_SEGMENT_INDEX
@@ -1494,7 +1723,7 @@
 
 
 /***/ },
-/* 20 */
+/* 21 */
 /***/ function(module, exports) {
 
 	var FlashLoader = (function () {
@@ -1532,7 +1761,7 @@
 
 
 /***/ },
-/* 21 */
+/* 22 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -1618,7 +1847,7 @@
 
 
 /***/ },
-/* 22 */
+/* 23 */
 /***/ function(module, exports) {
 
 	var DrawingController = (function () {
@@ -1640,10 +1869,10 @@
 
 
 /***/ },
-/* 23 */
+/* 24 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var ValueAnimator = __webpack_require__(24);
+	var ValueAnimator = __webpack_require__(25);
 	var ValueAnimatorController = (function () {
 	    function ValueAnimatorController() {
 	        this.animators = new Array();
@@ -1677,7 +1906,7 @@
 
 
 /***/ },
-/* 24 */
+/* 25 */
 /***/ function(module, exports) {
 
 	var HALF_OF_PI = Math.PI / 2;
@@ -1709,7 +1938,7 @@
 
 
 /***/ },
-/* 25 */
+/* 26 */
 /***/ function(module, exports) {
 
 	var CanvasPool = (function () {
@@ -1752,7 +1981,7 @@
 
 
 /***/ },
-/* 26 */
+/* 27 */
 /***/ function(module, exports) {
 
 	var QueryString = (function () {
@@ -1779,7 +2008,7 @@
 
 
 /***/ },
-/* 27 */
+/* 28 */
 /***/ function(module, exports) {
 
 	var StartPosition = (function () {
@@ -1828,7 +2057,7 @@
 
 
 /***/ },
-/* 28 */
+/* 29 */
 /***/ function(module, exports) {
 
 	var ResolutionType;
