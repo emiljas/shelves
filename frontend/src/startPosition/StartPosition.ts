@@ -18,6 +18,16 @@ class StartPosition {
             }
 
             return { segmentIndex, x, segments: segments };
+        } else if (this.args.queryString.IsSegmentIdSetUp) {
+          let segmentId = this.args.queryString.SegmentId;
+          let segmentIndex = this.getSegmentIndexBySegmentId(segmentId);
+          let segment = this.args.segmentsData[segmentIndex];
+          let x = (this.args.canvasWidth - segment.width * this.args.initialScale) / 2;
+          if (x < 0) {
+            x = 0;
+          }
+
+          return { segmentIndex, x, segments: [segment]  };
         } else {
           return { segmentIndex: 0, x: 0, segments: [] };
         }
@@ -25,6 +35,10 @@ class StartPosition {
 
     private getSegmentIndexByPlanogramId(planogramId: number): number {
         return _.findIndex(this.args.segmentsData, (s) => { return s.plnId === planogramId; });
+    }
+
+    private getSegmentIndexBySegmentId(segmentId: number): number {
+      return _.findIndex(this.args.segmentsData, (s) => { return s.id === segmentId; });
     }
 
     private getSegmentsByPlanogramId(planogramId: number, segmentIndex: number): Array<SegmentWidthModel> {

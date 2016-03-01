@@ -20,6 +20,8 @@ import KnownImages = require('../images/KnownImages');
 import Images = require('../images/Images');
 import FlashEffect = require('../flash/FlashEffect');
 
+declare var Rossmann: any;
+
 let segmentRepository = new SegmentRepository();
 
 const SEGMENT_COLOR = '#D2D1CC';
@@ -74,9 +76,12 @@ class Segment implements ISegmentPlace {
     private hightlightedProductPositions: Array<ProductPositionModel>;
     private debugPlaces: Array<DebugPlaceModel>;
     private plnId: number;
+    private planogramUrl: string;
+    private seoTitle: string;
     private requestInProgressPromise: Promise<any> = null;
     private knownImgs: KnownImages;
     private imgs: Images;
+
     private flashEffect: FlashEffect;
 
     constructor(
@@ -96,13 +101,16 @@ class Segment implements ISegmentPlace {
     public getId(): number { return this.id; }
     public getX(): number { return this.x; }
     public getWidth(): number { return this.width; }
+    public getPlanogramUrl(): string { return this.planogramUrl; }
+    public getPlanogramId(): number { return this.plnId; }
+    public getSeoTitle(): string { return this.seoTitle; }
     public checkIfLoading(): boolean { return this.isLoading; }
     public checkIfCanDrawCanvas(): boolean { return this.canDrawCanvas; }
 
-    public load(): void {
+    public load() {
       this.isLoading = true;
 
-        this.viewPort.getKnownImages().then((images) => {
+        return this.viewPort.getKnownImages().then((images) => {
             this.knownImgs = images;
             let getByIdPromise = this.requestInProgressPromise = segmentRepository.getById(this.id);
             return getByIdPromise;
@@ -119,6 +127,10 @@ class Segment implements ISegmentPlace {
             this.productPositions = data.productPositions;
             this.debugPlaces = data.debugPlaces;
             this.plnId = data.plnId;
+            this.planogramUrl = data.planogramUrl;
+            this.seoTitle = data.seoTitle;
+
+            this.segmentController.handleSegmentDataLoaded(this);
 
             let loadImagePromise = this.requestInProgressPromise = this.loadImage(data.spriteImgUrl);
             return loadImagePromise;
@@ -184,8 +196,8 @@ class Segment implements ISegmentPlace {
       }
     }
 
-    public isClicked(e: TapInput): boolean {
-        return e.x >= this.x && e.x <= this.x + this.width;
+    public isClicked(x: number, y: number): boolean {
+        return x >= this.x && x <= this.x + this.width;
     }
 
     public isClickable(x: number, y: number) {
@@ -248,7 +260,7 @@ class Segment implements ISegmentPlace {
     public showProductIfClicked(e: TapInput): void {
       let product = this.getProductUnderCursor(e.x, e.y);
       if (product) {
-        console.log('product cliecked: ' + product.priceId);
+        Rossmann.Modules.Shelves2.showProduct(product.planogramProductId, product.productId);
       }
     }
 
@@ -262,7 +274,7 @@ class Segment implements ISegmentPlace {
         return !isBeforeVisibleArea && !isAfterVisibleArea;
     }
 
-    public fitOnViewPort(y: number): void {
+    public fitOnViewPort(y?: number): void {
         let zoomScale = this.viewPort.getZoomScale();
 
         let canvasWidth = this.viewPort.getCanvasWidth();
@@ -272,7 +284,7 @@ class Segment implements ISegmentPlace {
         let yMove = canvasHeight / 2 - y * zoomScale;
 
         this.viewPort.animate('xMove', xMove);
-        if (y !== -1) {
+        if (y != null) {
             this.viewPort.animate('yMove', yMove);
         }
 
@@ -286,6 +298,19 @@ class Segment implements ISegmentPlace {
     public flash(): void {
         this.flashEffect = new FlashEffect(this.ctx);
         this.segmentController.reportEffectRenderingStart();
+    }
+
+    public hasProduct(productId: number): boolean {
+      return _.find(this.productPositions, (p) => { return p.productId === productId; }) != null;
+    }
+
+    public showProduct(productId: number) {
+      let product = this.getProduct(productId);
+      Rossmann.Modules.Shelves2.showProduct(product.planogramProductId, product.productId);
+    }
+
+    public getProduct(productId: number): ProductPositionModel {
+      return _.find(this.productPositions, (p) => { return p.productId === productId; });
     }
 
     public unload(): void {
@@ -500,8 +525,6 @@ class Segment implements ISegmentPlace {
       ctx.strokeStyle = '1px ' + TEXT_TYPE_COLOR[text.type];
       ctx.moveTo(text.dx, text.dy + 4.5);
       ctx.lineTo(text.dx + width, text.dy - 4.5);
-      // console.log(text.value, width);
-      // console.log(text.dx, text.dy + 4.5, text.dx + width, text.dy - 4.5);
       ctx.closePath();
       ctx.stroke();
     }

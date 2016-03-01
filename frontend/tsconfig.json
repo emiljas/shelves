@@ -68,6 +68,7 @@
     "src/utils/loadCancelableImage.ts",
     "src/utils/loadImage.ts",
     "src/utils/setTimedInterval.ts",
+    "src/utils/Timer.ts",
     "src/ViewPort.ts",
     "src/XMoveHolder.ts",
     "test/animation/AnimatedValuesLockTests.ts",

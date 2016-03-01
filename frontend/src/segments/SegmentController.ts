@@ -25,7 +25,9 @@ class SegmentController {
         private viewPort: ViewPort,
         private segmentsData: Array<SegmentWidthModel>,
         private segmentWidths: Array<number>,
-        startPosition: StartPositionResult
+        startPosition: StartPositionResult,
+        private startProductId: number,
+        noFlash: boolean
     ) {
         let appenderArgs: SegmentAppenderArgs = {
             INITIAL_SCALE: viewPort.getInitialScale(),
@@ -37,7 +39,6 @@ class SegmentController {
             createSegment: (index, x, width) => {
                 let id = this.segmentsData[index].id;
                 let segment = new Segment(viewPort, this, index, id, x, width);
-                // segment.load();
                 return segment;
             }
         };
@@ -48,7 +49,7 @@ class SegmentController {
             let segment = _.find(this.segments, (s) => { return s.getId() === segmentId; });
             segment.flash();
         };
-        this.flashLoader = new FlashLoader(startPosition.segments, makeFlash);
+        this.flashLoader = noFlash ? null : new FlashLoader(startPosition.segments, makeFlash);
     }
 
     public onClick(e: TapInput): void {
@@ -59,7 +60,7 @@ class SegmentController {
 
         let clickedSegment: Segment;
         for (let segment of this.segments) {
-            if (segment.isClicked(e)) {
+            if (segment.isClicked(e.x, e.y)) {
                 clickedSegment = segment;
                 break;
             }
@@ -153,6 +154,16 @@ class SegmentController {
       return false;
     }
 
+    public handleSegmentDataLoaded(segment: Segment) {
+      if (this.startProductId) {
+        if (segment.hasProduct(this.startProductId)) {
+          segment.fitOnViewPort();
+          segment.showProduct(this.startProductId);
+          this.startProductId = null;
+        }
+      }
+    }
+
     public segmentLoaded(event: SegmentLoadedEvent) {
         if (this.flashLoader) {
             this.flashLoader.segmentLoaded(event);
@@ -161,10 +172,15 @@ class SegmentController {
     }
 
     public fitMiddleSegmentOnViewPort(): void {
-      this.onClick({
-         x: this.viewPort.getCanvasWidth() / 2,
-         y: 0
-      });
+      let segment = this.getSegmentByCoords(this.viewPort.getCanvasWidth() / 2, 0);
+      if (segment) {
+        segment.fitOnViewPort();
+      }
+    }
+
+    public getMiddleSegment(): Segment {
+      let segment = this.getSegmentByCoords(this.viewPort.getCanvasWidth() / 2, 0);
+      return segment;
     }
 
     public fitLeftSegmentOnViewPort(): void {
@@ -174,7 +190,7 @@ class SegmentController {
       for (let segment of segments) {
         let segmentMiddleX = segment.getX() + segment.getWidth() / 2;
         if (middleX - DOUBLE_COMPARISON_DIFF > segmentMiddleX) {
-          segment.fitOnViewPort(-1);
+          segment.fitOnViewPort();
           return;
         }
       }
@@ -187,7 +203,7 @@ class SegmentController {
       for (let segment of segments) {
         let segmentMiddleX = segment.getX() + segment.getWidth() / 2;
         if (middleX + DOUBLE_COMPARISON_DIFF < segmentMiddleX) {
-          segment.fitOnViewPort(-1);
+          segment.fitOnViewPort();
           return;
         }
       }
@@ -221,6 +237,20 @@ class SegmentController {
         for (let segment of this.segments) {
             segment.unload();
         }
+    }
+
+    private getSegmentByCoords(x: number, y: number): Segment {
+        let scale = this.viewPort.getScale();
+        x = (x - this.viewPort.getXMove()) / scale;
+        y = (y - this.viewPort.getYMove() - this.viewPort.getY()) / scale;
+
+        for (let segment of this.segments) {
+            if (segment.isClicked(x, y)) {
+                return segment;
+            }
+        }
+
+        return null;
     }
 }
 

@@ -47,6 +47,7 @@ class Control {
         this.placeControl();
         this.bindControl();
         this.hideTopAndBottomBtns();
+        this.refreshZoomIcon();
     }
 
     public onZoomChange(): void {

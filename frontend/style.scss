@@ -83,3 +83,62 @@ body {
 .debugContainer .red{
   color: red;
 }
+
+#product-container {
+  padding: 15px;
+}
+
+.shelvesUrl {
+  display: none!important;
+}
+
+#productPopUpBackground {
+  position: absolute;
+  background-color: #000;
+  opacity: 0.5;
+  top: 0;
+  left: 0;
+  z-index: 99999;
+}
+
+#productPopUp {
+  position: absolute;
+  left: 0px;
+  z-index: 99999;
+  background-color: white;
+
+  .productPopUpClose {
+      text-align: right;
+      top: 30px;
+      right: 30px;
+      z-index: 1;
+
+      a {
+          font-size: 40px;
+          font-weight: bold;
+          line-height: 1;
+          color: #000;
+          opacity: 0.5;
+          text-shadow: 0 1px 0 #fff;
+
+          &:hover {
+              opacity: 1;
+          }
+      }
+  }
+
+  .productPopUpScrollableContent {
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  .productPopUpLoadingMessage {
+    width: 100%;
+    text-align: center;
+  }
+}
+
+//na koncie admina form nie moze miec marginesu
+#Form.showControlBar {
+  margin-top: 0!important;
+}

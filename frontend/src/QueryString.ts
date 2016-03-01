@@ -8,15 +8,28 @@ class QueryString {
   public IsProductIdSetUp: boolean;
   public ProductId: number;
 
-  constructor(private container: HTMLDivElement) {
-    this.IsPlanogramIdSetUp = this.getBoolAttr('data-is-planogram-id-set-up');
-    this.PlanogramId = this.getIntAttr('data-planogram-id');
+  private container: HTMLDivElement;
 
-    this.IsSegmentIdSetUp = this.getBoolAttr('data-is-segment-id-set-up');
-    this.SegmentId = this.getIntAttr('data-segment-id');
+  constructor(private containerOrSegmentId: HTMLDivElement | number) {
+    if (typeof(containerOrSegmentId) === 'number') {
+      let segmentId = <number>containerOrSegmentId;
 
-    this.IsProductIdSetUp = this.getBoolAttr('data-is-product-id-set-up');
-    this.ProductId = this.getIntAttr('data-product-id');
+      this.IsPlanogramIdSetUp = false;
+      this.IsSegmentIdSetUp = true;
+      this.SegmentId = segmentId;
+      this.IsProductIdSetUp = false;
+    } else {
+      this.container = <HTMLDivElement>containerOrSegmentId;
+
+      this.IsPlanogramIdSetUp = this.getBoolAttr('data-is-planogram-id-set-up');
+      this.PlanogramId = this.getIntAttr('data-planogram-id');
+
+      this.IsSegmentIdSetUp = this.getBoolAttr('data-is-segment-id-set-up');
+      this.SegmentId = this.getIntAttr('data-segment-id');
+
+      this.IsProductIdSetUp = this.getBoolAttr('data-is-product-id-set-up');
+      this.ProductId = this.getIntAttr('data-product-id');
+    }
   }
 
   private getBoolAttr(key: string) {

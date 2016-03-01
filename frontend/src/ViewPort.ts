@@ -15,9 +15,15 @@ import QueryString = require('./QueryString');
 import StartPosition = require('./startPosition/StartPosition');
 import StartPositionResult = require('./startPosition/StartPositionResult');
 import ResolutionType = require('./ResolutionType');
+import Timer = require('./utils/Timer');
+
+const Historyjs: Historyjs = <any>History;
+declare var Rossmann: any;
 
 const VERTICAL_SLIDE_RATIO = 0.9;
 const SCROLL_LINE_HEIGHT = 20;
+
+let lastSegmentId: number;
 
 class ViewPort implements XMoveHolder {
     private isDeleted = false;
@@ -48,6 +54,7 @@ class ViewPort implements XMoveHolder {
     private startPosition: StartPositionResult;
     private fontSize: number;
     private resolutionType: ResolutionType;
+    private timer250 = new Timer(250);
 
     private drawnXMove: number;
     private drawnYMove: number;
@@ -111,7 +118,14 @@ class ViewPort implements XMoveHolder {
         let maxCanvasHeight = Math.round(this.segmentHeight * this.zoomScale);
         this.canvasPool = new CanvasPool(maxCanvasWidth, maxCanvasHeight);
 
-        this.queryString = new QueryString(this.container);
+        let noFlash: boolean;
+        if (lastSegmentId) {
+          this.queryString = new QueryString(lastSegmentId);
+          noFlash = true;
+        } else {
+          this.queryString = new QueryString(this.container);
+          noFlash = false;
+        }
         let startPosition = new StartPosition({
             canvasWidth: this.canvasWidth,
             initialScale: this.initialScale,
@@ -119,7 +133,9 @@ class ViewPort implements XMoveHolder {
             queryString: this.queryString
         });
         this.startPosition = startPosition.calculate();
-        this.segmentController = new SegmentController(this, this.segmentsData, this.segmentWidths, this.startPosition);
+        let startProductId = this.queryString.IsProductIdSetUp ? this.queryString.ProductId : null;
+        this.segmentController = new SegmentController(this, this.segmentsData, this.segmentWidths
+          , this.startPosition, startProductId, noFlash);
 
         this.initControl();
         this.hammerManager = touch(this);
@@ -276,6 +292,16 @@ class ViewPort implements XMoveHolder {
             this.drawSlider();
         } else {
             this.segmentController.preloadSegments();
+        }
+
+        if (this.timer250.isInterval(timestamp)) {
+          let segment = this.segmentController.getMiddleSegment();
+          if (segment && !Rossmann.Modules.Shelves2.isProductPopUpOpen) {
+            let title = segment.getSeoTitle();
+            let url = segment.getPlanogramUrl();
+            Historyjs.replaceState(null, title, url);
+            lastSegmentId = segment.getId();
+          }
         }
 
         if (!this.isDeleted) {

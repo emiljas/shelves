@@ -52,6 +52,11 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
+	Promise.config({
+	    warnings: true,
+	    longStackTraces: false,
+	    cancellation: true
+	});
 	var ViewPort = __webpack_require__(2);
 	// import enableDebug = require('./debug/enableDebug');
 	var viewPort;
@@ -101,11 +106,8 @@
 	var QueryString = __webpack_require__(27);
 	var StartPosition = __webpack_require__(28);
 	var ResolutionType = __webpack_require__(29);
-	var Timer = __webpack_require__(30);
-	var Historyjs = History;
 	var VERTICAL_SLIDE_RATIO = 0.9;
 	var SCROLL_LINE_HEIGHT = 20;
-	var lastSegmentId;
 	var ViewPort = (function () {
 	    function ViewPort(containerId) {
 	        var _this = this;
@@ -117,7 +119,6 @@
 	        this.isMagnified = false;
 	        this.isTopScrollBlock = true;
 	        this.isBottomScrollBlock = true;
-	        this.timer250 = new Timer(250);
 	        this.drawingController = new DrawingController();
 	        this.valueAnimatorController = new ValueAnimatorController();
 	        this.frameRequestCallback = function (timestamp) { _this.onAnimationFrame(timestamp); };
@@ -139,15 +140,7 @@
 	        var maxCanvasWidth = Math.round(this.maxSegmentWidth * this.zoomScale);
 	        var maxCanvasHeight = Math.round(this.segmentHeight * this.zoomScale);
 	        this.canvasPool = new CanvasPool(maxCanvasWidth, maxCanvasHeight);
-	        var noFlash;
-	        if (lastSegmentId) {
-	            this.queryString = new QueryString(lastSegmentId);
-	            noFlash = true;
-	        }
-	        else {
-	            this.queryString = new QueryString(this.container);
-	            noFlash = false;
-	        }
+	        this.queryString = new QueryString(this.container);
 	        var startPosition = new StartPosition({
 	            canvasWidth: this.canvasWidth,
 	            initialScale: this.initialScale,
@@ -155,8 +148,7 @@
 	            queryString: this.queryString
 	        });
 	        this.startPosition = startPosition.calculate();
-	        var startProductId = this.queryString.IsProductIdSetUp ? this.queryString.ProductId : null;
-	        this.segmentController = new SegmentController(this, this.segmentsData, this.segmentWidths, this.startPosition, startProductId, noFlash);
+	        this.segmentController = new SegmentController(this, this.segmentsData, this.segmentWidths, this.startPosition);
 	        this.initControl();
 	        this.hammerManager = touch(this);
 	        this.events.addEventListener(this.canvas, 'mousemove', function (e) { _this.onMouseMove(e); });
@@ -314,15 +306,6 @@
 	        }
 	        else {
 	            this.segmentController.preloadSegments();
-	        }
-	        if (this.timer250.isInterval(timestamp)) {
-	            var segment = this.segmentController.getMiddleSegment();
-	            if (segment && !Rossmann.Modules.Shelves2.isProductPopUpOpen) {
-	                var title = segment.getSeoTitle();
-	                var url = segment.getPlanogramUrl();
-	                Historyjs.replaceState(null, title, url);
-	                lastSegmentId = segment.getId();
-	            }
 	        }
 	        if (!this.isDeleted) {
 	            window.requestAnimationFrame(this.frameRequestCallback);
@@ -489,7 +472,6 @@
 	        this.placeControl();
 	        this.bindControl();
 	        this.hideTopAndBottomBtns();
-	        this.refreshZoomIcon();
 	    };
 	    Control.prototype.onZoomChange = function () {
 	        this.refreshZoomIcon();
@@ -763,12 +745,11 @@
 	var FlashLoader = __webpack_require__(21);
 	var DOUBLE_COMPARISON_DIFF = 1;
 	var SegmentController = (function () {
-	    function SegmentController(viewPort, segmentsData, segmentWidths, startPosition, startProductId, noFlash) {
+	    function SegmentController(viewPort, segmentsData, segmentWidths, startPosition) {
 	        var _this = this;
 	        this.viewPort = viewPort;
 	        this.segmentsData = segmentsData;
 	        this.segmentWidths = segmentWidths;
-	        this.startProductId = startProductId;
 	        this.segments = new Array();
 	        this.notDrawnSegmentCount = 0;
 	        this.effectsRenderingCount = 0;
@@ -782,6 +763,7 @@
 	            createSegment: function (index, x, width) {
 	                var id = _this.segmentsData[index].id;
 	                var segment = new Segment(viewPort, _this, index, id, x, width);
+	                // segment.load();
 	                return segment;
 	            }
 	        };
@@ -791,7 +773,7 @@
 	            var segment = _.find(_this.segments, function (s) { return s.getId() === segmentId; });
 	            segment.flash();
 	        };
-	        this.flashLoader = noFlash ? null : new FlashLoader(startPosition.segments, makeFlash);
+	        this.flashLoader = new FlashLoader(startPosition.segments, makeFlash);
 	    }
 	    SegmentController.prototype.onClick = function (e) {
 	        var scale = this.viewPort.getScale();
@@ -800,7 +782,7 @@
 	        var clickedSegment;
 	        for (var _i = 0, _a = this.segments; _i < _a.length; _i++) {
 	            var segment = _a[_i];
-	            if (segment.isClicked(e.x, e.y)) {
+	            if (segment.isClicked(e)) {
 	                clickedSegment = segment;
 	                break;
 	            }
@@ -888,15 +870,6 @@
 	        }
 	        return false;
 	    };
-	    SegmentController.prototype.handleSegmentDataLoaded = function (segment) {
-	        if (this.startProductId) {
-	            if (segment.hasProduct(this.startProductId)) {
-	                segment.fitOnViewPort();
-	                segment.showProduct(this.startProductId);
-	                this.startProductId = null;
-	            }
-	        }
-	    };
 	    SegmentController.prototype.segmentLoaded = function (event) {
 	        if (this.flashLoader) {
 	            this.flashLoader.segmentLoaded(event);
@@ -904,14 +877,10 @@
 	        this.notDrawnSegmentCount++;
 	    };
 	    SegmentController.prototype.fitMiddleSegmentOnViewPort = function () {
-	        var segment = this.getSegmentByCoords(this.viewPort.getCanvasWidth() / 2, 0);
-	        if (segment) {
-	            segment.fitOnViewPort();
-	        }
-	    };
-	    SegmentController.prototype.getMiddleSegment = function () {
-	        var segment = this.getSegmentByCoords(this.viewPort.getCanvasWidth() / 2, 0);
-	        return segment;
+	        this.onClick({
+	            x: this.viewPort.getCanvasWidth() / 2,
+	            y: 0
+	        });
 	    };
 	    SegmentController.prototype.fitLeftSegmentOnViewPort = function () {
 	        var segments = _.sortBy(this.segments, function (s) { return -s.getX(); });
@@ -921,7 +890,7 @@
 	            var segment = segments[_i];
 	            var segmentMiddleX = segment.getX() + segment.getWidth() / 2;
 	            if (middleX - DOUBLE_COMPARISON_DIFF > segmentMiddleX) {
-	                segment.fitOnViewPort();
+	                segment.fitOnViewPort(-1);
 	                return;
 	            }
 	        }
@@ -934,7 +903,7 @@
 	            var segment = segments[_i];
 	            var segmentMiddleX = segment.getX() + segment.getWidth() / 2;
 	            if (middleX + DOUBLE_COMPARISON_DIFF < segmentMiddleX) {
-	                segment.fitOnViewPort();
+	                segment.fitOnViewPort(-1);
 	                return;
 	            }
 	        }
@@ -968,18 +937,6 @@
 	            var segment = _a[_i];
 	            segment.unload();
 	        }
-	    };
-	    SegmentController.prototype.getSegmentByCoords = function (x, y) {
-	        var scale = this.viewPort.getScale();
-	        x = (x - this.viewPort.getXMove()) / scale;
-	        y = (y - this.viewPort.getYMove() - this.viewPort.getY()) / scale;
-	        for (var _i = 0, _a = this.segments; _i < _a.length; _i++) {
-	            var segment = _a[_i];
-	            if (segment.isClicked(x, y)) {
-	                return segment;
-	            }
-	        }
-	        return null;
 	    };
 	    return SegmentController;
 	})();
@@ -1043,15 +1000,12 @@
 	    Segment.prototype.getId = function () { return this.id; };
 	    Segment.prototype.getX = function () { return this.x; };
 	    Segment.prototype.getWidth = function () { return this.width; };
-	    Segment.prototype.getPlanogramUrl = function () { return this.planogramUrl; };
-	    Segment.prototype.getPlanogramId = function () { return this.plnId; };
-	    Segment.prototype.getSeoTitle = function () { return this.seoTitle; };
 	    Segment.prototype.checkIfLoading = function () { return this.isLoading; };
 	    Segment.prototype.checkIfCanDrawCanvas = function () { return this.canDrawCanvas; };
 	    Segment.prototype.load = function () {
 	        var _this = this;
 	        this.isLoading = true;
-	        return this.viewPort.getKnownImages().then(function (images) {
+	        this.viewPort.getKnownImages().then(function (images) {
 	            _this.knownImgs = images;
 	            var getByIdPromise = _this.requestInProgressPromise = segmentRepository.getById(_this.id);
 	            return getByIdPromise;
@@ -1068,9 +1022,6 @@
 	            _this.productPositions = data.productPositions;
 	            _this.debugPlaces = data.debugPlaces;
 	            _this.plnId = data.plnId;
-	            _this.planogramUrl = data.planogramUrl;
-	            _this.seoTitle = data.seoTitle;
-	            _this.segmentController.handleSegmentDataLoaded(_this);
 	            var loadImagePromise = _this.requestInProgressPromise = _this.loadImage(data.spriteImgUrl);
 	            return loadImagePromise;
 	        })
@@ -1129,8 +1080,8 @@
 	            this.canvas = null;
 	        }
 	    };
-	    Segment.prototype.isClicked = function (x, y) {
-	        return x >= this.x && x <= this.x + this.width;
+	    Segment.prototype.isClicked = function (e) {
+	        return e.x >= this.x && e.x <= this.x + this.width;
 	    };
 	    Segment.prototype.isClickable = function (x, y) {
 	        if (this.isLoaded) {
@@ -1186,7 +1137,7 @@
 	    Segment.prototype.showProductIfClicked = function (e) {
 	        var product = this.getProductUnderCursor(e.x, e.y);
 	        if (product) {
-	            Rossmann.Modules.Shelves2.showProduct(product.planogramProductId, product.productId);
+	            console.log(product);
 	        }
 	    };
 	    Segment.prototype.isInCanvasVisibleArea = function () {
@@ -1204,7 +1155,7 @@
 	        var canvasHeight = this.viewPort.getCanvasHeight();
 	        var yMove = canvasHeight / 2 - y * zoomScale;
 	        this.viewPort.animate('xMove', xMove);
-	        if (y != null) {
+	        if (y !== -1) {
 	            this.viewPort.animate('yMove', yMove);
 	        }
 	        var scale = this.viewPort.getScale();
@@ -1216,16 +1167,6 @@
 	    Segment.prototype.flash = function () {
 	        this.flashEffect = new FlashEffect(this.ctx);
 	        this.segmentController.reportEffectRenderingStart();
-	    };
-	    Segment.prototype.hasProduct = function (productId) {
-	        return _.find(this.productPositions, function (p) { return p.productId === productId; }) != null;
-	    };
-	    Segment.prototype.showProduct = function (productId) {
-	        var product = this.getProduct(productId);
-	        Rossmann.Modules.Shelves2.showProduct(product.planogramProductId, product.productId);
-	    };
-	    Segment.prototype.getProduct = function (productId) {
-	        return _.find(this.productPositions, function (p) { return p.productId === productId; });
 	    };
 	    Segment.prototype.unload = function () {
 	        if (this.isLoaded) {
@@ -1419,6 +1360,8 @@
 	        ctx.strokeStyle = '1px ' + TEXT_TYPE_COLOR[text.type];
 	        ctx.moveTo(text.dx, text.dy + 4.5);
 	        ctx.lineTo(text.dx + width, text.dy - 4.5);
+	        // console.log(text.value, width);
+	        // console.log(text.dx, text.dy + 4.5, text.dx + width, text.dy - 4.5);
 	        ctx.closePath();
 	        ctx.stroke();
 	    };
@@ -2064,24 +2007,14 @@
 /***/ function(module, exports) {
 
 	var QueryString = (function () {
-	    function QueryString(containerOrSegmentId) {
-	        this.containerOrSegmentId = containerOrSegmentId;
-	        if (typeof (containerOrSegmentId) === 'number') {
-	            var segmentId = containerOrSegmentId;
-	            this.IsPlanogramIdSetUp = false;
-	            this.IsSegmentIdSetUp = true;
-	            this.SegmentId = segmentId;
-	            this.IsProductIdSetUp = false;
-	        }
-	        else {
-	            this.container = containerOrSegmentId;
-	            this.IsPlanogramIdSetUp = this.getBoolAttr('data-is-planogram-id-set-up');
-	            this.PlanogramId = this.getIntAttr('data-planogram-id');
-	            this.IsSegmentIdSetUp = this.getBoolAttr('data-is-segment-id-set-up');
-	            this.SegmentId = this.getIntAttr('data-segment-id');
-	            this.IsProductIdSetUp = this.getBoolAttr('data-is-product-id-set-up');
-	            this.ProductId = this.getIntAttr('data-product-id');
-	        }
+	    function QueryString(container) {
+	        this.container = container;
+	        this.IsPlanogramIdSetUp = this.getBoolAttr('data-is-planogram-id-set-up');
+	        this.PlanogramId = this.getIntAttr('data-planogram-id');
+	        this.IsSegmentIdSetUp = this.getBoolAttr('data-is-segment-id-set-up');
+	        this.SegmentId = this.getIntAttr('data-segment-id');
+	        this.IsProductIdSetUp = this.getBoolAttr('data-is-product-id-set-up');
+	        this.ProductId = this.getIntAttr('data-product-id');
 	    }
 	    QueryString.prototype.getBoolAttr = function (key) {
 	        var value = this.container.getAttribute(key);
@@ -2116,25 +2049,12 @@
 	            }
 	            return { segmentIndex: segmentIndex, x: x, segments: segments };
 	        }
-	        else if (this.args.queryString.IsSegmentIdSetUp) {
-	            var segmentId = this.args.queryString.SegmentId;
-	            var segmentIndex = this.getSegmentIndexBySegmentId(segmentId);
-	            var segment = this.args.segmentsData[segmentIndex];
-	            var x = (this.args.canvasWidth - segment.width * this.args.initialScale) / 2;
-	            if (x < 0) {
-	                x = 0;
-	            }
-	            return { segmentIndex: segmentIndex, x: x, segments: [segment] };
-	        }
 	        else {
 	            return { segmentIndex: 0, x: 0, segments: [] };
 	        }
 	    };
 	    StartPosition.prototype.getSegmentIndexByPlanogramId = function (planogramId) {
 	        return _.findIndex(this.args.segmentsData, function (s) { return s.plnId === planogramId; });
-	    };
-	    StartPosition.prototype.getSegmentIndexBySegmentId = function (segmentId) {
-	        return _.findIndex(this.args.segmentsData, function (s) { return s.id === segmentId; });
 	    };
 	    StartPosition.prototype.getSegmentsByPlanogramId = function (planogramId, segmentIndex) {
 	        var segments = new Array();
@@ -2169,27 +2089,6 @@
 	    ResolutionType[ResolutionType["Desktop"] = 2] = "Desktop";
 	})(ResolutionType || (ResolutionType = {}));
 	module.exports = ResolutionType;
-
-
-/***/ },
-/* 30 */
-/***/ function(module, exports) {
-
-	var Timer = (function () {
-	    function Timer(interval) {
-	        this.interval = interval;
-	        this.lastTime = 0;
-	    }
-	    Timer.prototype.isInterval = function (time) {
-	        if (time - this.lastTime > this.interval) {
-	            this.lastTime = time;
-	            return true;
-	        }
-	        return false;
-	    };
-	    return Timer;
-	})();
-	module.exports = Timer;
 
 
 /***/ }

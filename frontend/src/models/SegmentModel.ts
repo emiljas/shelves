@@ -20,6 +20,8 @@ interface SegmentModel {
   productPositions: Array<ProductPositionModel>;
   debugPlaces: Array<DebugPlaceModel>;
   plnId: number;
+  planogramUrl: string;
+  seoTitle: string;
 }
 
 export = SegmentModel;

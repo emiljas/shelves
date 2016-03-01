@@ -1,11 +1,5 @@
 'use strict';
 
-(<any>Promise).config({
-    warnings: true,
-    longStackTraces: false,
-    cancellation: true
-});
-
 import ViewPort = require('./ViewPort');
 
 // import enableDebug = require('./debug/enableDebug');
