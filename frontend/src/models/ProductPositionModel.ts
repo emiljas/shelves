@@ -5,7 +5,7 @@ interface ProductPositionModel {
     h: number; //height
     dx: number; //destination x
     dy: number; //destincation y
-    planogramProductId: number;
+    ppId: number;
     productId: number;
     priceId: number;
 }

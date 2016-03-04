@@ -1,4 +1,5 @@
 import KnownImageModel = require('./KnownImageModel');
+import ProductIconModel = require('./ProductIconModel');
 import HeaderTitleFrameModel = require('./HeaderTitleFrameModel');
 import PriceModel = require('./PriceModel');
 import TextModel = require('./TextModel');
@@ -12,6 +13,7 @@ interface SegmentModel {
   spriteImgUrl: string;
   knownImages1: Array<KnownImageModel>;
   knownImages2: Array<KnownImageModel>;
+  productIcons: Array<ProductIconModel>;
   headerTitleFrames: Array<HeaderTitleFrameModel>;
   prices: Array<PriceModel>;
   hookPrices: Array<PriceModel>;

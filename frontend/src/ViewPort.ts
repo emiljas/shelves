@@ -66,6 +66,9 @@ class ViewPort implements XMoveHolder {
     private canvasPool: CanvasPool;
     private queryString: QueryString;
 
+    private maxCanvasWidth: number;
+    private maxCanvasHeight: number;
+
     private frameRequestCallback: FrameRequestCallback = (timestamp) => { this.onAnimationFrame(timestamp); };
 
     public getCanvas() { return this.canvas; }
@@ -89,6 +92,8 @@ class ViewPort implements XMoveHolder {
     public checkIfTopScrollBlock() { return this.isTopScrollBlock; }
     public checkIfBottomScrollBlock() { return this.isBottomScrollBlock; }
     public getFontSize(): number { return this.fontSize; }
+    public getMaxCanvasWidth(): number { return this.maxCanvasWidth; }
+    public getMaxCanvasHeight(): number { return this.maxCanvasHeight; }
 
     constructor(containerId: string) {
         // (<any>window)['vp'] = this; //DEBUG ONLY
@@ -114,9 +119,9 @@ class ViewPort implements XMoveHolder {
 
         this.calculateScales();
 
-        let maxCanvasWidth = Math.round(this.maxSegmentWidth * this.zoomScale);
-        let maxCanvasHeight = Math.round(this.segmentHeight * this.zoomScale);
-        this.canvasPool = new CanvasPool(maxCanvasWidth, maxCanvasHeight);
+        this.maxCanvasWidth = Math.round(this.maxSegmentWidth * this.zoomScale);
+        this.maxCanvasHeight = Math.round(this.segmentHeight * this.zoomScale);
+        this.canvasPool = new CanvasPool(this.maxCanvasWidth, this.maxCanvasHeight);
 
         let noFlash: boolean;
         if (lastSegmentId) {
@@ -139,7 +144,8 @@ class ViewPort implements XMoveHolder {
 
         this.initControl();
         this.hammerManager = touch(this);
-        this.events.addEventListener(this.canvas, 'mousemove', (e: MouseEvent) => { this.onMouseMove(e); });
+        this.events.addEventListener(this.canvas, 'mousemove', (e: MouseEvent) => { this.handleMouseMove(e); });
+        this.events.addEventListener(this.canvas, 'touchstart', (e: TouchEvent) => { this.handleTouchStart(e); });
         this.scrollPageHeight = document.documentElement.clientHeight;
         this.events.addEventListener(this.canvas, 'wheel', (e: WheelEvent) => { e.preventDefault(); this.onScroll(e); });
 
@@ -335,17 +341,31 @@ class ViewPort implements XMoveHolder {
       }
     }
 
-    private onMouseMove(e: MouseEvent): void {
+    private handleTouchStart(e: TouchEvent): void {
+        let rect = this.canvas.getBoundingClientRect();
+        let x = e.touches[0].pageX - rect.left;
+        let y = e.touches[0].pageY - rect.top;
+        this.handleMouseMoveOrTouchStart(x, y);
+    }
+
+    private handleMouseMove(e: MouseEvent): void {
       let x = e.offsetX;
       let y = e.offsetY;
+      this.handleMouseMoveOrTouchStart(x, y);
+    }
 
-      this.segmentController.handleMouseMove(x, y);
+    private handleMouseMoveOrTouchStart(x: number, y: number) {
+      if (this.isMagnified) {
+        this.segmentController.handleMouseMove(x, y);
 
-      let isClickable = this.segmentController.isClickable(x, y);
-      if (isClickable) {
-        this.container.classList.add('pointer');
+        let isClickable = this.segmentController.isClickable(x, y);
+        if (isClickable) {
+          this.container.classList.add('pointer');
+        } else {
+          this.container.classList.remove('pointer');
+        }
       } else {
-        this.container.classList.remove('pointer');
+          this.container.classList.add('pointer');
       }
     }
 

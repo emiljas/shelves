@@ -8,7 +8,10 @@ enum ImageType {
   FooterBackground = 6,
   PegboardHook = 7,
   PriceBackground = 8,
-  PromoPriceBackground = 9
+  PromoPriceBackground = 9,
+  NewProduct = 10,
+  SpecialProduct = 11,
+  SuperOfferProduct = 12
 }
 
 export = ImageType;

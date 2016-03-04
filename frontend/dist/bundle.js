@@ -136,9 +136,9 @@
 	        this.maxSegmentWidth = _.max(this.segmentWidths);
 	        this.segmentHeight = parseInt(this.container.getAttribute('data-segment-height'), 10);
 	        this.calculateScales();
-	        var maxCanvasWidth = Math.round(this.maxSegmentWidth * this.zoomScale);
-	        var maxCanvasHeight = Math.round(this.segmentHeight * this.zoomScale);
-	        this.canvasPool = new CanvasPool(maxCanvasWidth, maxCanvasHeight);
+	        this.maxCanvasWidth = Math.round(this.maxSegmentWidth * this.zoomScale);
+	        this.maxCanvasHeight = Math.round(this.segmentHeight * this.zoomScale);
+	        this.canvasPool = new CanvasPool(this.maxCanvasWidth, this.maxCanvasHeight);
 	        var noFlash;
 	        if (lastSegmentId) {
 	            this.queryString = new QueryString(lastSegmentId);
@@ -159,7 +159,8 @@
 	        this.segmentController = new SegmentController(this, this.segmentsData, this.segmentWidths, this.startPosition, startProductId, noFlash);
 	        this.initControl();
 	        this.hammerManager = touch(this);
-	        this.events.addEventListener(this.canvas, 'mousemove', function (e) { _this.onMouseMove(e); });
+	        this.events.addEventListener(this.canvas, 'mousemove', function (e) { _this.handleMouseMove(e); });
+	        this.events.addEventListener(this.canvas, 'touchstart', function (e) { _this.handleTouchStart(e); });
 	        this.scrollPageHeight = document.documentElement.clientHeight;
 	        this.events.addEventListener(this.canvas, 'wheel', function (e) { e.preventDefault(); _this.onScroll(e); });
 	        this.setResolutionType();
@@ -186,6 +187,8 @@
 	    ViewPort.prototype.checkIfTopScrollBlock = function () { return this.isTopScrollBlock; };
 	    ViewPort.prototype.checkIfBottomScrollBlock = function () { return this.isBottomScrollBlock; };
 	    ViewPort.prototype.getFontSize = function () { return this.fontSize; };
+	    ViewPort.prototype.getMaxCanvasWidth = function () { return this.maxCanvasWidth; };
+	    ViewPort.prototype.getMaxCanvasHeight = function () { return this.maxCanvasHeight; };
 	    ViewPort.prototype.start = function () {
 	        window.requestAnimationFrame(this.frameRequestCallback);
 	    };
@@ -350,16 +353,30 @@
 	            this.ctx.fillRect(sliderZipX, sliderZipY + sliderZipEndY - scrollZipHeight, sliderZipWidth, scrollZipHeight);
 	        }
 	    };
-	    ViewPort.prototype.onMouseMove = function (e) {
+	    ViewPort.prototype.handleTouchStart = function (e) {
+	        var rect = this.canvas.getBoundingClientRect();
+	        var x = e.touches[0].pageX - rect.left;
+	        var y = e.touches[0].pageY - rect.top;
+	        this.handleMouseMoveOrTouchStart(x, y);
+	    };
+	    ViewPort.prototype.handleMouseMove = function (e) {
 	        var x = e.offsetX;
 	        var y = e.offsetY;
-	        this.segmentController.handleMouseMove(x, y);
-	        var isClickable = this.segmentController.isClickable(x, y);
-	        if (isClickable) {
-	            this.container.classList.add('pointer');
+	        this.handleMouseMoveOrTouchStart(x, y);
+	    };
+	    ViewPort.prototype.handleMouseMoveOrTouchStart = function (x, y) {
+	        if (this.isMagnified) {
+	            this.segmentController.handleMouseMove(x, y);
+	            var isClickable = this.segmentController.isClickable(x, y);
+	            if (isClickable) {
+	                this.container.classList.add('pointer');
+	            }
+	            else {
+	                this.container.classList.remove('pointer');
+	            }
 	        }
 	        else {
-	            this.container.classList.remove('pointer');
+	            this.container.classList.add('pointer');
 	        }
 	    };
 	    ViewPort.prototype.onScroll = function (e) {
@@ -684,6 +701,9 @@
 	        this.addImage(ImageType.PegboardHook, 'pegboardHook.png');
 	        this.addImage(ImageType.PriceBackground, 'priceBackground.png');
 	        this.addImage(ImageType.PromoPriceBackground, 'promoPriceBackground.png');
+	        this.addImage(ImageType.NewProduct, 'newProduct.png');
+	        this.addImage(ImageType.SpecialProduct, 'specialProduct.png');
+	        this.addImage(ImageType.SuperOfferProduct, 'superOfferProduct.png');
 	    }
 	    KnownImages.downloadAll = function () {
 	        var images = new KnownImages();
@@ -728,6 +748,9 @@
 	    ImageType[ImageType["PegboardHook"] = 7] = "PegboardHook";
 	    ImageType[ImageType["PriceBackground"] = 8] = "PriceBackground";
 	    ImageType[ImageType["PromoPriceBackground"] = 9] = "PromoPriceBackground";
+	    ImageType[ImageType["NewProduct"] = 10] = "NewProduct";
+	    ImageType[ImageType["SpecialProduct"] = 11] = "SpecialProduct";
+	    ImageType[ImageType["SuperOfferProduct"] = 12] = "SuperOfferProduct";
 	})(ImageType || (ImageType = {}));
 	module.exports = ImageType;
 
@@ -806,8 +829,10 @@
 	            }
 	        }
 	        if (clickedSegment) {
+	            if (this.viewPort.checkIfMagnified()) {
+	                clickedSegment.showProductIfClicked(e);
+	            }
 	            clickedSegment.fitOnViewPort(e.y);
-	            clickedSegment.showProductIfClicked(e);
 	        }
 	        else {
 	            console.error('cannot find clicked segment');
@@ -1056,10 +1081,11 @@
 	            var getByIdPromise = _this.requestInProgressPromise = segmentRepository.getById(_this.id);
 	            return getByIdPromise;
 	        }).then(function (data) {
-	            _this.zoomWidth = _this.width * _this.viewPort.getZoomScale();
-	            _this.zoomHeight = _this.height * _this.viewPort.getZoomScale();
+	            _this.zoomWidth = Math.min(_this.width * _this.viewPort.getZoomScale(), _this.viewPort.getMaxCanvasWidth());
+	            _this.zoomHeight = Math.min(_this.height * _this.viewPort.getZoomScale(), _this.viewPort.getMaxCanvasHeight());
 	            _this.knownImages1 = data.knownImages1;
 	            _this.knownImages2 = data.knownImages2;
+	            _this.productIcons = data.productIcons;
 	            _this.images = data.images;
 	            _this.headerTitleFrames = data.headerTitleFrames;
 	            _this.prices = data.prices;
@@ -1151,6 +1177,7 @@
 	            var product = this.getProductUnderCursor(x, y);
 	            var tempHighlightedPrice = this.highlightedPrice;
 	            var tempHighlightedProductPositions = this.hightlightedProductPositions;
+	            var tempHighlightedProductIcon = this.highlightedProductIcon;
 	            if (product) {
 	                this.hightlightedProductPositions = [product];
 	                var price = _.find(this.prices, function (p) { return p.priceId === product.priceId; });
@@ -1158,13 +1185,17 @@
 	                    price = _.find(this.hookPrices, function (p) { return p.priceId === product.priceId; });
 	                }
 	                this.highlightedPrice = price;
+	                var productIcon = _.find(this.productIcons, function (p) { return p.ppId === product.ppId; });
+	                this.highlightedProductIcon = productIcon;
 	            }
 	            else {
 	                this.hightlightedProductPositions = null;
 	                this.highlightedPrice = null;
+	                this.highlightedProductIcon = null;
 	            }
 	            if (this.hightlightedProductPositions !== tempHighlightedProductPositions
-	                || this.highlightedPrice !== tempHighlightedPrice) {
+	                || this.highlightedPrice !== tempHighlightedPrice
+	                || this.highlightedProductIcon !== tempHighlightedProductIcon) {
 	                this.drawCanvas(this.canvas);
 	                this.segmentController.segmentLoaded({ segmentId: this.id });
 	            }
@@ -1174,10 +1205,13 @@
 	        if (this.isLoaded) {
 	            var tempHighlightedPrice = this.highlightedPrice;
 	            var tempHighlightedProductPositions = this.hightlightedProductPositions;
+	            var tempHighlightedProductIcon = this.highlightedProductIcon;
 	            this.highlightedPrice = null;
 	            this.hightlightedProductPositions = null;
+	            this.highlightedProductIcon = null;
 	            if (this.hightlightedProductPositions !== tempHighlightedProductPositions
-	                || this.highlightedPrice !== tempHighlightedPrice) {
+	                || this.highlightedPrice !== tempHighlightedPrice
+	                || this.highlightedProductIcon !== tempHighlightedProductIcon) {
 	                this.drawCanvas(this.canvas);
 	                this.segmentController.segmentLoaded({ segmentId: this.id });
 	            }
@@ -1186,7 +1220,7 @@
 	    Segment.prototype.showProductIfClicked = function (e) {
 	        var product = this.getProductUnderCursor(e.x, e.y);
 	        if (product) {
-	            Rossmann.Modules.Shelves2.showProduct(product.planogramProductId, product.productId);
+	            Rossmann.Modules.Shelves2.showProduct(product.ppId, product.productId);
 	        }
 	    };
 	    Segment.prototype.isInCanvasVisibleArea = function () {
@@ -1222,7 +1256,7 @@
 	    };
 	    Segment.prototype.showProduct = function (productId) {
 	        var product = this.getProduct(productId);
-	        Rossmann.Modules.Shelves2.showProduct(product.planogramProductId, product.productId);
+	        Rossmann.Modules.Shelves2.showProduct(product.ppId, product.productId);
 	    };
 	    Segment.prototype.getProduct = function (productId) {
 	        return _.find(this.productPositions, function (p) { return p.productId === productId; });
@@ -1303,6 +1337,7 @@
 	            var price = _l[_k];
 	            this.drawPrice(ctx, price);
 	        }
+	        this.drawKnownImages(ctx, this.productIcons);
 	        for (var _m = 0, _o = this.hookPrices; _m < _o.length; _m++) {
 	            var price = _o[_m];
 	            this.drawPrice(ctx, price);
@@ -1338,6 +1373,9 @@
 	            for (var _i = 0, _a = this.hightlightedProductPositions; _i < _a.length; _i++) {
 	                var p = _a[_i];
 	                ctx.drawImage(this.spriteImg, p.sx, p.sy, p.w, p.h, p.dx, p.dy, p.w, p.h);
+	            }
+	            if (this.highlightedProductIcon) {
+	                this.drawKnownImage(ctx, this.highlightedProductIcon);
 	            }
 	            this.drawPrice(ctx, this.highlightedPrice);
 	            ctx.shadowBlur = 0;

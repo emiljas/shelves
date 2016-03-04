@@ -4,6 +4,7 @@ import ViewPort = require('../ViewPort');
 import SegmentController = require('./SegmentController');
 import SegmentRepository = require('../repository/SegmentRepository');
 import KnownImageModel = require('../models/KnownImageModel');
+import ProductIconModel = require('../models/ProductIconModel');
 import ImageModel = require('../models/ImageModel');
 import HeaderTitleFrameModel = require('../models/HeaderTitleFrameModel');
 import PriceModel = require('../models/PriceModel');
@@ -66,6 +67,8 @@ class Segment implements ISegmentPlace {
     private middleX: number;
     private knownImages1: Array<KnownImageModel>;
     private knownImages2: Array<KnownImageModel>;
+    private productIcons: Array<ProductIconModel>;
+    private highlightedProductIcon: ProductIconModel;
     private images: Array<ImageModel>;
     private headerTitleFrames: Array<HeaderTitleFrameModel>;
     private prices: Array<PriceModel>;
@@ -115,10 +118,11 @@ class Segment implements ISegmentPlace {
             let getByIdPromise = this.requestInProgressPromise = segmentRepository.getById(this.id);
             return getByIdPromise;
         }).then((data) => {
-            this.zoomWidth = this.width * this.viewPort.getZoomScale();
-            this.zoomHeight = this.height * this.viewPort.getZoomScale();
+            this.zoomWidth = Math.min(this.width * this.viewPort.getZoomScale(), this.viewPort.getMaxCanvasWidth());
+            this.zoomHeight = Math.min(this.height * this.viewPort.getZoomScale(), this.viewPort.getMaxCanvasHeight());
             this.knownImages1 = data.knownImages1;
             this.knownImages2 = data.knownImages2;
+            this.productIcons = data.productIcons;
             this.images = data.images;
             this.headerTitleFrames = data.headerTitleFrames;
             this.prices = data.prices;
@@ -152,7 +156,7 @@ class Segment implements ISegmentPlace {
     public draw(timestamp: number) {
         if (this.isInCanvasVisibleArea()) {
             if (this.isLoaded) {
-              this.ctx.drawImage(this.canvas, 0, 0, this.zoomWidth, this.zoomHeight, this.x, 0, this.width, this.height);
+                this.ctx.drawImage(this.canvas, 0, 0, this.zoomWidth, this.zoomHeight, this.x, 0, this.width, this.height);
 
               if (this.flashEffect) {
                   if (this.flashEffect.isEnded()) {
@@ -220,22 +224,29 @@ class Segment implements ISegmentPlace {
         let product = this.getProductUnderCursor(x, y);
         let tempHighlightedPrice = this.highlightedPrice;
         let tempHighlightedProductPositions = this.hightlightedProductPositions;
+        let tempHighlightedProductIcon = this.highlightedProductIcon;
 
         if (product) {
           this.hightlightedProductPositions = [product];
+
           let price = _.find(this.prices, (p) => { return p.priceId === product.priceId; });
           if (!price) {
             price = _.find(this.hookPrices, (p) => { return p.priceId === product.priceId; });
           }
           this.highlightedPrice = price;
 
+          let productIcon = _.find(this.productIcons, (p) => { return p.ppId === product.ppId; });
+          this.highlightedProductIcon = productIcon;
+
         } else {
           this.hightlightedProductPositions = null;
           this.highlightedPrice = null;
+          this.highlightedProductIcon = null;
         }
 
         if (this.hightlightedProductPositions !== tempHighlightedProductPositions
-          || this.highlightedPrice !== tempHighlightedPrice) {
+          || this.highlightedPrice !== tempHighlightedPrice
+          || this.highlightedProductIcon !== tempHighlightedProductIcon) {
           this.drawCanvas(this.canvas);
           this.segmentController.segmentLoaded({segmentId: this.id});
         }
@@ -246,12 +257,15 @@ class Segment implements ISegmentPlace {
         if (this.isLoaded) {
           let tempHighlightedPrice = this.highlightedPrice;
           let tempHighlightedProductPositions = this.hightlightedProductPositions;
+          let tempHighlightedProductIcon = this.highlightedProductIcon;
 
           this.highlightedPrice = null;
           this.hightlightedProductPositions = null;
+          this.highlightedProductIcon = null;
 
           if (this.hightlightedProductPositions !== tempHighlightedProductPositions
-            || this.highlightedPrice !== tempHighlightedPrice) {
+            || this.highlightedPrice !== tempHighlightedPrice
+            || this.highlightedProductIcon !== tempHighlightedProductIcon) {
             this.drawCanvas(this.canvas);
             this.segmentController.segmentLoaded({segmentId: this.id});
           }
@@ -260,7 +274,7 @@ class Segment implements ISegmentPlace {
     public showProductIfClicked(e: TapInput): void {
       let product = this.getProductUnderCursor(e.x, e.y);
       if (product) {
-        Rossmann.Modules.Shelves2.showProduct(product.planogramProductId, product.productId);
+        Rossmann.Modules.Shelves2.showProduct(product.ppId, product.productId);
       }
     }
 
@@ -306,7 +320,7 @@ class Segment implements ISegmentPlace {
 
     public showProduct(productId: number) {
       let product = this.getProduct(productId);
-      Rossmann.Modules.Shelves2.showProduct(product.planogramProductId, product.productId);
+      Rossmann.Modules.Shelves2.showProduct(product.ppId, product.productId);
     }
 
     public getProduct(productId: number): ProductPositionModel {
@@ -396,6 +410,8 @@ class Segment implements ISegmentPlace {
           this.drawPrice(ctx, price);
         }
 
+        this.drawKnownImages(ctx, this.productIcons);
+
         for (let price of this.hookPrices) {
           this.drawPrice(ctx, price);
         }
@@ -436,6 +452,10 @@ class Segment implements ISegmentPlace {
 
           for (var p of this.hightlightedProductPositions) {
             ctx.drawImage(this.spriteImg, p.sx, p.sy, p.w, p.h, p.dx, p.dy, p.w, p.h);
+          }
+
+          if (this.highlightedProductIcon) {
+            this.drawKnownImage(ctx, this.highlightedProductIcon);
           }
 
           this.drawPrice(ctx, this.highlightedPrice);

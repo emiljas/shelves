@@ -67,8 +67,11 @@ class SegmentController {
         }
 
         if (clickedSegment) {
+            if (this.viewPort.checkIfMagnified()) {
+              clickedSegment.showProductIfClicked(e);
+            }
+
             clickedSegment.fitOnViewPort(e.y);
-            clickedSegment.showProductIfClicked(e);
         } else {
             console.error('cannot find clicked segment');
         }

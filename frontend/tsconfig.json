@@ -41,6 +41,7 @@
     "src/models/ImageType.ts",
     "src/models/KnownImageModel.ts",
     "src/models/PriceModel.ts",
+    "src/models/ProductIconModel.ts",
     "src/models/ProductPositionModel.ts",
     "src/models/SegmentModel.ts",
     "src/models/SegmentWidthModel.ts",
