@@ -1,5 +1,7 @@
 'use strict';
 
+const SEGMENT_COLOR = '#D2D1CC';
+
 import Events = require('./events/Events');
 import XMoveHolder = require('./XMoveHolder');
 import Control = require('./control/Control');
@@ -9,13 +11,17 @@ import touch = require('./touch/touch');
 import TapInput = require('./touch/TapInput');
 import DrawingController = require('./animation/DrawingController');
 import ValueAnimatorController = require('./animation/ValueAnimatorController');
+import ValueAnimatorArgs = require('./animation/ValueAnimatorArgs');
 import CanvasPool = require('./segments/CanvasPool');
 import SegmentWidthModel = require('./models/SegmentWidthModel');
+import Preloader = require('./preloader/Preloader');
 import QueryString = require('./QueryString');
 import StartPosition = require('./startPosition/StartPosition');
 import StartPositionResult = require('./startPosition/StartPositionResult');
 import ResolutionType = require('./ResolutionType');
 import Timer = require('./utils/Timer');
+import AnimateInput = require('./AnimateInput');
+import CartDict = require('./cart/CartDict');
 
 const Historyjs: Historyjs = <any>History;
 declare var Rossmann: any;
@@ -27,6 +33,8 @@ let lastSegmentId: number;
 
 class ViewPort implements XMoveHolder {
     private isDeleted = false;
+    private anyPreloadingSegmentsExists: boolean;
+    private shouldRedrawPreloaders = false;
     private events = new Events();
     private hammerManager: HammerManager;
     private container: HTMLDivElement;
@@ -42,6 +50,7 @@ class ViewPort implements XMoveHolder {
     private canvasWidth: number;
     private canvasHeight: number;
     private scrollPageHeight: number;
+    private x: number;
     private y: number;
     private xMove: number = 0;
     private yMove: number = 0;
@@ -54,7 +63,6 @@ class ViewPort implements XMoveHolder {
     private startPosition: StartPositionResult;
     private fontSize: number;
     private resolutionType: ResolutionType;
-    private timer250 = new Timer(250);
 
     private drawnXMove: number;
     private drawnYMove: number;
@@ -64,12 +72,14 @@ class ViewPort implements XMoveHolder {
     private drawingController = new DrawingController();
     private valueAnimatorController = new ValueAnimatorController();
     private canvasPool: CanvasPool;
+    private preloader: Preloader;
     private queryString: QueryString;
 
     private maxCanvasWidth: number;
     private maxCanvasHeight: number;
 
     private frameRequestCallback: FrameRequestCallback = (timestamp) => { this.onAnimationFrame(timestamp); };
+    private setUrlOncePer250ms: () => void;
 
     public getCanvas() { return this.canvas; }
     public getCanvasContext() { return this.ctx; }
@@ -82,10 +92,12 @@ class ViewPort implements XMoveHolder {
     public getInitialScale() { return this.initialScale; }
     public getZoomScale() { return this.zoomScale; }
     public getScale() { return this.scale; }
-    public getY() { return this.y; }
+    public getX(): number { return this.x; }
+    public getY(): number { return this.y; }
     public getSegmentHeight() { return this.segmentHeight; }
     public getKnownImages() { return this.knownImagesPromise; }
     public getCanvasPool() { return this.canvasPool; }
+    public getPreloader() { return this.preloader; }
     public getQueryString() { return this.queryString; }
     public getEvents() { return this.events; }
     public checkIfMagnified() { return this.isMagnified; }
@@ -94,6 +106,8 @@ class ViewPort implements XMoveHolder {
     public getFontSize(): number { return this.fontSize; }
     public getMaxCanvasWidth(): number { return this.maxCanvasWidth; }
     public getMaxCanvasHeight(): number { return this.maxCanvasHeight; }
+    public getStartX(): number { return this.startPosition.x; }
+    public checkIfAnimationsInProgressExists(): boolean { return this.valueAnimatorController.animationsInProgressExists(); }
 
     constructor(containerId: string) {
         // (<any>window)['vp'] = this; //DEBUG ONLY
@@ -104,7 +118,10 @@ class ViewPort implements XMoveHolder {
 
         this.canvasWidth = this.canvas.width;
         this.canvasHeight = this.canvas.height;
-        this.y = this.container.getBoundingClientRect().top;
+
+        let containerRect = this.container.getBoundingClientRect();
+        this.x = containerRect.left;
+        this.y = containerRect.top;
 
         this.fitPlaceHolder(containerId);
 
@@ -122,6 +139,10 @@ class ViewPort implements XMoveHolder {
         this.maxCanvasWidth = Math.round(this.maxSegmentWidth * this.zoomScale);
         this.maxCanvasHeight = Math.round(this.segmentHeight * this.zoomScale);
         this.canvasPool = new CanvasPool(this.maxCanvasWidth, this.maxCanvasHeight);
+
+        let minSegmentWidth = 356;
+        let preloaderWidth = Math.round(minSegmentWidth * this.initialScale * 0.95);
+        this.preloader = new Preloader(preloaderWidth);
 
         let noFlash: boolean;
         if (lastSegmentId) {
@@ -147,10 +168,21 @@ class ViewPort implements XMoveHolder {
         this.events.addEventListener(this.canvas, 'mousemove', (e: MouseEvent) => { this.handleMouseMove(e); });
         this.events.addEventListener(this.canvas, 'touchstart', (e: TouchEvent) => { this.handleTouchStart(e); });
         this.scrollPageHeight = document.documentElement.clientHeight;
-        this.events.addEventListener(this.canvas, 'wheel', (e: WheelEvent) => { e.preventDefault(); this.onScroll(e); });
+        this.events.addEventListener(this.canvas, 'wheel', (e: WheelEvent) => { e.preventDefault(); this.handleScroll(e); });
+        let tooltip = document.getElementById('shelves2ProductTooltip')
+        this.events.addEventListener(tooltip, 'wheel', (e: WheelEvent) => { e.preventDefault(); e.stopPropagation(); this.handleScroll(e); });
+
+        this.setUrlOncePer250ms = _.throttle(() => { this.setUrl(); }, 250);
 
         this.setResolutionType();
         this.setFontSize();
+
+        CartDict.GetInstance().handleProductQuantityChangedCallback = () => {
+          this.segmentController.handleProductQuantityChanged();
+        };
+        //
+        // (<any>window).x = this.control_left.bind(this);
+        // (<any>window).y = this.control_right.bind(this);
     }
 
     public start(): void {
@@ -161,15 +193,24 @@ class ViewPort implements XMoveHolder {
         this.segmentController.onClick(e);
     }
 
-    public animate(propertyName: string, endValue: number): void {
-        this.valueAnimatorController.remove(propertyName);
-        this.valueAnimatorController.add({
-            id: propertyName,
-            start: (<any>this)[propertyName],
-            end: endValue,
+    public animate(input: AnimateInput): void {
+        let args = this.createValueAnimatorArgs(input);
+        this.valueAnimatorController.add(args);
+    }
+
+    public animateBatch(inputs: Array<AnimateInput>): void {
+      let argsList = _.map(inputs, (i) => { return this.createValueAnimatorArgs(i); });
+      this.valueAnimatorController.addBatch(argsList);
+    }
+
+    private createValueAnimatorArgs(input: AnimateInput): ValueAnimatorArgs {
+        return {
+            id: input.propertyName,
+            start: (<any>this)[input.propertyName],
+            end: input.endValue,
             timestamp: this.timestamp,
-            onChange: (value) => { (<any>this)[propertyName] = value; }
-        });
+            onChange: (value) => { (<any>this)[input.propertyName] = value; }
+        };
     }
 
     public stopAnimation(propertyName: string): void {
@@ -185,42 +226,55 @@ class ViewPort implements XMoveHolder {
     }
 
     public control_left() {
-      if (this.isMagnified) {
-        this.segmentController.fitLeftSegmentOnViewPort();
-      } else {
-        this.slideLeft();
+      if (!this.valueAnimatorController.animationsInProgressExists()) {
+        if (this.isMagnified) {
+          this.segmentController.fitLeftSegmentOnViewPort();
+        } else {
+          this.slideLeft();
+        }
       }
     }
 
     public control_right() {
-      if (this.isMagnified) {
-        this.segmentController.fitRightSegmentOnViewPort();
-      } else {
-        this.slideRight();
+      if (!this.valueAnimatorController.animationsInProgressExists()) {
+        if (this.isMagnified) {
+          this.segmentController.fitRightSegmentOnViewPort();
+        } else {
+          this.slideRight();
+        }
       }
     }
 
     public control_top() {
-      this.animate('yMove', this.yMove + VERTICAL_SLIDE_RATIO * this.canvasHeight);
+      if (!this.valueAnimatorController.animationsInProgressExists()) {
+        this.animate({propertyName: 'yMove', endValue: this.yMove + VERTICAL_SLIDE_RATIO * this.canvasHeight});
+      }
     }
 
     public control_bottom() {
-      this.animate('yMove', this.yMove - VERTICAL_SLIDE_RATIO * this.canvasHeight);
+      if (!this.valueAnimatorController.animationsInProgressExists()) {
+        this.animate({propertyName: 'yMove', endValue: this.yMove - VERTICAL_SLIDE_RATIO * this.canvasHeight});
+      }
     }
 
     public control_zoom() {
-      this.notifyAboutZoomChange(true);
-
-      this.segmentController.fitMiddleSegmentOnViewPort();
+      if (!this.valueAnimatorController.animationsInProgressExists()) {
+        this.notifyAboutZoomChange(true);
+        this.segmentController.fitMiddleSegmentOnViewPort();
+      }
     }
 
     public control_unzoom() {
-      this.notifyAboutZoomChange(false);
+      if (!this.valueAnimatorController.animationsInProgressExists()) {
+        this.notifyAboutZoomChange(false);
 
-      let x = -this.xMove + this.canvasWidth / 2;
-      this.animate('xMove', this.canvasWidth / 2 - x * (this.initialScale / this.zoomScale));
-      this.animate('yMove', 0);
-      this.animate('scale', this.initialScale);
+        let x = -this.xMove + this.canvasWidth / 2;
+        this.animateBatch([
+          {propertyName: 'xMove', endValue: this.canvasWidth / 2 - x * (this.initialScale / this.zoomScale)},
+          {propertyName: 'yMove', endValue: 0},
+          {propertyName: 'scale', endValue: this.initialScale}
+        ]);
+      }
     }
 
     public notifyAboutZoomChange(isMagnified: boolean): void {
@@ -260,12 +314,12 @@ class ViewPort implements XMoveHolder {
 
     private slideRight() {
         let xMove = this.xMove - this.canvasWidth;
-        this.animate('xMove', xMove);
+        this.animate({propertyName: 'xMove', endValue: xMove});
     }
 
     private slideLeft() {
         let xMove = this.xMove + this.canvasWidth;
-        this.animate('xMove', xMove);
+        this.animate({propertyName: 'xMove', endValue: xMove});
     }
 
     private setResolutionType(): void {
@@ -292,28 +346,39 @@ class ViewPort implements XMoveHolder {
         this.timestamp = timestamp;
         this.valueAnimatorController.onAnimationFrame(timestamp);
 
-        if (this.mustBeRedraw()) {
-            this.blockVerticalMoveOutsideCanvas();
-            this.draw();
-            this.drawSlider();
-        } else {
-            this.segmentController.preloadSegments();
+        this.anyPreloadingSegmentsExists = this.segmentController.checkIfAnyPreloadingSegmentsExists();
+        if (this.anyPreloadingSegmentsExists) {
+          this.shouldRedrawPreloaders = this.preloader.handleAnimationFrame(timestamp);
         }
 
-        if (this.timer250.isInterval(timestamp)) {
-          let segment = this.segmentController.getMiddleSegment();
-          if (segment && !Rossmann.Modules.Shelves2.isProductPopUpOpen) {
-            let title = segment.getSeoTitle();
-            let url = segment.getPlanogramUrl();
-            Historyjs.replaceState(null, title, url);
-            lastSegmentId = segment.getId();
+        if (this.mustBeRedraw()) {
+          if (this.isTranslatedOrScaled()) {
+            Rossmann.Modules.Shelves2.closeProductTooltip();
           }
+
+          this.blockVerticalMoveOutsideCanvas();
+          this.draw();
+          this.drawSlider();
+        } else {
+          this.segmentController.preloadSegments();
         }
+
+        this.setUrlOncePer250ms();
 
         if (!this.isDeleted) {
             window.requestAnimationFrame(this.frameRequestCallback);
         }
     };
+
+    private setUrl(): void {
+      let segment = this.segmentController.getMiddleSegment();
+      if (segment && !Rossmann.Modules.Shelves2.isProductPopUpOpen) {
+        let title = segment.getSeoTitle();
+        let url = segment.getPlanogramUrl();
+        Historyjs.replaceState(null, title, url);
+        lastSegmentId = segment.getId();
+      }
+    }
 
     private drawSlider() {
       if (this.isMagnified) {
@@ -336,7 +401,7 @@ class ViewPort implements XMoveHolder {
         let scrollZipHeight = (sliderHeight - 2 * sliderPadding)
            * (((this.canvasHeight) / this.scale) / this.segmentHeight);
 
-        this.ctx.fillStyle = 'black';
+        this.ctx.fillStyle = '#0067B2';
         this.ctx.fillRect(sliderZipX, sliderZipY + sliderZipEndY - scrollZipHeight, sliderZipWidth, scrollZipHeight);
       }
     }
@@ -345,16 +410,28 @@ class ViewPort implements XMoveHolder {
         let rect = this.canvas.getBoundingClientRect();
         let x = e.touches[0].pageX - rect.left;
         let y = e.touches[0].pageY - rect.top;
-        this.handleMouseMoveOrTouchStart(x, y);
+        this.handleCursorPositionChanged(x, y);
     }
 
     private handleMouseMove(e: MouseEvent): void {
       let x = e.offsetX;
       let y = e.offsetY;
-      this.handleMouseMoveOrTouchStart(x, y);
+      this.handleCursorPositionChanged(x, y);
     }
 
-    private handleMouseMoveOrTouchStart(x: number, y: number) {
+    private handleScroll(e: WheelEvent): void {
+      if (e.deltaMode === e.DOM_DELTA_PIXEL) {
+        this.yMove -= e.deltaY;
+      } else if (e.deltaMode === e.DOM_DELTA_LINE) {
+        this.yMove -= e.deltaY * SCROLL_LINE_HEIGHT;
+      } else if (e.deltaY === e.DOM_DELTA_PAGE) {
+        this.yMove -= e.deltaY * this.scrollPageHeight;
+      }
+
+    this.handleCursorPositionChanged(e.offsetX, e.offsetY);
+    }
+
+    private handleCursorPositionChanged(x: number, y: number) {
       if (this.isMagnified) {
         this.segmentController.handleMouseMove(x, y);
 
@@ -366,16 +443,6 @@ class ViewPort implements XMoveHolder {
         }
       } else {
           this.container.classList.add('pointer');
-      }
-    }
-
-    private onScroll(e: WheelEvent): void {
-      if (e.deltaMode === e.DOM_DELTA_PIXEL) {
-        this.yMove -= e.deltaY;
-      } else if (e.deltaMode === e.DOM_DELTA_LINE) {
-        this.yMove -= e.deltaY * SCROLL_LINE_HEIGHT;
-      } else if (e.deltaY === e.DOM_DELTA_PAGE) {
-        this.yMove -= e.deltaY * this.scrollPageHeight;
       }
     }
 
@@ -395,11 +462,20 @@ class ViewPort implements XMoveHolder {
     }
 
     private mustBeRedraw(): boolean {
+        let notDrawnSegmentsExists = this.segmentController.checkIfNonDrawnSegmentsExistsAndReset();
+
         return this.xMove !== this.drawnXMove
             || this.yMove !== this.drawnYMove
             || this.scale !== this.drawnScale
-            || this.segmentController.checkIfNonDrawnSegmentsExistsAndReset()
-            || this.segmentController.checkIfAnyEffectsRendering();
+            || notDrawnSegmentsExists
+            || this.segmentController.checkIfAnyEffectsRendering()
+            || (this.anyPreloadingSegmentsExists && this.shouldRedrawPreloaders);
+    }
+
+    private isTranslatedOrScaled(): boolean {
+        return this.xMove !== this.drawnXMove
+            || this.yMove !== this.drawnYMove
+            || this.scale !== this.drawnScale;
     }
 
     private blockVerticalMoveOutsideCanvas() {

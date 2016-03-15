@@ -21,11 +21,13 @@ class SegmentController {
     private notDrawnSegmentCount = 0;
     private effectsRenderingCount = 0;
 
+    public getStartPosition(): StartPositionResult { return this.startPosition; }
+
     constructor(
         private viewPort: ViewPort,
         private segmentsData: Array<SegmentWidthModel>,
         private segmentWidths: Array<number>,
-        startPosition: StartPositionResult,
+        private startPosition: StartPositionResult,
         private startProductId: number,
         noFlash: boolean
     ) {
@@ -77,10 +79,20 @@ class SegmentController {
         }
     }
 
+    public handleProductQuantityChanged(): void {
+      for (let segment of this.segments) {
+        segment.handleProductQuantityChanged();
+      }
+    }
+
     public checkIfNonDrawnSegmentsExistsAndReset(): boolean {
         let nonDrawnSegmentsExists = this.notDrawnSegmentCount > 0;
         this.notDrawnSegmentCount = 0;
         return nonDrawnSegmentsExists;
+    }
+
+    public checkIfAnyPreloadingSegmentsExists(): boolean {
+      return _.find(this.segments, (s) => { return s.checkIfPreloading(); }) != null;
     }
 
     public checkIfAnyEffectsRendering(): boolean {
@@ -135,7 +147,10 @@ class SegmentController {
         }
 
         if (this.flashLoader) {
-          if (this.flashLoader.canBeFlashed()) {
+          if (this.viewPort.getXMove() !== 0) {
+            this.flashLoader = null;
+            this.effectsRenderingCount = 0;
+          } else if (this.flashLoader.canBeFlashed()) {
             this.flashLoader.flash();
             this.flashLoader = null;
           } else {
@@ -160,7 +175,6 @@ class SegmentController {
     public handleSegmentDataLoaded(segment: Segment) {
       if (this.startProductId) {
         if (segment.hasProduct(this.startProductId)) {
-          segment.fitOnViewPort();
           segment.showProduct(this.startProductId);
           this.startProductId = null;
         }

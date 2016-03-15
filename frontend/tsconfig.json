@@ -13,6 +13,7 @@
     "typings/tsd.d.ts"
   ],
   "files": [
+    "src/AnimateInput.ts",
     "src/animation/AnimatedValuesLock.ts",
     "src/animation/DrawingController.ts",
     "src/animation/Slide.ts",
@@ -21,6 +22,7 @@
     "src/animation/ValueAnimator.ts",
     "src/animation/ValueAnimatorArgs.ts",
     "src/animation/ValueAnimatorController.ts",
+    "src/cart/CartDict.ts",
     "src/control/Control.ts",
     "src/debug/enableDebug.ts",
     "src/debug/FpsMeasurer.ts",
@@ -47,6 +49,7 @@
     "src/models/SegmentWidthModel.ts",
     "src/models/TextModel.ts",
     "src/models/TextType.ts",
+    "src/preloader/Preloader.ts",
     "src/QueryString.ts",
     "src/repository/Repository.ts",
     "src/repository/SegmentRepository.ts",

@@ -95,8 +95,10 @@ function touch(viewPort: ViewPort) {
         let newXDiff = lastMove.s * cosAlfa;
         let newYDiff = lastMove.s * sinAlfa;
 
-        viewPort.animate('xMove', viewPort.getXMove() - newXDiff);
-        viewPort.animate('yMove', viewPort.getYMove() - newYDiff);
+        viewPort.animateBatch([
+          {propertyName: 'xMove', endValue: viewPort.getXMove() - newXDiff},
+          {propertyName: 'yMove', endValue: viewPort.getYMove() - newYDiff}
+        ]);
       }
 
       moveEnd();

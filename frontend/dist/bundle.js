@@ -90,18 +90,20 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
+	var SEGMENT_COLOR = '#D2D1CC';
 	var Events = __webpack_require__(3);
 	var Control = __webpack_require__(4);
-	var KnownImages = __webpack_require__(6);
+	var KnownImages = __webpack_require__(7);
 	var SegmentController = __webpack_require__(9);
-	var touch = __webpack_require__(22);
-	var DrawingController = __webpack_require__(23);
-	var ValueAnimatorController = __webpack_require__(24);
-	var CanvasPool = __webpack_require__(26);
-	var QueryString = __webpack_require__(27);
-	var StartPosition = __webpack_require__(28);
-	var ResolutionType = __webpack_require__(29);
-	var Timer = __webpack_require__(30);
+	var touch = __webpack_require__(23);
+	var DrawingController = __webpack_require__(24);
+	var ValueAnimatorController = __webpack_require__(25);
+	var CanvasPool = __webpack_require__(27);
+	var Preloader = __webpack_require__(28);
+	var QueryString = __webpack_require__(29);
+	var StartPosition = __webpack_require__(30);
+	var ResolutionType = __webpack_require__(31);
+	var CartDict = __webpack_require__(18);
 	var Historyjs = History;
 	var VERTICAL_SLIDE_RATIO = 0.9;
 	var SCROLL_LINE_HEIGHT = 20;
@@ -110,6 +112,7 @@
 	    function ViewPort(containerId) {
 	        var _this = this;
 	        this.isDeleted = false;
+	        this.shouldRedrawPreloaders = false;
 	        this.events = new Events();
 	        this.knownImagesPromise = KnownImages.downloadAll();
 	        this.xMove = 0;
@@ -117,7 +120,6 @@
 	        this.isMagnified = false;
 	        this.isTopScrollBlock = true;
 	        this.isBottomScrollBlock = true;
-	        this.timer250 = new Timer(250);
 	        this.drawingController = new DrawingController();
 	        this.valueAnimatorController = new ValueAnimatorController();
 	        this.frameRequestCallback = function (timestamp) { _this.onAnimationFrame(timestamp); };
@@ -127,7 +129,9 @@
 	        this.fitCanvas();
 	        this.canvasWidth = this.canvas.width;
 	        this.canvasHeight = this.canvas.height;
-	        this.y = this.container.getBoundingClientRect().top;
+	        var containerRect = this.container.getBoundingClientRect();
+	        this.x = containerRect.left;
+	        this.y = containerRect.top;
 	        this.fitPlaceHolder(containerId);
 	        this.container.classList.remove('loading');
 	        this.ctx = this.canvas.getContext('2d');
@@ -139,6 +143,9 @@
 	        this.maxCanvasWidth = Math.round(this.maxSegmentWidth * this.zoomScale);
 	        this.maxCanvasHeight = Math.round(this.segmentHeight * this.zoomScale);
 	        this.canvasPool = new CanvasPool(this.maxCanvasWidth, this.maxCanvasHeight);
+	        var minSegmentWidth = 356;
+	        var preloaderWidth = Math.round(minSegmentWidth * this.initialScale * 0.95);
+	        this.preloader = new Preloader(preloaderWidth);
 	        var noFlash;
 	        if (lastSegmentId) {
 	            this.queryString = new QueryString(lastSegmentId);
@@ -162,9 +169,18 @@
 	        this.events.addEventListener(this.canvas, 'mousemove', function (e) { _this.handleMouseMove(e); });
 	        this.events.addEventListener(this.canvas, 'touchstart', function (e) { _this.handleTouchStart(e); });
 	        this.scrollPageHeight = document.documentElement.clientHeight;
-	        this.events.addEventListener(this.canvas, 'wheel', function (e) { e.preventDefault(); _this.onScroll(e); });
+	        this.events.addEventListener(this.canvas, 'wheel', function (e) { e.preventDefault(); _this.handleScroll(e); });
+	        var tooltip = document.getElementById('shelves2ProductTooltip');
+	        this.events.addEventListener(tooltip, 'wheel', function (e) { e.preventDefault(); e.stopPropagation(); _this.handleScroll(e); });
+	        this.setUrlOncePer250ms = _.throttle(function () { _this.setUrl(); }, 250);
 	        this.setResolutionType();
 	        this.setFontSize();
+	        CartDict.GetInstance().handleProductQuantityChangedCallback = function () {
+	            _this.segmentController.handleProductQuantityChanged();
+	        };
+	        //
+	        // (<any>window).x = this.control_left.bind(this);
+	        // (<any>window).y = this.control_right.bind(this);
 	    }
 	    ViewPort.prototype.getCanvas = function () { return this.canvas; };
 	    ViewPort.prototype.getCanvasContext = function () { return this.ctx; };
@@ -177,10 +193,12 @@
 	    ViewPort.prototype.getInitialScale = function () { return this.initialScale; };
 	    ViewPort.prototype.getZoomScale = function () { return this.zoomScale; };
 	    ViewPort.prototype.getScale = function () { return this.scale; };
+	    ViewPort.prototype.getX = function () { return this.x; };
 	    ViewPort.prototype.getY = function () { return this.y; };
 	    ViewPort.prototype.getSegmentHeight = function () { return this.segmentHeight; };
 	    ViewPort.prototype.getKnownImages = function () { return this.knownImagesPromise; };
 	    ViewPort.prototype.getCanvasPool = function () { return this.canvasPool; };
+	    ViewPort.prototype.getPreloader = function () { return this.preloader; };
 	    ViewPort.prototype.getQueryString = function () { return this.queryString; };
 	    ViewPort.prototype.getEvents = function () { return this.events; };
 	    ViewPort.prototype.checkIfMagnified = function () { return this.isMagnified; };
@@ -189,22 +207,32 @@
 	    ViewPort.prototype.getFontSize = function () { return this.fontSize; };
 	    ViewPort.prototype.getMaxCanvasWidth = function () { return this.maxCanvasWidth; };
 	    ViewPort.prototype.getMaxCanvasHeight = function () { return this.maxCanvasHeight; };
+	    ViewPort.prototype.getStartX = function () { return this.startPosition.x; };
+	    ViewPort.prototype.checkIfAnimationsInProgressExists = function () { return this.valueAnimatorController.animationsInProgressExists(); };
 	    ViewPort.prototype.start = function () {
 	        window.requestAnimationFrame(this.frameRequestCallback);
 	    };
 	    ViewPort.prototype.onClick = function (e) {
 	        this.segmentController.onClick(e);
 	    };
-	    ViewPort.prototype.animate = function (propertyName, endValue) {
+	    ViewPort.prototype.animate = function (input) {
+	        var args = this.createValueAnimatorArgs(input);
+	        this.valueAnimatorController.add(args);
+	    };
+	    ViewPort.prototype.animateBatch = function (inputs) {
 	        var _this = this;
-	        this.valueAnimatorController.remove(propertyName);
-	        this.valueAnimatorController.add({
-	            id: propertyName,
-	            start: this[propertyName],
-	            end: endValue,
+	        var argsList = _.map(inputs, function (i) { return _this.createValueAnimatorArgs(i); });
+	        this.valueAnimatorController.addBatch(argsList);
+	    };
+	    ViewPort.prototype.createValueAnimatorArgs = function (input) {
+	        var _this = this;
+	        return {
+	            id: input.propertyName,
+	            start: this[input.propertyName],
+	            end: input.endValue,
 	            timestamp: this.timestamp,
-	            onChange: function (value) { _this[propertyName] = value; }
-	        });
+	            onChange: function (value) { _this[input.propertyName] = value; }
+	        };
 	    };
 	    ViewPort.prototype.stopAnimation = function (propertyName) {
 	        this.valueAnimatorController.remove(propertyName);
@@ -216,37 +244,51 @@
 	        this.drawingController.endAnimation();
 	    };
 	    ViewPort.prototype.control_left = function () {
-	        if (this.isMagnified) {
-	            this.segmentController.fitLeftSegmentOnViewPort();
-	        }
-	        else {
-	            this.slideLeft();
+	        if (!this.valueAnimatorController.animationsInProgressExists()) {
+	            if (this.isMagnified) {
+	                this.segmentController.fitLeftSegmentOnViewPort();
+	            }
+	            else {
+	                this.slideLeft();
+	            }
 	        }
 	    };
 	    ViewPort.prototype.control_right = function () {
-	        if (this.isMagnified) {
-	            this.segmentController.fitRightSegmentOnViewPort();
-	        }
-	        else {
-	            this.slideRight();
+	        if (!this.valueAnimatorController.animationsInProgressExists()) {
+	            if (this.isMagnified) {
+	                this.segmentController.fitRightSegmentOnViewPort();
+	            }
+	            else {
+	                this.slideRight();
+	            }
 	        }
 	    };
 	    ViewPort.prototype.control_top = function () {
-	        this.animate('yMove', this.yMove + VERTICAL_SLIDE_RATIO * this.canvasHeight);
+	        if (!this.valueAnimatorController.animationsInProgressExists()) {
+	            this.animate({ propertyName: 'yMove', endValue: this.yMove + VERTICAL_SLIDE_RATIO * this.canvasHeight });
+	        }
 	    };
 	    ViewPort.prototype.control_bottom = function () {
-	        this.animate('yMove', this.yMove - VERTICAL_SLIDE_RATIO * this.canvasHeight);
+	        if (!this.valueAnimatorController.animationsInProgressExists()) {
+	            this.animate({ propertyName: 'yMove', endValue: this.yMove - VERTICAL_SLIDE_RATIO * this.canvasHeight });
+	        }
 	    };
 	    ViewPort.prototype.control_zoom = function () {
-	        this.notifyAboutZoomChange(true);
-	        this.segmentController.fitMiddleSegmentOnViewPort();
+	        if (!this.valueAnimatorController.animationsInProgressExists()) {
+	            this.notifyAboutZoomChange(true);
+	            this.segmentController.fitMiddleSegmentOnViewPort();
+	        }
 	    };
 	    ViewPort.prototype.control_unzoom = function () {
-	        this.notifyAboutZoomChange(false);
-	        var x = -this.xMove + this.canvasWidth / 2;
-	        this.animate('xMove', this.canvasWidth / 2 - x * (this.initialScale / this.zoomScale));
-	        this.animate('yMove', 0);
-	        this.animate('scale', this.initialScale);
+	        if (!this.valueAnimatorController.animationsInProgressExists()) {
+	            this.notifyAboutZoomChange(false);
+	            var x = -this.xMove + this.canvasWidth / 2;
+	            this.animateBatch([
+	                { propertyName: 'xMove', endValue: this.canvasWidth / 2 - x * (this.initialScale / this.zoomScale) },
+	                { propertyName: 'yMove', endValue: 0 },
+	                { propertyName: 'scale', endValue: this.initialScale }
+	            ]);
+	        }
 	    };
 	    ViewPort.prototype.notifyAboutZoomChange = function (isMagnified) {
 	        this.isMagnified = isMagnified;
@@ -279,11 +321,11 @@
 	    };
 	    ViewPort.prototype.slideRight = function () {
 	        var xMove = this.xMove - this.canvasWidth;
-	        this.animate('xMove', xMove);
+	        this.animate({ propertyName: 'xMove', endValue: xMove });
 	    };
 	    ViewPort.prototype.slideLeft = function () {
 	        var xMove = this.xMove + this.canvasWidth;
-	        this.animate('xMove', xMove);
+	        this.animate({ propertyName: 'xMove', endValue: xMove });
 	    };
 	    ViewPort.prototype.setResolutionType = function () {
 	        if (this.canvasWidth <= 480) {
@@ -310,7 +352,14 @@
 	    ViewPort.prototype.onAnimationFrame = function (timestamp) {
 	        this.timestamp = timestamp;
 	        this.valueAnimatorController.onAnimationFrame(timestamp);
+	        this.anyPreloadingSegmentsExists = this.segmentController.checkIfAnyPreloadingSegmentsExists();
+	        if (this.anyPreloadingSegmentsExists) {
+	            this.shouldRedrawPreloaders = this.preloader.handleAnimationFrame(timestamp);
+	        }
 	        if (this.mustBeRedraw()) {
+	            if (this.isTranslatedOrScaled()) {
+	                Rossmann.Modules.Shelves2.closeProductTooltip();
+	            }
 	            this.blockVerticalMoveOutsideCanvas();
 	            this.draw();
 	            this.drawSlider();
@@ -318,20 +367,21 @@
 	        else {
 	            this.segmentController.preloadSegments();
 	        }
-	        if (this.timer250.isInterval(timestamp)) {
-	            var segment = this.segmentController.getMiddleSegment();
-	            if (segment && !Rossmann.Modules.Shelves2.isProductPopUpOpen) {
-	                var title = segment.getSeoTitle();
-	                var url = segment.getPlanogramUrl();
-	                Historyjs.replaceState(null, title, url);
-	                lastSegmentId = segment.getId();
-	            }
-	        }
+	        this.setUrlOncePer250ms();
 	        if (!this.isDeleted) {
 	            window.requestAnimationFrame(this.frameRequestCallback);
 	        }
 	    };
 	    ;
+	    ViewPort.prototype.setUrl = function () {
+	        var segment = this.segmentController.getMiddleSegment();
+	        if (segment && !Rossmann.Modules.Shelves2.isProductPopUpOpen) {
+	            var title = segment.getSeoTitle();
+	            var url = segment.getPlanogramUrl();
+	            Historyjs.replaceState(null, title, url);
+	            lastSegmentId = segment.getId();
+	        }
+	    };
 	    ViewPort.prototype.drawSlider = function () {
 	        if (this.isMagnified) {
 	            var sliderMargin = 10;
@@ -349,7 +399,7 @@
 	                * (((-this.yMove + this.canvasHeight) / this.scale) / this.segmentHeight);
 	            var scrollZipHeight = (sliderHeight - 2 * sliderPadding)
 	                * (((this.canvasHeight) / this.scale) / this.segmentHeight);
-	            this.ctx.fillStyle = 'black';
+	            this.ctx.fillStyle = '#0067B2';
 	            this.ctx.fillRect(sliderZipX, sliderZipY + sliderZipEndY - scrollZipHeight, sliderZipWidth, scrollZipHeight);
 	        }
 	    };
@@ -357,14 +407,26 @@
 	        var rect = this.canvas.getBoundingClientRect();
 	        var x = e.touches[0].pageX - rect.left;
 	        var y = e.touches[0].pageY - rect.top;
-	        this.handleMouseMoveOrTouchStart(x, y);
+	        this.handleCursorPositionChanged(x, y);
 	    };
 	    ViewPort.prototype.handleMouseMove = function (e) {
 	        var x = e.offsetX;
 	        var y = e.offsetY;
-	        this.handleMouseMoveOrTouchStart(x, y);
+	        this.handleCursorPositionChanged(x, y);
 	    };
-	    ViewPort.prototype.handleMouseMoveOrTouchStart = function (x, y) {
+	    ViewPort.prototype.handleScroll = function (e) {
+	        if (e.deltaMode === e.DOM_DELTA_PIXEL) {
+	            this.yMove -= e.deltaY;
+	        }
+	        else if (e.deltaMode === e.DOM_DELTA_LINE) {
+	            this.yMove -= e.deltaY * SCROLL_LINE_HEIGHT;
+	        }
+	        else if (e.deltaY === e.DOM_DELTA_PAGE) {
+	            this.yMove -= e.deltaY * this.scrollPageHeight;
+	        }
+	        this.handleCursorPositionChanged(e.offsetX, e.offsetY);
+	    };
+	    ViewPort.prototype.handleCursorPositionChanged = function (x, y) {
 	        if (this.isMagnified) {
 	            this.segmentController.handleMouseMove(x, y);
 	            var isClickable = this.segmentController.isClickable(x, y);
@@ -379,17 +441,6 @@
 	            this.container.classList.add('pointer');
 	        }
 	    };
-	    ViewPort.prototype.onScroll = function (e) {
-	        if (e.deltaMode === e.DOM_DELTA_PIXEL) {
-	            this.yMove -= e.deltaY;
-	        }
-	        else if (e.deltaMode === e.DOM_DELTA_LINE) {
-	            this.yMove -= e.deltaY * SCROLL_LINE_HEIGHT;
-	        }
-	        else if (e.deltaY === e.DOM_DELTA_PAGE) {
-	            this.yMove -= e.deltaY * this.scrollPageHeight;
-	        }
-	    };
 	    ViewPort.prototype.draw = function () {
 	        this.drawnXMove = this.xMove;
 	        this.drawnYMove = this.yMove;
@@ -402,11 +453,18 @@
 	        this.ctx.restore();
 	    };
 	    ViewPort.prototype.mustBeRedraw = function () {
+	        var notDrawnSegmentsExists = this.segmentController.checkIfNonDrawnSegmentsExistsAndReset();
 	        return this.xMove !== this.drawnXMove
 	            || this.yMove !== this.drawnYMove
 	            || this.scale !== this.drawnScale
-	            || this.segmentController.checkIfNonDrawnSegmentsExistsAndReset()
-	            || this.segmentController.checkIfAnyEffectsRendering();
+	            || notDrawnSegmentsExists
+	            || this.segmentController.checkIfAnyEffectsRendering()
+	            || (this.anyPreloadingSegmentsExists && this.shouldRedrawPreloaders);
+	    };
+	    ViewPort.prototype.isTranslatedOrScaled = function () {
+	        return this.xMove !== this.drawnXMove
+	            || this.yMove !== this.drawnYMove
+	            || this.scale !== this.drawnScale;
 	    };
 	    ViewPort.prototype.blockVerticalMoveOutsideCanvas = function () {
 	        var minYMove = 0;
@@ -477,6 +535,7 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var setTimedInterval = __webpack_require__(5);
+	var loadImage = __webpack_require__(6);
 	var BASE_IMG_URL = '/DesktopModules/RossmannV4Modules/Shelves2/Img/icons/';
 	var TOP_IMG_URL = BASE_IMG_URL + 'scroll-top.png';
 	var HOVER_TOP_IMG_URL = BASE_IMG_URL + 'scroll-top-hover.png';
@@ -490,6 +549,14 @@
 	var HOVER_PLUS_IMG_URL = BASE_IMG_URL + 'zoom-plus-hover.png';
 	var MINUS_IMG_URL = BASE_IMG_URL + 'zoom-minus.png';
 	var HOVER_MINUS_IMG_URL = BASE_IMG_URL + 'zoom-minus-hover.png';
+	var CONTROL_ICONS = [
+	    TOP_IMG_URL, HOVER_TOP_IMG_URL,
+	    LEFT_IMG_URL, HOVER_LEFT_IMG_URL,
+	    RIGHT_IMG_URL, HOVER_RIGHT_IMG_URL,
+	    BOTTOM_IMG_URL, HOVER_BOTTOM_IMG_URL,
+	    PLUS_IMG_URL, HOVER_PLUS_IMG_URL,
+	    MINUS_IMG_URL, HOVER_MINUS_IMG_URL
+	];
 	var LEFT_ARROW_KEY_CODE = 37;
 	var UP_ARROW_KEY_CODE = 38;
 	var RIGHT_ARROW_KEY_CODE = 39;
@@ -507,6 +574,7 @@
 	        this.bindControl();
 	        this.hideTopAndBottomBtns();
 	        this.refreshZoomIcon();
+	        this.showControlAfterIconsLoaded();
 	    };
 	    Control.prototype.onZoomChange = function () {
 	        this.refreshZoomIcon();
@@ -573,33 +641,44 @@
 	            _this.handleMiddle();
 	        });
 	        this.events.addEventListener(document, 'keydown', function (e) {
+	            var nodeName = e.target.nodeName.toLowerCase();
+	            if (nodeName === 'input' || nodeName === 'textarea') {
+	                return;
+	            }
 	            if (e.keyCode) {
 	                if (e.keyCode === LEFT_ARROW_KEY_CODE) {
+	                    e.preventDefault();
 	                    _this.viewPort.control_left();
 	                }
 	                else if (e.keyCode === RIGHT_ARROW_KEY_CODE) {
+	                    e.preventDefault();
 	                    _this.viewPort.control_right();
 	                }
 	                else if (e.keyCode === UP_ARROW_KEY_CODE) {
+	                    e.preventDefault();
 	                    _this.viewPort.control_top();
 	                }
 	                else if (e.keyCode === DOWN_ARROW_KEY_CODE) {
+	                    e.preventDefault();
 	                    _this.viewPort.control_bottom();
 	                }
 	                else if (e.keyCode === SPACE_KEY_CODE) {
+	                    e.preventDefault();
 	                    _this.handleMiddle();
 	                }
 	            }
 	        });
 	    };
 	    Control.prototype.handleMiddle = function () {
-	        if (this.viewPort.checkIfMagnified()) {
-	            this.viewPort.control_unzoom();
-	            this.middle.src = HOVER_PLUS_IMG_URL;
-	        }
-	        else {
-	            this.viewPort.control_zoom();
-	            this.middle.src = HOVER_MINUS_IMG_URL;
+	        if (!this.viewPort.checkIfAnimationsInProgressExists()) {
+	            if (this.viewPort.checkIfMagnified()) {
+	                this.viewPort.control_unzoom();
+	                this.middle.src = HOVER_PLUS_IMG_URL;
+	            }
+	            else {
+	                this.viewPort.control_zoom();
+	                this.middle.src = HOVER_MINUS_IMG_URL;
+	            }
 	        }
 	    };
 	    Control.prototype.changeIconOnHover = function (img, iconUrl, hoverIconUrl) {
@@ -656,6 +735,16 @@
 	    Control.prototype.hideBottomBtn = function () {
 	        this.bottom.classList.add('disactivated');
 	    };
+	    Control.prototype.showControlAfterIconsLoaded = function () {
+	        var _this = this;
+	        this.loadIcons().then(function () {
+	            _this.controlDiv.style.display = 'block';
+	        });
+	    };
+	    Control.prototype.loadIcons = function () {
+	        var promises = _.map(CONTROL_ICONS, function (icon) { return loadImage(icon); });
+	        return Promise.all(promises);
+	    };
 	    return Control;
 	})();
 	module.exports = Control;
@@ -683,10 +772,30 @@
 
 /***/ },
 /* 6 */
+/***/ function(module, exports) {
+
+	function loadImage(url) {
+	    'use strict';
+	    return new Promise(function (resolve, reject) {
+	        var img = new Image();
+	        img.src = url;
+	        img.onload = function () {
+	            resolve(img);
+	        };
+	        img.onerror = function (err) {
+	            reject(err);
+	        };
+	    });
+	}
+	module.exports = loadImage;
+
+
+/***/ },
+/* 7 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var ImageType = __webpack_require__(7);
-	var loadImage = __webpack_require__(8);
+	var ImageType = __webpack_require__(8);
+	var loadImage = __webpack_require__(6);
 	var baseUrl = '/DesktopModules/RossmannV4Modules/Shelves2/Img/';
 	var KnownImages = (function () {
 	    function KnownImages() {
@@ -733,7 +842,7 @@
 
 
 /***/ },
-/* 7 */
+/* 8 */
 /***/ function(module, exports) {
 
 	var ImageType;
@@ -756,34 +865,14 @@
 
 
 /***/ },
-/* 8 */
-/***/ function(module, exports) {
-
-	function loadImage(url) {
-	    'use strict';
-	    return new Promise(function (resolve, reject) {
-	        var img = new Image();
-	        img.src = url;
-	        img.onload = function () {
-	            resolve(img);
-	        };
-	        img.onerror = function (err) {
-	            reject(err);
-	        };
-	    });
-	}
-	module.exports = loadImage;
-
-
-/***/ },
 /* 9 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	var Segment = __webpack_require__(10);
-	var SegmentPrepender = __webpack_require__(18);
-	var SegmentAppender = __webpack_require__(20);
-	var FlashLoader = __webpack_require__(21);
+	var SegmentPrepender = __webpack_require__(19);
+	var SegmentAppender = __webpack_require__(21);
+	var FlashLoader = __webpack_require__(22);
 	var DOUBLE_COMPARISON_DIFF = 1;
 	var SegmentController = (function () {
 	    function SegmentController(viewPort, segmentsData, segmentWidths, startPosition, startProductId, noFlash) {
@@ -791,6 +880,7 @@
 	        this.viewPort = viewPort;
 	        this.segmentsData = segmentsData;
 	        this.segmentWidths = segmentWidths;
+	        this.startPosition = startPosition;
 	        this.startProductId = startProductId;
 	        this.segments = new Array();
 	        this.notDrawnSegmentCount = 0;
@@ -816,6 +906,7 @@
 	        };
 	        this.flashLoader = noFlash ? null : new FlashLoader(startPosition.segments, makeFlash);
 	    }
+	    SegmentController.prototype.getStartPosition = function () { return this.startPosition; };
 	    SegmentController.prototype.onClick = function (e) {
 	        var scale = this.viewPort.getScale();
 	        e.x = (e.x - this.viewPort.getXMove()) / scale;
@@ -838,10 +929,19 @@
 	            console.error('cannot find clicked segment');
 	        }
 	    };
+	    SegmentController.prototype.handleProductQuantityChanged = function () {
+	        for (var _i = 0, _a = this.segments; _i < _a.length; _i++) {
+	            var segment = _a[_i];
+	            segment.handleProductQuantityChanged();
+	        }
+	    };
 	    SegmentController.prototype.checkIfNonDrawnSegmentsExistsAndReset = function () {
 	        var nonDrawnSegmentsExists = this.notDrawnSegmentCount > 0;
 	        this.notDrawnSegmentCount = 0;
 	        return nonDrawnSegmentsExists;
+	    };
+	    SegmentController.prototype.checkIfAnyPreloadingSegmentsExists = function () {
+	        return _.find(this.segments, function (s) { return s.checkIfPreloading(); }) != null;
 	    };
 	    SegmentController.prototype.checkIfAnyEffectsRendering = function () {
 	        return this.effectsRenderingCount > 0;
@@ -890,7 +990,11 @@
 	            this.notDrawnSegmentCount++;
 	        }
 	        if (this.flashLoader) {
-	            if (this.flashLoader.canBeFlashed()) {
+	            if (this.viewPort.getXMove() !== 0) {
+	                this.flashLoader = null;
+	                this.effectsRenderingCount = 0;
+	            }
+	            else if (this.flashLoader.canBeFlashed()) {
 	                this.flashLoader.flash();
 	                this.flashLoader = null;
 	            }
@@ -916,7 +1020,6 @@
 	    SegmentController.prototype.handleSegmentDataLoaded = function (segment) {
 	        if (this.startProductId) {
 	            if (segment.hasProduct(this.startProductId)) {
-	                segment.fitOnViewPort();
 	                segment.showProduct(this.startProductId);
 	                this.startProductId = null;
 	            }
@@ -1018,16 +1121,18 @@
 	'use strict';
 	var SegmentRepository = __webpack_require__(11);
 	var TextType = __webpack_require__(13);
-	var ImageType = __webpack_require__(7);
+	var ImageType = __webpack_require__(8);
 	var loadImage = __webpack_require__(14);
 	var createWhitePixelImg = __webpack_require__(15);
 	var Images = __webpack_require__(16);
 	var FlashEffect = __webpack_require__(17);
+	var CartDict = __webpack_require__(18);
 	var segmentRepository = new SegmentRepository();
 	var SEGMENT_COLOR = '#D2D1CC';
 	var DARK_SEGMENT_COLOR = '#666666';
 	var SEGMENT_BORDER_LINE_WIDTH = 2;
 	var CURVE_R = 5;
+	var QUANTITY_CIRCLE_R = 20;
 	var TEXT_TYPE_FONT = {};
 	TEXT_TYPE_FONT[TextType.Price] = 'bold 11px Arial';
 	TEXT_TYPE_FONT[TextType.PromoPrice] = 'bold 11px Arial';
@@ -1056,10 +1161,13 @@
 	        this.id = id;
 	        this.x = x;
 	        this.width = width;
+	        this.isDrawnAtLeastOne = false;
 	        this.isLoading = false;
 	        this.isLoaded = false;
 	        this.canDrawCanvas = false;
+	        this.isProductTooltipOpen = false;
 	        this.requestInProgressPromise = null;
+	        this.cartDict = CartDict.GetInstance();
 	        this.height = this.viewPort.getSegmentHeight();
 	        this.ctx = viewPort.getCanvasContext();
 	        this.middleX = this.x + this.width / 2;
@@ -1071,7 +1179,9 @@
 	    Segment.prototype.getPlanogramUrl = function () { return this.planogramUrl; };
 	    Segment.prototype.getPlanogramId = function () { return this.plnId; };
 	    Segment.prototype.getSeoTitle = function () { return this.seoTitle; };
+	    Segment.prototype.checkIfDrawnAtLeastOne = function () { return this.isDrawnAtLeastOne; };
 	    Segment.prototype.checkIfLoading = function () { return this.isLoading; };
+	    Segment.prototype.checkIfPreloading = function () { return this.isInCanvasVisibleArea() && !this.isLoaded; };
 	    Segment.prototype.checkIfCanDrawCanvas = function () { return this.canDrawCanvas; };
 	    Segment.prototype.load = function () {
 	        var _this = this;
@@ -1133,13 +1243,15 @@
 	                this.ctx.strokeStyle = DARK_SEGMENT_COLOR;
 	                this.ctx.lineWidth = SEGMENT_BORDER_LINE_WIDTH;
 	                this.ctx.strokeRect(this.x, 0, this.width, this.height);
-	                var middleY = (this.viewPort.getCanvasHeight() / 2 - this.viewPort.getYMove()) / this.viewPort.getScale();
-	                this.ctx.font = 'bold ' + this.viewPort.getFontSize() + 'px Ariel';
-	                this.ctx.fillStyle = 'black';
-	                this.ctx.textAlign = 'center';
-	                this.ctx.fillText('Trwa ładowanie..', this.middleX, middleY);
+	                var scale = this.viewPort.getScale();
+	                var middleY = (this.viewPort.getCanvasHeight() / 2 - this.viewPort.getYMove()) / scale;
+	                var preloader = this.viewPort.getPreloader().getCanvas();
+	                var preloaderWidth = preloader.width / scale;
+	                var preloaderHeight = preloader.height / scale;
+	                this.ctx.drawImage(preloader, this.middleX - preloaderWidth / 2, middleY - preloaderHeight / 2, preloaderWidth, preloaderHeight);
 	            }
 	        }
+	        this.isDrawnAtLeastOne = true;
 	    };
 	    Segment.prototype.createCanvasIfNecessary = function () {
 	        if (this.canDrawCanvas && !this.canvas && this.isInCanvasVisibleArea()) {
@@ -1179,6 +1291,20 @@
 	            var tempHighlightedProductPositions = this.hightlightedProductPositions;
 	            var tempHighlightedProductIcon = this.highlightedProductIcon;
 	            if (product) {
+	                this.isProductTooltipOpen = true;
+	                Rossmann.Modules.Shelves2.queueShowingProductTooltip({
+	                    planogramProductId: product.ppId,
+	                    //x, y relative to page
+	                    productId: product.productId,
+	                    productName: product.name,
+	                    x: this.viewPort.getXMove() + (this.x + product.dx + product.w / 2) * this.viewPort.getScale(),
+	                    y: this.viewPort.getY() + this.viewPort.getYMove() + (product.dy + product.h / 2) * this.viewPort.getScale(),
+	                    width: product.w,
+	                    height: product.h,
+	                    photoUrl: product.photoUrl,
+	                    photoRatio: product.photoRatio,
+	                    minY: this.viewPort.getY()
+	                });
 	                this.hightlightedProductPositions = [product];
 	                var price = _.find(this.prices, function (p) { return p.priceId === product.priceId; });
 	                if (!price) {
@@ -1192,6 +1318,8 @@
 	                this.hightlightedProductPositions = null;
 	                this.highlightedPrice = null;
 	                this.highlightedProductIcon = null;
+	                this.isProductTooltipOpen = false;
+	                Rossmann.Modules.Shelves2.closeProductTooltip();
 	            }
 	            if (this.hightlightedProductPositions !== tempHighlightedProductPositions
 	                || this.highlightedPrice !== tempHighlightedPrice
@@ -1215,6 +1343,16 @@
 	                this.drawCanvas(this.canvas);
 	                this.segmentController.segmentLoaded({ segmentId: this.id });
 	            }
+	            if (this.isProductTooltipOpen) {
+	                this.isProductTooltipOpen = false;
+	                Rossmann.Modules.Shelves2.closeProductTooltip();
+	            }
+	        }
+	    };
+	    Segment.prototype.handleProductQuantityChanged = function () {
+	        if (this.isLoaded) {
+	            this.drawCanvas(this.canvas);
+	            this.segmentController.segmentLoaded({ segmentId: this.id });
 	        }
 	    };
 	    Segment.prototype.showProductIfClicked = function (e) {
@@ -1237,15 +1375,17 @@
 	        var xMove = (canvasWidth - this.width * zoomScale) / 2 - this.x * zoomScale;
 	        var canvasHeight = this.viewPort.getCanvasHeight();
 	        var yMove = canvasHeight / 2 - y * zoomScale;
-	        this.viewPort.animate('xMove', xMove);
+	        var animateInputs = new Array();
+	        animateInputs.push({ propertyName: 'xMove', endValue: xMove });
 	        if (y != null) {
-	            this.viewPort.animate('yMove', yMove);
+	            animateInputs.push({ propertyName: 'yMove', endValue: yMove });
 	        }
 	        var scale = this.viewPort.getScale();
 	        if (scale !== zoomScale) {
-	            this.viewPort.animate('scale', zoomScale);
+	            animateInputs.push({ propertyName: 'scale', endValue: zoomScale });
 	            this.viewPort.notifyAboutZoomChange(true);
 	        }
+	        this.viewPort.animateBatch(animateInputs);
 	    };
 	    Segment.prototype.flash = function () {
 	        this.flashEffect = new FlashEffect(this.ctx);
@@ -1256,6 +1396,7 @@
 	    };
 	    Segment.prototype.showProduct = function (productId) {
 	        var product = this.getProduct(productId);
+	        this.fitOnViewPort(product.dy);
 	        Rossmann.Modules.Shelves2.showProduct(product.ppId, product.productId);
 	    };
 	    Segment.prototype.getProduct = function (productId) {
@@ -1323,8 +1464,6 @@
 	            ctx.fill();
 	        }
 	        ctx.shadowBlur = 0;
-	        ctx.shadowOffsetX = 0;
-	        ctx.shadowOffsetY = 0;
 	        for (var _f = 0, _g = this.texts; _f < _g.length; _f++) {
 	            var text = _g[_f];
 	            this.drawText(ctx, text);
@@ -1342,6 +1481,12 @@
 	            var price = _o[_m];
 	            this.drawPrice(ctx, price);
 	        }
+	        for (var _p = 0, _q = this.productPositions; _p < _q.length; _p++) {
+	            var p = _q[_p];
+	            if (p.isRightTopCorner) {
+	                this.drawQuantity(ctx, p);
+	            }
+	        }
 	        // debug only!
 	        // let debugPlacesI = 0;
 	        // let DEBUG_PLACES_COLORS = ['rgba(0, 255, 0, 0.3)', 'rgba(0, 0, 255, 0.3)', 'rgba(255, 0, 0, 0.3)'];
@@ -1354,15 +1499,32 @@
 	        //   debugPlacesI++;
 	        // }
 	        //debug only!
-	        ctx.font = 'bold 250px Ariel';
-	        ctx.fillStyle = 'black';
-	        ctx.textAlign = 'center';
-	        ctx.fillText(this.plnId.toString(), this.width / 2, 600);
+	        // ctx.font = 'bold 250px Ariel';
+	        // ctx.fillStyle = 'black';
+	        // ctx.textAlign = 'center';
+	        // ctx.fillText(this.index.toString(), this.width / 2, 600);
 	        this.drawHighlightedProductAndPrice(ctx);
 	        ctx.strokeStyle = DARK_SEGMENT_COLOR;
 	        ctx.lineWidth = SEGMENT_BORDER_LINE_WIDTH;
 	        ctx.strokeRect(0, 0, this.width, this.height);
 	        ctx.restore();
+	    };
+	    Segment.prototype.drawQuantity = function (ctx, p) {
+	        var quantity = this.cartDict.getDict()[p.productId];
+	        if (quantity && quantity > 0) {
+	            var x = p.dx + p.w;
+	            var y = p.dy;
+	            ctx.fillStyle = '#00CC00';
+	            ctx.beginPath();
+	            ctx.arc(x, y, QUANTITY_CIRCLE_R, 0, 2 * Math.PI, false);
+	            ctx.closePath();
+	            ctx.fill();
+	            ctx.font = 'bold 20px Ariel';
+	            ctx.fillStyle = 'white';
+	            ctx.textAlign = 'center';
+	            ctx.textBaseline = 'middle';
+	            ctx.fillText('+' + quantity, x, y);
+	        }
 	    };
 	    Segment.prototype.drawHighlightedProductAndPrice = function (ctx) {
 	        if (this.hightlightedProductPositions && this.highlightedPrice) {
@@ -1371,13 +1533,20 @@
 	            ctx.shadowOffsetX = 0;
 	            ctx.shadowOffsetY = 0;
 	            for (var _i = 0, _a = this.hightlightedProductPositions; _i < _a.length; _i++) {
-	                var p = _a[_i];
-	                ctx.drawImage(this.spriteImg, p.sx, p.sy, p.w, p.h, p.dx, p.dy, p.w, p.h);
+	                var p_1 = _a[_i];
+	                ctx.drawImage(this.spriteImg, p_1.sx, p_1.sy, p_1.w, p_1.h, p_1.dx, p_1.dy, p_1.w, p_1.h);
 	            }
 	            if (this.highlightedProductIcon) {
 	                this.drawKnownImage(ctx, this.highlightedProductIcon);
 	            }
 	            this.drawPrice(ctx, this.highlightedPrice);
+	            for (var _b = 0, _c = this.hightlightedProductPositions; _b < _c.length; _b++) {
+	                var p = _c[_b];
+	                var rightTopProduct = _.find(this.productPositions, function (pp) {
+	                    return pp.ppId === p.ppId && pp.isRightTopCorner;
+	                });
+	                this.drawQuantity(ctx, rightTopProduct);
+	            }
 	            ctx.shadowBlur = 0;
 	            ctx.shadowOffsetX = 0;
 	            ctx.shadowOffsetY = 0;
@@ -1625,7 +1794,7 @@
 /* 16 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var loadImage = __webpack_require__(8);
+	var loadImage = __webpack_require__(6);
 	var Images = (function () {
 	    function Images(images) {
 	        var _this = this;
@@ -1683,9 +1852,63 @@
 
 /***/ },
 /* 18 */
+/***/ function(module, exports) {
+
+	var Cart = Rossmann.Shared.Carts.Cart;
+	var Et = Rossmann.Shared.Events.Event;
+	var CartDict = (function () {
+	    function CartDict() {
+	        var _this = this;
+	        this.dict = {};
+	        Cart.Instance().GettingAllItems().then(function (items) {
+	            for (var _i = 0; _i < items.length; _i++) {
+	                var item = items[_i];
+	                _this.addToDict(item.ProductId, item.Quantity);
+	            }
+	            _this.handleProductQuantityChanged();
+	        });
+	    }
+	    CartDict.GetInstance = function () {
+	        if (!CartDict.instance) {
+	            CartDict.instance = new CartDict();
+	        }
+	        return CartDict.instance;
+	    };
+	    CartDict.prototype.addToDict = function (productId, quantity) {
+	        this.dict[productId] = quantity;
+	    };
+	    CartDict.prototype.handleProductQuantityChanged = function () {
+	        if (this.handleProductQuantityChangedCallback) {
+	            this.handleProductQuantityChangedCallback();
+	        }
+	    };
+	    CartDict.prototype.getDict = function () {
+	        return this.dict;
+	    };
+	    return CartDict;
+	})();
+	Et.Listen('AddToCartEvent', function (data) {
+	    handleProductQuantityChanged(data);
+	});
+	Et.Listen('RemoveFromCartEvent', function (data) {
+	    handleProductQuantityChanged(data);
+	});
+	function handleProductQuantityChanged(data) {
+	    var productId = data.details.id;
+	    Cart.Instance().GettingQuantity(productId).then(function (quantity) {
+	        var cartDict = CartDict.GetInstance();
+	        cartDict.addToDict(productId, quantity);
+	        cartDict.handleProductQuantityChanged();
+	    });
+	}
+	module.exports = CartDict;
+
+
+/***/ },
+/* 19 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var LoopIndex = __webpack_require__(19);
+	var LoopIndex = __webpack_require__(20);
 	var SegmentPrepender = (function () {
 	    function SegmentPrepender(args) {
 	        this.args = args;
@@ -1742,7 +1965,7 @@
 
 
 /***/ },
-/* 19 */
+/* 20 */
 /***/ function(module, exports) {
 
 	var LoopIndex = (function () {
@@ -1780,10 +2003,10 @@
 
 
 /***/ },
-/* 20 */
+/* 21 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var LoopIndex = __webpack_require__(19);
+	var LoopIndex = __webpack_require__(20);
 	/*
 	dodaje i usuwa segmenty
 	pierwszy segment dodany jest w x = START_X i ma index START_SEGMENT_INDEX
@@ -1840,7 +2063,7 @@
 
 
 /***/ },
-/* 21 */
+/* 22 */
 /***/ function(module, exports) {
 
 	var FlashLoader = (function () {
@@ -1866,6 +2089,9 @@
 	        }
 	        return true;
 	    };
+	    FlashLoader.prototype.checkIfEmpty = function () {
+	        return this.segments.length === 0;
+	    };
 	    FlashLoader.prototype.flash = function () {
 	        for (var _i = 0, _a = this.segments; _i < _a.length; _i++) {
 	            var segment = _a[_i];
@@ -1878,7 +2104,7 @@
 
 
 /***/ },
-/* 22 */
+/* 23 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -1945,8 +2171,10 @@
 	            var cosAlfa = lastMove.xDiff / lastMove.s;
 	            var newXDiff = lastMove.s * cosAlfa;
 	            var newYDiff = lastMove.s * sinAlfa;
-	            viewPort.animate('xMove', viewPort.getXMove() - newXDiff);
-	            viewPort.animate('yMove', viewPort.getYMove() - newYDiff);
+	            viewPort.animateBatch([
+	                { propertyName: 'xMove', endValue: viewPort.getXMove() - newXDiff },
+	                { propertyName: 'yMove', endValue: viewPort.getYMove() - newYDiff }
+	            ]);
 	        }
 	        moveEnd();
 	    });
@@ -1964,7 +2192,7 @@
 
 
 /***/ },
-/* 23 */
+/* 24 */
 /***/ function(module, exports) {
 
 	var DrawingController = (function () {
@@ -1986,16 +2214,34 @@
 
 
 /***/ },
-/* 24 */
+/* 25 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var ValueAnimator = __webpack_require__(25);
+	var ValueAnimator = __webpack_require__(26);
 	var ValueAnimatorController = (function () {
 	    function ValueAnimatorController() {
 	        this.animators = new Array();
 	    }
 	    ValueAnimatorController.prototype.add = function (args) {
-	        this.animators.push(new ValueAnimator(args));
+	        var _this = this;
+	        setTimeout(function () {
+	            if (_this.animationsInProgressExists()) {
+	                return;
+	            }
+	            _this.animators.push(new ValueAnimator(args));
+	        }, 0);
+	    };
+	    ValueAnimatorController.prototype.addBatch = function (argsList) {
+	        var _this = this;
+	        setTimeout(function () {
+	            if (_this.animationsInProgressExists()) {
+	                return;
+	            }
+	            for (var _i = 0; _i < argsList.length; _i++) {
+	                var args = argsList[_i];
+	                _this.animators.push(new ValueAnimator(args));
+	            }
+	        }, 0);
 	    };
 	    ValueAnimatorController.prototype.remove = function (id) {
 	        for (var _i = 0, _a = this.animators; _i < _a.length; _i++) {
@@ -2004,6 +2250,9 @@
 	                _.pull(this.animators, animator);
 	            }
 	        }
+	    };
+	    ValueAnimatorController.prototype.animationsInProgressExists = function () {
+	        return this.animators.length > 0;
 	    };
 	    ValueAnimatorController.prototype.onAnimationFrame = function (timestamp) {
 	        for (var _i = 0, _a = this.animators; _i < _a.length; _i++) {
@@ -2023,7 +2272,7 @@
 
 
 /***/ },
-/* 25 */
+/* 26 */
 /***/ function(module, exports) {
 
 	var HALF_OF_PI = Math.PI / 2;
@@ -2055,7 +2304,7 @@
 
 
 /***/ },
-/* 26 */
+/* 27 */
 /***/ function(module, exports) {
 
 	var CanvasPool = (function () {
@@ -2098,7 +2347,135 @@
 
 
 /***/ },
-/* 27 */
+/* 28 */
+/***/ function(module, exports) {
+
+	var PADDING = 4;
+	var PRELOADER_WIDTH = 160;
+	var PRELOADER_HEIGHT = 130;
+	var PRELOADER_WIDGET_CENTER_X = PRELOADER_WIDTH / 2;
+	var PRELOADER_WIDGET_CENTER_Y = 45;
+	var PRELOADER_TEXT_Y = 105;
+	var PRELOADER_TEXT = 'Proszę czekać...';
+	var PRELOADER_WIDGET_R = 19;
+	var COS_45 = Math.cos(Math.PI / 4);
+	var STEP_DURATION = 100;
+	var CIRCLE_COUNT = 8;
+	var CIRCLE_RADIUS = 3;
+	var XXL_CIRCLE_RADIUS = 6;
+	var XL_CIRCLE_RADIUS = 5;
+	var L_CIRCLE_RADIUS = 4;
+	var BORDER_CURVE_R = 5;
+	var Preloader = (function () {
+	    function Preloader(width) {
+	        this.rotateIndex = 0;
+	        this.scale = width / PRELOADER_WIDTH;
+	        this.canvas = document.createElement('canvas');
+	        this.ctx = this.canvas.getContext('2d');
+	        this.circleRadius = CIRCLE_RADIUS * this.scale;
+	        this.lCircleRadius = L_CIRCLE_RADIUS * this.scale;
+	        this.xlCircleRadius = XL_CIRCLE_RADIUS * this.scale;
+	        this.xxlCircleRadius = XXL_CIRCLE_RADIUS * this.scale;
+	        this.preloaderWidgetR = PRELOADER_WIDGET_R * this.scale;
+	        this.preloaderWidgetCenterX = PRELOADER_WIDGET_CENTER_X * this.scale;
+	        this.preloaderWidgetCenterY = PRELOADER_WIDGET_CENTER_Y * this.scale;
+	        this.preloaderTextY = PRELOADER_TEXT_Y * this.scale;
+	        this.preloaderWidth = PRELOADER_WIDTH * this.scale;
+	        this.preloaderHeight = PRELOADER_HEIGHT * this.scale;
+	        this.padding = PADDING * this.scale;
+	        this.borderCurveR = BORDER_CURVE_R * this.scale;
+	        this.canvas.width = this.preloaderWidth;
+	        this.canvas.height = this.preloaderHeight;
+	        this.fontFillStyle = this.calculateFontFillStyle();
+	        this.drawBackground();
+	        this.drawText();
+	    }
+	    Preloader.prototype.getCanvas = function () { return this.canvas; };
+	    Preloader.prototype.handleAnimationFrame = function (time) {
+	        if (!this.lastStepTime || time - this.lastStepTime > STEP_DURATION) {
+	            this.lastStepTime = time;
+	        }
+	        else {
+	            return false;
+	        }
+	        this.ctx.fillStyle = 'white';
+	        this.ctx.fillRect(this.preloaderWidgetCenterX - this.preloaderWidgetR - 2 * this.xxlCircleRadius, this.preloaderWidgetCenterY - this.preloaderWidgetR - 2 * this.xxlCircleRadius, 2 * this.preloaderWidgetR + 4 * this.xxlCircleRadius, 2 * this.preloaderWidgetR + 4 * this.xxlCircleRadius);
+	        this.ctx.translate(this.preloaderWidgetCenterX, this.preloaderWidgetCenterY);
+	        this.ctx.rotate(this.rotateIndex * (Math.PI / 4));
+	        var d = this.drawCircleRelativeToPreloaderCenter.bind(this);
+	        d(0, -this.preloaderWidgetR, this.lCircleRadius);
+	        d(this.preloaderWidgetR * COS_45, -this.preloaderWidgetR * COS_45, this.xlCircleRadius);
+	        d(this.preloaderWidgetR, 0, this.xxlCircleRadius);
+	        d(this.preloaderWidgetR * COS_45, this.preloaderWidgetR * COS_45, this.circleRadius);
+	        d(0, this.preloaderWidgetR, this.circleRadius);
+	        d(-this.preloaderWidgetR * COS_45, this.preloaderWidgetR * COS_45, this.circleRadius);
+	        d(-this.preloaderWidgetR, 0, this.circleRadius);
+	        d(-this.preloaderWidgetR * COS_45, -this.preloaderWidgetR * COS_45, this.circleRadius);
+	        this.ctx.rotate(-this.rotateIndex * (Math.PI / 4));
+	        if (this.rotateIndex === CIRCLE_COUNT - 1) {
+	            this.rotateIndex = 0;
+	        }
+	        else {
+	            this.rotateIndex++;
+	        }
+	        this.ctx.translate(-this.preloaderWidgetCenterX, -this.preloaderWidgetCenterY);
+	        return true;
+	    };
+	    Preloader.prototype.drawBackground = function () {
+	        var dx = this.padding;
+	        var dy = this.padding;
+	        var w = this.preloaderWidth - 2 * this.padding;
+	        var h = this.preloaderHeight - 2 * this.padding;
+	        this.ctx.shadowColor = 'black';
+	        this.ctx.shadowBlur = this.padding * 0.5;
+	        this.ctx.shadowOffsetX = 0;
+	        this.ctx.shadowOffsetY = 0;
+	        this.ctx.fillStyle = 'white';
+	        this.ctx.beginPath();
+	        this.ctx.moveTo(dx + this.borderCurveR, dy);
+	        this.ctx.lineTo(dx + w - this.borderCurveR, dy);
+	        this.ctx.quadraticCurveTo(dx + w, dy, dx + w, dy + this.borderCurveR);
+	        this.ctx.lineTo(dx + w, dy + h - this.borderCurveR);
+	        this.ctx.quadraticCurveTo(dx + w, dy + h, dx + w - this.borderCurveR, dy + h);
+	        this.ctx.lineTo(dx + this.borderCurveR, dy + h);
+	        this.ctx.quadraticCurveTo(dx, dy + h, dx, dy + h - this.borderCurveR);
+	        this.ctx.lineTo(dx, dy + this.borderCurveR);
+	        this.ctx.quadraticCurveTo(dx, dy, dx + this.borderCurveR, dy);
+	        this.ctx.closePath();
+	        this.ctx.fill();
+	        this.ctx.shadowBlur = 0;
+	    };
+	    Preloader.prototype.drawText = function () {
+	        this.ctx.font = this.fontFillStyle;
+	        this.ctx.fillStyle = 'black';
+	        this.ctx.textAlign = 'center';
+	        this.ctx.fillText(PRELOADER_TEXT, this.preloaderWidth / 2, this.preloaderTextY);
+	    };
+	    Preloader.prototype.drawCircleRelativeToPreloaderCenter = function (x, y, r) {
+	        this.ctx.beginPath();
+	        this.ctx.arc(x, y, r, 0, 2 * Math.PI);
+	        this.ctx.fillStyle = 'red';
+	        this.ctx.fill();
+	        this.ctx.closePath();
+	    };
+	    Preloader.prototype.calculateFontFillStyle = function () {
+	        var fontSize = 16;
+	        do {
+	            this.ctx.font = 'bold ' + fontSize + 'px Ariel';
+	            if (this.ctx.measureText(PRELOADER_TEXT).width < this.preloaderWidth) {
+	                break;
+	            }
+	            fontSize--;
+	        } while (fontSize > 0);
+	        return this.ctx.font;
+	    };
+	    return Preloader;
+	})();
+	module.exports = Preloader;
+
+
+/***/ },
+/* 29 */
 /***/ function(module, exports) {
 
 	var QueryString = (function () {
@@ -2135,9 +2512,10 @@
 
 
 /***/ },
-/* 28 */
+/* 30 */
 /***/ function(module, exports) {
 
+	var DEFAULT_START_POSITION_RESULT = { segmentIndex: 0, x: 0, segments: [] };
 	var StartPosition = (function () {
 	    function StartPosition(args) {
 	        this.args = args;
@@ -2146,26 +2524,36 @@
 	        if (this.args.queryString.IsPlanogramIdSetUp) {
 	            var planogramId = this.args.queryString.PlanogramId;
 	            var segmentIndex = this.getSegmentIndexByPlanogramId(planogramId);
-	            var segments = this.getSegmentsByPlanogramId(planogramId, segmentIndex);
-	            var planogramWidth = this.calculatePlanogramWidth(segments);
-	            var x = (this.args.canvasWidth - planogramWidth) / 2;
-	            if (x < 0) {
-	                x = 0;
+	            if (segmentIndex > 0) {
+	                var segments = this.getSegmentsByPlanogramId(planogramId, segmentIndex);
+	                var planogramWidth = this.calculatePlanogramWidth(segments);
+	                var x = (this.args.canvasWidth - planogramWidth) / 2;
+	                if (x < 0) {
+	                    x = 0;
+	                }
+	                return { segmentIndex: segmentIndex, x: x, segments: segments };
 	            }
-	            return { segmentIndex: segmentIndex, x: x, segments: segments };
+	            else {
+	                return DEFAULT_START_POSITION_RESULT;
+	            }
 	        }
 	        else if (this.args.queryString.IsSegmentIdSetUp) {
 	            var segmentId = this.args.queryString.SegmentId;
 	            var segmentIndex = this.getSegmentIndexBySegmentId(segmentId);
-	            var segment = this.args.segmentsData[segmentIndex];
-	            var x = (this.args.canvasWidth - segment.width * this.args.initialScale) / 2;
-	            if (x < 0) {
-	                x = 0;
+	            if (segmentIndex > 0) {
+	                var segment = this.args.segmentsData[segmentIndex];
+	                var x = (this.args.canvasWidth - segment.width * this.args.initialScale) / 2;
+	                if (x < 0) {
+	                    x = 0;
+	                }
+	                return { segmentIndex: segmentIndex, x: x, segments: [segment] };
 	            }
-	            return { segmentIndex: segmentIndex, x: x, segments: [segment] };
+	            else {
+	                return DEFAULT_START_POSITION_RESULT;
+	            }
 	        }
 	        else {
-	            return { segmentIndex: 0, x: 0, segments: [] };
+	            return DEFAULT_START_POSITION_RESULT;
 	        }
 	    };
 	    StartPosition.prototype.getSegmentIndexByPlanogramId = function (planogramId) {
@@ -2197,7 +2585,7 @@
 
 
 /***/ },
-/* 29 */
+/* 31 */
 /***/ function(module, exports) {
 
 	var ResolutionType;
@@ -2207,27 +2595,6 @@
 	    ResolutionType[ResolutionType["Desktop"] = 2] = "Desktop";
 	})(ResolutionType || (ResolutionType = {}));
 	module.exports = ResolutionType;
-
-
-/***/ },
-/* 30 */
-/***/ function(module, exports) {
-
-	var Timer = (function () {
-	    function Timer(interval) {
-	        this.interval = interval;
-	        this.lastTime = 0;
-	    }
-	    Timer.prototype.isInterval = function (time) {
-	        if (time - this.lastTime > this.interval) {
-	            this.lastTime = time;
-	            return true;
-	        }
-	        return false;
-	    };
-	    return Timer;
-	})();
-	module.exports = Timer;
 
 
 /***/ }

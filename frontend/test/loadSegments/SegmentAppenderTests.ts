@@ -20,6 +20,18 @@ describe('SegmentAppender', function() {
         assert.equal(segments.length, 3);
     });
 
+    // it('append2', function() {
+    //     let segments = new Array<ISegmentPlace>();
+    //     let appender = makeAppender(segments);
+    //     appender.work(0);
+    //     appender.work(-601);
+    //     appender.work(-1201);
+    //     appender.work(-2401);
+    //     appender.work(-99999);
+    //     appender.work(0);
+    //     assert.equal(segments.length, 3);
+    // });
+
     it('unload', function() {
         let segments = new Array<ISegmentPlace>();
         let appender = makeAppender(segments);

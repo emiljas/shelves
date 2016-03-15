@@ -6,6 +6,15 @@ body {
   overflow: hidden;
 }
 
+.noSelection {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
 .shelvesPlaceHolder {
   //element to hold height of .shelves
   height: 1080px; // initial height, should be programatically set to .shelves height
@@ -98,13 +107,13 @@ body {
   opacity: 0.5;
   top: 0;
   left: 0;
-  z-index: 99999;
+  z-index: 500;
 }
 
 #productPopUp {
   position: absolute;
   left: 0px;
-  z-index: 99999;
+  z-index: 500;
   background-color: white;
 
   .productPopUpClose {
@@ -138,7 +147,220 @@ body {
   }
 }
 
+.shelves2Tooltip {
+  position: absolute;
+  top: 100px;
+  left: 200px;
+  border-radius: 3px;
+  background: white;
+  box-shadow: 0 0 6px #cccccc;
+  z-index: 100;
+  cursor: pointer;
+
+
+  &.verticalTooltip {
+    width: 185px;
+    height: 280px;
+
+    .tooltipImg {
+      display: flex;
+      justify-content: center;
+      height: 226px;
+      padding: 8px 8px 0 8px;
+
+      img {
+        align-self: center;
+        width: auto;
+        max-height: 100%;
+        display: block;
+        margin: 0 auto;
+      }
+    }
+
+    .tooltipBottom {
+      height: 54px;
+      padding: 8px;
+
+      .tooltipName {
+        float: left;
+        width: 117px;
+        height: 38px;
+        overflow: hidden;
+        text-decoration: none;
+        color: #000000;
+        outline: none;
+        font-size: 11px;
+        line-height: 13px;
+      }
+
+      .tooltipCart .cart {
+        padding-right: 2px;
+      }
+    }
+  }
+
+  &.horizontalTooltip {
+    width: 250px;
+    height: 200px;
+
+    .tooltipImg {
+      display: flex;
+      justify-content: center;
+      height: 150px;
+      padding: 8px 8px 0 8px;
+
+      img {
+        align-self: center;
+        width: auto;
+        max-height: 100%;
+        display: block;
+        margin: 0 auto;
+      }
+    }
+
+    .tooltipBottom {
+      height: 54px;
+      padding: 8px;
+
+      .tooltipName {
+        float: left;
+        width: 182px;
+        height: 38px;
+        overflow: hidden;
+        text-decoration: none;
+        color: #000000;
+        outline: none;
+        font-size: 11px;
+        line-height: 13px;
+      }
+
+      .tooltipCart .cart {
+        padding-right: 2px!important;
+        margin-top: 10px!important;
+      }
+    }
+  }
+
+  &.arrow:before, &.arrow:after {
+    position: absolute;
+    width: 0;
+    height: 0;
+    border-style: solid;
+    content: '';
+  }
+
+  &.leftTopArrow:before {
+    left: 13px;
+    margin-left: 0;
+    top: -11px;
+    border-width: 0 8px 11px 8px;
+    border-color: transparent transparent #D6D6D6 transparent;
+    bottom: -11px;
+  }
+
+  &.leftTopArrow:after {
+    left: 14px;
+    margin-left: 0;
+    top: -10px;
+    border-width: 0 7px 10px 7px;
+    border-color: transparent transparent white transparent;
+    bottom: -10px;
+  }
+
+  &.topArrow:before {
+    top: -11px;
+    border-width: 0 8px 11px 8px;
+    border-color: transparent transparent #D6D6D6 transparent;
+    bottom: -11px;
+    margin-left: -8px;
+    left: 50%;
+  }
+
+  &.topArrow:after {
+    top: -10px;
+    border-width: 0 7px 10px 7px;
+    border-color: transparent transparent white transparent;
+    bottom: -10px;
+    margin-left: -7px;
+    left: 50%;
+  }
+
+  &.rightTopArrow:before {
+    right: 13px;
+    left: auto;
+    margin-left: 0;
+    top: -11px;
+    border-width: 0 8px 11px 8px;
+    border-color: transparent transparent #D6D6D6 transparent;
+    bottom: -11px;
+  }
+
+  &.rightTopArrow:after {
+    right: 14px;
+    left: auto;
+    margin-left: 0;
+    top: -10px;
+    border-width: 0 7px 10px 7px;
+    border-color: transparent transparent white transparent;
+    bottom: -10px;
+  }
+
+  &.rightBottomArrow:before {
+    right: 13px;
+    left: auto;
+    margin-left: 0;
+    bottom: -11px;
+    border-width: 11px 8px 0 8px;
+    border-color: #D6D6D6 transparent transparent transparent;
+  }
+
+  &.rightBottomArrow:after {
+    right: 14px;
+    left: auto;
+    margin-left: 0;
+    bottom: -10px;
+    border-width: 10px 7px 0 7px;
+    border-color: white transparent transparent transparent;
+  }
+
+  &.bottomArrow:before {
+    bottom: -11px;
+    margin-left: -8px;
+    border-width: 11px 8px 0 8px;
+    border-color: #D6D6D6 transparent transparent transparent;
+    left: 50%;
+  }
+
+  &.bottomArrow:after {
+    bottom: -10px;
+    margin-left: -7px;
+    border-width: 10px 7px 0 7px;
+    border-color: white transparent transparent transparent;
+    left: 50%;
+  }
+
+  &.leftBottomArrow:before {
+    left: 13px;
+    margin-left: 0;
+    bottom: -11px;
+    border-width: 11px 8px 0 8px;
+    border-color: #D6D6D6 transparent transparent transparent;
+  }
+
+  &.leftBottomArrow:after {
+    left: 14px;
+    margin-left: 0;
+    bottom: -10px;
+    border-width: 10px 7px 0 7px;
+    border-color: white transparent transparent transparent;
+  }
+}
+
 //na koncie admina form nie moze miec marginesu
 #Form.showControlBar {
   margin-top: 0!important;
+}
+
+.modal-backdrop {
+  display: none!important;
 }

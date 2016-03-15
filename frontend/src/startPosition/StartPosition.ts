@@ -2,6 +2,8 @@ import StartPositionArgs = require('./StartPositionArgs');
 import StartPositionResult = require('./StartPositionResult');
 import SegmentWidthModel = require('../models/SegmentWidthModel');
 
+const DEFAULT_START_POSITION_RESULT: StartPositionResult = { segmentIndex: 0, x: 0, segments: [] };
+
 class StartPosition {
     constructor(private args: StartPositionArgs) {
     }
@@ -10,26 +12,34 @@ class StartPosition {
         if (this.args.queryString.IsPlanogramIdSetUp) {
             let planogramId = this.args.queryString.PlanogramId;
             let segmentIndex = this.getSegmentIndexByPlanogramId(planogramId);
-            let segments = this.getSegmentsByPlanogramId(planogramId, segmentIndex);
-            let planogramWidth = this.calculatePlanogramWidth(segments);
-            let x = (this.args.canvasWidth - planogramWidth) / 2;
-            if (x < 0) {
-                x = 0;
-            }
+            if (segmentIndex > 0) {
+              let segments = this.getSegmentsByPlanogramId(planogramId, segmentIndex);
+              let planogramWidth = this.calculatePlanogramWidth(segments);
+              let x = (this.args.canvasWidth - planogramWidth) / 2;
+              if (x < 0) {
+                  x = 0;
+              }
 
-            return { segmentIndex, x, segments: segments };
+              return { segmentIndex, x, segments: segments };
+            } else {
+              return DEFAULT_START_POSITION_RESULT;
+            }
         } else if (this.args.queryString.IsSegmentIdSetUp) {
           let segmentId = this.args.queryString.SegmentId;
           let segmentIndex = this.getSegmentIndexBySegmentId(segmentId);
-          let segment = this.args.segmentsData[segmentIndex];
-          let x = (this.args.canvasWidth - segment.width * this.args.initialScale) / 2;
-          if (x < 0) {
-            x = 0;
-          }
+          if (segmentIndex > 0) {
+            let segment = this.args.segmentsData[segmentIndex];
+            let x = (this.args.canvasWidth - segment.width * this.args.initialScale) / 2;
+            if (x < 0) {
+              x = 0;
+            }
 
-          return { segmentIndex, x, segments: [segment]  };
+            return { segmentIndex, x, segments: [segment]  };
+          } else {
+            return DEFAULT_START_POSITION_RESULT;
+          }
         } else {
-          return { segmentIndex: 0, x: 0, segments: [] };
+          return DEFAULT_START_POSITION_RESULT;
         }
     }
 

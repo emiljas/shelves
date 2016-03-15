@@ -20,6 +20,8 @@ import ISegmentPlace = require('./ISegmentPlace');
 import KnownImages = require('../images/KnownImages');
 import Images = require('../images/Images');
 import FlashEffect = require('../flash/FlashEffect');
+import AnimateInput = require('../AnimateInput');
+import CartDict = require('../cart/CartDict');
 
 declare var Rossmann: any;
 
@@ -29,6 +31,7 @@ const SEGMENT_COLOR = '#D2D1CC';
 const DARK_SEGMENT_COLOR = '#666666';
 const SEGMENT_BORDER_LINE_WIDTH = 2;
 const CURVE_R = 5;
+const QUANTITY_CIRCLE_R = 20;
 
 let TEXT_TYPE_FONT: any = {};
 TEXT_TYPE_FONT[TextType.Price] = 'bold 11px Arial';
@@ -55,9 +58,11 @@ TEXT_TYPE_BASE_LINE[TextType.OldPrice] = 'middle';
 TEXT_TYPE_BASE_LINE[TextType.Header] = 'middle';
 
 class Segment implements ISegmentPlace {
+    private isDrawnAtLeastOne = false;
     private isLoading = false;
     private isLoaded = false;
     private canDrawCanvas = false;
+    private isProductTooltipOpen = false;
     private canvas: HTMLCanvasElement;
     private ctx: CanvasRenderingContext2D;
     private spriteImg: HTMLImageElement;
@@ -84,6 +89,7 @@ class Segment implements ISegmentPlace {
     private requestInProgressPromise: Promise<any> = null;
     private knownImgs: KnownImages;
     private imgs: Images;
+    private cartDict: CartDict;
 
     private flashEffect: FlashEffect;
 
@@ -95,6 +101,7 @@ class Segment implements ISegmentPlace {
         private x: number,
         private width: number
     ) {
+        this.cartDict = CartDict.GetInstance();
         this.height = this.viewPort.getSegmentHeight();
         this.ctx = viewPort.getCanvasContext();
         this.middleX = this.x + this.width / 2;
@@ -107,11 +114,13 @@ class Segment implements ISegmentPlace {
     public getPlanogramUrl(): string { return this.planogramUrl; }
     public getPlanogramId(): number { return this.plnId; }
     public getSeoTitle(): string { return this.seoTitle; }
+    public checkIfDrawnAtLeastOne(): boolean { return this.isDrawnAtLeastOne; }
     public checkIfLoading(): boolean { return this.isLoading; }
+    public checkIfPreloading(): boolean { return this.isInCanvasVisibleArea() && !this.isLoaded; }
     public checkIfCanDrawCanvas(): boolean { return this.canDrawCanvas; }
 
     public load() {
-      this.isLoading = true;
+        this.isLoading = true;
 
         return this.viewPort.getKnownImages().then((images) => {
             this.knownImgs = images;
@@ -149,7 +158,7 @@ class Segment implements ISegmentPlace {
                 return this.imgs.downloadAll();
             })
             .then(() => {
-              this.canDrawCanvas = true;
+                this.canDrawCanvas = true;
             });
     }
 
@@ -158,46 +167,50 @@ class Segment implements ISegmentPlace {
             if (this.isLoaded) {
                 this.ctx.drawImage(this.canvas, 0, 0, this.zoomWidth, this.zoomHeight, this.x, 0, this.width, this.height);
 
-              if (this.flashEffect) {
-                  if (this.flashEffect.isEnded()) {
-                      this.flashEffect = null;
-                      this.segmentController.reportEffectRenderingStop();
-                  } else {
-                      this.flashEffect.flash(timestamp, this.x, 0, this.width, this.height);
-                  }
-              }
+                if (this.flashEffect) {
+                    if (this.flashEffect.isEnded()) {
+                        this.flashEffect = null;
+                        this.segmentController.reportEffectRenderingStop();
+                    } else {
+                        this.flashEffect.flash(timestamp, this.x, 0, this.width, this.height);
+                    }
+                }
             } else {
-              this.ctx.fillStyle = SEGMENT_COLOR;
-              this.ctx.fillRect(this.x, 0, this.width, this.height);
+                this.ctx.fillStyle = SEGMENT_COLOR;
+                this.ctx.fillRect(this.x, 0, this.width, this.height);
 
-              this.ctx.strokeStyle = DARK_SEGMENT_COLOR;
-              this.ctx.lineWidth = SEGMENT_BORDER_LINE_WIDTH;
-              this.ctx.strokeRect(this.x, 0, this.width, this.height);
+                this.ctx.strokeStyle = DARK_SEGMENT_COLOR;
+                this.ctx.lineWidth = SEGMENT_BORDER_LINE_WIDTH;
+                this.ctx.strokeRect(this.x, 0, this.width, this.height);
 
-              let middleY = (this.viewPort.getCanvasHeight() / 2 - this.viewPort.getYMove()) / this.viewPort.getScale();
-              this.ctx.font = 'bold ' + this.viewPort.getFontSize() + 'px Ariel';
-              this.ctx.fillStyle = 'black';
-              this.ctx.textAlign = 'center';
-              this.ctx.fillText('Trwa ładowanie..', this.middleX, middleY);
+                let scale = this.viewPort.getScale();
+                let middleY = (this.viewPort.getCanvasHeight() / 2 - this.viewPort.getYMove()) / scale;
+
+                let preloader = this.viewPort.getPreloader().getCanvas();
+                let preloaderWidth = preloader.width / scale;
+                let preloaderHeight = preloader.height / scale;
+                this.ctx.drawImage(preloader, this.middleX - preloaderWidth / 2, middleY - preloaderHeight / 2, preloaderWidth, preloaderHeight);
             }
         }
+
+        this.isDrawnAtLeastOne = true;
     }
 
     public createCanvasIfNecessary(): void {
-      if (this.canDrawCanvas && !this.canvas && this.isInCanvasVisibleArea()) {
-        this.canvas = this.createCanvas();
+        if (this.canDrawCanvas && !this.canvas && this.isInCanvasVisibleArea()) {
+            this.canvas = this.createCanvas();
 
-        this.isLoaded = true;
-        this.segmentController.segmentLoaded({ segmentId: this.id });
-      }
+            this.isLoaded = true;
+            this.segmentController.segmentLoaded({ segmentId: this.id });
+        }
     }
 
     public releaseCanvasIfNotInUse(): void {
-      if (this.isLoaded && !this.isInCanvasVisibleArea()) {
-        this.isLoaded = false;
-        this.viewPort.getCanvasPool().release(this.canvas);
-        this.canvas = null;
-      }
+        if (this.isLoaded && !this.isInCanvasVisibleArea()) {
+            this.isLoaded = false;
+            this.viewPort.getCanvasPool().release(this.canvas);
+            this.canvas = null;
+        }
     }
 
     public isClicked(x: number, y: number): boolean {
@@ -205,77 +218,107 @@ class Segment implements ISegmentPlace {
     }
 
     public isClickable(x: number, y: number) {
-      if (this.isLoaded) {
-        for (let product of this.productPositions) {
-            if (x >= this.x + product.dx
-                && x <= this.x + product.dx + product.w
-                && y >= product.dy
-                && y <= product.dy + product.h) {
-                return true;
+        if (this.isLoaded) {
+            for (let product of this.productPositions) {
+                if (x >= this.x + product.dx
+                    && x <= this.x + product.dx + product.w
+                    && y >= product.dy
+                    && y <= product.dy + product.h) {
+                    return true;
+                }
             }
         }
-      }
 
-      return false;
+        return false;
     }
 
     public handleMouseMove(x: number, y: number): void {
-      if (this.isLoaded) {
-        let product = this.getProductUnderCursor(x, y);
-        let tempHighlightedPrice = this.highlightedPrice;
-        let tempHighlightedProductPositions = this.hightlightedProductPositions;
-        let tempHighlightedProductIcon = this.highlightedProductIcon;
+        if (this.isLoaded) {
+            let product = this.getProductUnderCursor(x, y);
+            let tempHighlightedPrice = this.highlightedPrice;
+            let tempHighlightedProductPositions = this.hightlightedProductPositions;
+            let tempHighlightedProductIcon = this.highlightedProductIcon;
 
-        if (product) {
-          this.hightlightedProductPositions = [product];
+            if (product) {
+                this.isProductTooltipOpen = true;
+                Rossmann.Modules.Shelves2.queueShowingProductTooltip({
+                    planogramProductId: product.ppId,
+                    //x, y relative to page
+                    productId: product.productId,
+                    productName: product.name,
+                    x: this.viewPort.getXMove() + (this.x + product.dx + product.w / 2) * this.viewPort.getScale(),
+                    y: this.viewPort.getY() + this.viewPort.getYMove() + (product.dy + product.h / 2) * this.viewPort.getScale(),
+                    width: product.w,
+                    height: product.h,
+                    photoUrl: product.photoUrl,
+                    photoRatio: product.photoRatio,
+                    minY: this.viewPort.getY()
+                });
 
-          let price = _.find(this.prices, (p) => { return p.priceId === product.priceId; });
-          if (!price) {
-            price = _.find(this.hookPrices, (p) => { return p.priceId === product.priceId; });
-          }
-          this.highlightedPrice = price;
+                this.hightlightedProductPositions = [product];
 
-          let productIcon = _.find(this.productIcons, (p) => { return p.ppId === product.ppId; });
-          this.highlightedProductIcon = productIcon;
+                let price = _.find(this.prices, (p) => { return p.priceId === product.priceId; });
+                if (!price) {
+                    price = _.find(this.hookPrices, (p) => { return p.priceId === product.priceId; });
+                }
+                this.highlightedPrice = price;
 
-        } else {
-          this.hightlightedProductPositions = null;
-          this.highlightedPrice = null;
-          this.highlightedProductIcon = null;
+                let productIcon = _.find(this.productIcons, (p) => { return p.ppId === product.ppId; });
+                this.highlightedProductIcon = productIcon;
+
+            } else {
+                this.hightlightedProductPositions = null;
+                this.highlightedPrice = null;
+                this.highlightedProductIcon = null;
+                this.isProductTooltipOpen = false;
+                Rossmann.Modules.Shelves2.closeProductTooltip();
+            }
+
+            if (this.hightlightedProductPositions !== tempHighlightedProductPositions
+                || this.highlightedPrice !== tempHighlightedPrice
+                || this.highlightedProductIcon !== tempHighlightedProductIcon) {
+                this.drawCanvas(this.canvas);
+                this.segmentController.segmentLoaded({ segmentId: this.id });
+            }
         }
-
-        if (this.hightlightedProductPositions !== tempHighlightedProductPositions
-          || this.highlightedPrice !== tempHighlightedPrice
-          || this.highlightedProductIcon !== tempHighlightedProductIcon) {
-          this.drawCanvas(this.canvas);
-          this.segmentController.segmentLoaded({segmentId: this.id});
-        }
-      }
     }
 
     public handleMouseOut() {
         if (this.isLoaded) {
-          let tempHighlightedPrice = this.highlightedPrice;
-          let tempHighlightedProductPositions = this.hightlightedProductPositions;
-          let tempHighlightedProductIcon = this.highlightedProductIcon;
+            let tempHighlightedPrice = this.highlightedPrice;
+            let tempHighlightedProductPositions = this.hightlightedProductPositions;
+            let tempHighlightedProductIcon = this.highlightedProductIcon;
 
-          this.highlightedPrice = null;
-          this.hightlightedProductPositions = null;
-          this.highlightedProductIcon = null;
+            this.highlightedPrice = null;
+            this.hightlightedProductPositions = null;
+            this.highlightedProductIcon = null;
 
-          if (this.hightlightedProductPositions !== tempHighlightedProductPositions
-            || this.highlightedPrice !== tempHighlightedPrice
-            || this.highlightedProductIcon !== tempHighlightedProductIcon) {
-            this.drawCanvas(this.canvas);
-            this.segmentController.segmentLoaded({segmentId: this.id});
-          }
+            if (this.hightlightedProductPositions !== tempHighlightedProductPositions
+                || this.highlightedPrice !== tempHighlightedPrice
+                || this.highlightedProductIcon !== tempHighlightedProductIcon) {
+                this.drawCanvas(this.canvas);
+                this.segmentController.segmentLoaded({ segmentId: this.id });
+            }
+
+            if (this.isProductTooltipOpen) {
+                this.isProductTooltipOpen = false;
+                Rossmann.Modules.Shelves2.closeProductTooltip();
+            }
         }
     }
-    public showProductIfClicked(e: TapInput): void {
-      let product = this.getProductUnderCursor(e.x, e.y);
-      if (product) {
-        Rossmann.Modules.Shelves2.showProduct(product.ppId, product.productId);
+
+    public handleProductQuantityChanged(): void {
+      if (this.isLoaded) {
+        this.drawCanvas(this.canvas);
+        this.segmentController.segmentLoaded({ segmentId: this.id });
       }
+    }
+
+    public showProductIfClicked(e: TapInput): void {
+        let product = this.getProductUnderCursor(e.x, e.y);
+        if (product) {
+            Rossmann.Modules.Shelves2.showProduct(product.ppId, product.productId);
+        }
     }
 
     public isInCanvasVisibleArea(): boolean {
@@ -297,16 +340,20 @@ class Segment implements ISegmentPlace {
         let canvasHeight = this.viewPort.getCanvasHeight();
         let yMove = canvasHeight / 2 - y * zoomScale;
 
-        this.viewPort.animate('xMove', xMove);
+        var animateInputs = new Array<AnimateInput>();
+
+        animateInputs.push({propertyName: 'xMove', endValue: xMove});
         if (y != null) {
-            this.viewPort.animate('yMove', yMove);
+          animateInputs.push({propertyName: 'yMove', endValue: yMove});
         }
 
         let scale = this.viewPort.getScale();
         if (scale !== zoomScale) {
-            this.viewPort.animate('scale', zoomScale);
+            animateInputs.push({propertyName: 'scale', endValue: zoomScale});
             this.viewPort.notifyAboutZoomChange(true);
         }
+
+        this.viewPort.animateBatch(animateInputs);
     }
 
     public flash(): void {
@@ -315,16 +362,17 @@ class Segment implements ISegmentPlace {
     }
 
     public hasProduct(productId: number): boolean {
-      return _.find(this.productPositions, (p) => { return p.productId === productId; }) != null;
+        return _.find(this.productPositions, (p) => { return p.productId === productId; }) != null;
     }
 
     public showProduct(productId: number) {
-      let product = this.getProduct(productId);
-      Rossmann.Modules.Shelves2.showProduct(product.ppId, product.productId);
+        let product = this.getProduct(productId);
+        this.fitOnViewPort(product.dy);
+        Rossmann.Modules.Shelves2.showProduct(product.ppId, product.productId);
     }
 
     public getProduct(productId: number): ProductPositionModel {
-      return _.find(this.productPositions, (p) => { return p.productId === productId; });
+        return _.find(this.productPositions, (p) => { return p.productId === productId; });
     }
 
     public unload(): void {
@@ -366,40 +414,38 @@ class Segment implements ISegmentPlace {
         ctx.font = TEXT_TYPE_FONT[TextType.Header];
         let maxHeaderTitleWidth = 0;
         for (let f of this.headerTitleFrames) {
-          maxHeaderTitleWidth = Math.max(ctx.measureText(' ' + f.value + ' ').width, maxHeaderTitleWidth);
+            maxHeaderTitleWidth = Math.max(ctx.measureText(' ' + f.value + ' ').width, maxHeaderTitleWidth);
         }
 
         ctx.fillStyle = 'white';
         for (let f of this.headerTitleFrames) {
-          ctx.shadowColor = 'black';
-          ctx.shadowBlur = 20;
-          ctx.shadowOffsetX = 0;
-          ctx.shadowOffsetY = 0;
+            ctx.shadowColor = 'black';
+            ctx.shadowBlur = 20;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 0;
 
-          let w = maxHeaderTitleWidth;
-          let h = f.h;
-          let dx = (f.headerWidth - w) / 2;
-          let dy = f.dy;
+            let w = maxHeaderTitleWidth;
+            let h = f.h;
+            let dx = (f.headerWidth - w) / 2;
+            let dy = f.dy;
 
-          ctx.beginPath();
-          ctx.moveTo(dx + CURVE_R, dy);
-          ctx.lineTo(dx + w - CURVE_R, dy);
-          ctx.quadraticCurveTo(dx + w, dy, dx + w, dy + CURVE_R);
-          ctx.lineTo(dx + w, dy + h - CURVE_R);
-          ctx.quadraticCurveTo(dx + w, dy + h, dx + w - CURVE_R, dy + h);
-          ctx.lineTo(dx + CURVE_R, dy + h);
-          ctx.quadraticCurveTo(dx, dy + h, dx, dy + h - CURVE_R);
-          ctx.lineTo(dx, dy + CURVE_R);
-          ctx.quadraticCurveTo(dx, dy, dx + CURVE_R, dy);
-          ctx.closePath();
-          ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(dx + CURVE_R, dy);
+            ctx.lineTo(dx + w - CURVE_R, dy);
+            ctx.quadraticCurveTo(dx + w, dy, dx + w, dy + CURVE_R);
+            ctx.lineTo(dx + w, dy + h - CURVE_R);
+            ctx.quadraticCurveTo(dx + w, dy + h, dx + w - CURVE_R, dy + h);
+            ctx.lineTo(dx + CURVE_R, dy + h);
+            ctx.quadraticCurveTo(dx, dy + h, dx, dy + h - CURVE_R);
+            ctx.lineTo(dx, dy + CURVE_R);
+            ctx.quadraticCurveTo(dx, dy, dx + CURVE_R, dy);
+            ctx.closePath();
+            ctx.fill();
         }
         ctx.shadowBlur = 0;
-        ctx.shadowOffsetX = 0;
-        ctx.shadowOffsetY = 0;
 
         for (let text of this.texts) {
-          this.drawText(ctx, text);
+            this.drawText(ctx, text);
         }
 
         for (let p of this.productPositions) {
@@ -407,13 +453,19 @@ class Segment implements ISegmentPlace {
         }
 
         for (let price of this.prices) {
-          this.drawPrice(ctx, price);
+            this.drawPrice(ctx, price);
         }
 
         this.drawKnownImages(ctx, this.productIcons);
 
         for (let price of this.hookPrices) {
-          this.drawPrice(ctx, price);
+            this.drawPrice(ctx, price);
+        }
+
+        for (let p of this.productPositions) {
+            if (p.isRightTopCorner) {
+              this.drawQuantity(ctx, p);
+            }
         }
 
         // debug only!
@@ -429,10 +481,10 @@ class Segment implements ISegmentPlace {
         // }
 
         //debug only!
-        ctx.font = 'bold 250px Ariel';
-        ctx.fillStyle = 'black';
-        ctx.textAlign = 'center';
-        ctx.fillText(this.plnId.toString(), this.width / 2, 600);
+        // ctx.font = 'bold 250px Ariel';
+        // ctx.fillStyle = 'black';
+        // ctx.textAlign = 'center';
+        // ctx.fillText(this.index.toString(), this.width / 2, 600);
 
         this.drawHighlightedProductAndPrice(ctx);
 
@@ -443,110 +495,137 @@ class Segment implements ISegmentPlace {
         ctx.restore();
     }
 
+    private drawQuantity(ctx: CanvasRenderingContext2D, p: ProductPositionModel): void {
+      let quantity = this.cartDict.getDict()[p.productId];
+      if (quantity && quantity > 0) {
+        let x = p.dx + p.w;
+        let y = p.dy;
+
+        ctx.fillStyle = '#00CC00';
+        ctx.beginPath();
+        ctx.arc(x, y, QUANTITY_CIRCLE_R, 0, 2 * Math.PI, false);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.font = 'bold 20px Ariel';
+        ctx.fillStyle = 'white';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('+' + quantity, x, y);
+      }
+    }
+
     private drawHighlightedProductAndPrice(ctx: CanvasRenderingContext2D) {
         if (this.hightlightedProductPositions && this.highlightedPrice) {
-          ctx.shadowColor = '#ffd700';
-          ctx.shadowBlur = 20;
-          ctx.shadowOffsetX = 0;
-          ctx.shadowOffsetY = 0;
+            ctx.shadowColor = '#ffd700';
+            ctx.shadowBlur = 20;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 0;
 
-          for (var p of this.hightlightedProductPositions) {
-            ctx.drawImage(this.spriteImg, p.sx, p.sy, p.w, p.h, p.dx, p.dy, p.w, p.h);
-          }
+            for (let p of this.hightlightedProductPositions) {
+                ctx.drawImage(this.spriteImg, p.sx, p.sy, p.w, p.h, p.dx, p.dy, p.w, p.h);
+            }
 
-          if (this.highlightedProductIcon) {
-            this.drawKnownImage(ctx, this.highlightedProductIcon);
-          }
+            if (this.highlightedProductIcon) {
+                this.drawKnownImage(ctx, this.highlightedProductIcon);
+            }
 
-          this.drawPrice(ctx, this.highlightedPrice);
+            this.drawPrice(ctx, this.highlightedPrice);
 
-          ctx.shadowBlur = 0;
-          ctx.shadowOffsetX = 0;
-          ctx.shadowOffsetY = 0;
+            for (var p of this.hightlightedProductPositions) {
+                let rightTopProduct = _.find(this.productPositions, (pp) => {
+                  return pp.ppId === p.ppId && pp.isRightTopCorner;
+                });
+                this.drawQuantity(ctx, rightTopProduct);
+            }
+
+            ctx.shadowBlur = 0;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 0;
         }
     }
 
     private drawPrice(ctx: CanvasRenderingContext2D, price: PriceModel) {
-      if (price.imageType === ImageType.PromoPriceBackground) {
-        this.drawKnownImage(ctx, {
-          type: price.imageType,
-          dx: price.promoImageDx,
-          dy: price.imageDy
-        });
+        if (price.imageType === ImageType.PromoPriceBackground) {
+            this.drawKnownImage(ctx, {
+                type: price.imageType,
+                dx: price.promoImageDx,
+                dy: price.imageDy
+            });
 
-        this.drawStrikethroughText(ctx, {
-          value: price.oldTextValue,
-          type: price.oldTextType,
-          dx: price.oldTextDx,
-          dy: price.oldTextDy
-        });
+            this.drawStrikethroughText(ctx, {
+                value: price.oldTextValue,
+                type: price.oldTextType,
+                dx: price.oldTextDx,
+                dy: price.oldTextDy
+            });
 
-        this.drawText(ctx, {
-          value: price.textValue,
-          type: price.promoTextType,
-          dx: price.promoTextDx,
-          dy: price.promoTextDy
-        });
-      } else {
-        this.drawKnownImage(ctx, {
-          type: price.imageType,
-          dx: price.imageDx,
-          dy: price.imageDy
-        });
+            this.drawText(ctx, {
+                value: price.textValue,
+                type: price.promoTextType,
+                dx: price.promoTextDx,
+                dy: price.promoTextDy
+            });
+        } else {
+            this.drawKnownImage(ctx, {
+                type: price.imageType,
+                dx: price.imageDx,
+                dy: price.imageDy
+            });
 
-        this.drawText(ctx, {
-          value: price.textValue,
-          type: price.textType,
-          dx: price.textDx,
-          dy: price.textDy
-        });
-      }
+            this.drawText(ctx, {
+                value: price.textValue,
+                type: price.textType,
+                dx: price.textDx,
+                dy: price.textDy
+            });
+        }
     }
 
     private drawKnownImages(ctx: CanvasRenderingContext2D, images: Array<KnownImageModel>): void {
         for (let image of images) {
-          this.drawKnownImage(ctx, image);
+            this.drawKnownImage(ctx, image);
         }
     }
 
     private drawKnownImage(ctx: CanvasRenderingContext2D, image: KnownImageModel) {
-      let img = this.knownImgs.getByType(image.type);
+        let img = this.knownImgs.getByType(image.type);
 
-      if (image.repeat) {
-        ctx.beginPath();
-        let pattern = ctx.createPattern(img, 'repeat');
-        ctx.fillStyle = pattern;
-        ctx.fillRect(image.dx, image.dy, image.w, image.h);
-      } else if (image.w && image.h) {
-          ctx.drawImage(img, image.dx, image.dy, image.w, image.h);
-      } else {
-          ctx.drawImage(img, image.dx, image.dy);
-      }
+        if (image.repeat) {
+            ctx.beginPath();
+            let pattern = ctx.createPattern(img, 'repeat');
+            ctx.fillStyle = pattern;
+            ctx.fillRect(image.dx, image.dy, image.w, image.h);
+        } else if (image.w && image.h) {
+            ctx.drawImage(img, image.dx, image.dy, image.w, image.h);
+        } else {
+            ctx.drawImage(img, image.dx, image.dy);
+        }
     }
 
     private drawText(ctx: CanvasRenderingContext2D, text: TextModel): void {
-      ctx.font = TEXT_TYPE_FONT[text.type];
-      ctx.fillStyle = TEXT_TYPE_COLOR[text.type];
-      ctx.textAlign = TEXT_TYPE_ALIGN[text.type];
-      ctx.textBaseline = TEXT_TYPE_BASE_LINE[text.type];
-      ctx.fillText(text.value, text.dx, text.dy);
+        ctx.font = TEXT_TYPE_FONT[text.type];
+        ctx.fillStyle = TEXT_TYPE_COLOR[text.type];
+        ctx.textAlign = TEXT_TYPE_ALIGN[text.type];
+        ctx.textBaseline = TEXT_TYPE_BASE_LINE[text.type];
+        ctx.fillText(text.value, text.dx, text.dy);
     }
 
     //tylko dla czcionki 9px
     private drawStrikethroughText(ctx: CanvasRenderingContext2D, text: TextModel): void {
-      ctx.fillStyle = TEXT_TYPE_COLOR[text.type];
-      ctx.font = TEXT_TYPE_FONT[text.type];
-      ctx.textAlign = TEXT_TYPE_ALIGN[text.type];
-      ctx.textBaseline = TEXT_TYPE_BASE_LINE[text.type];
-      ctx.fillText(text.value, text.dx, text.dy);
+        ctx.fillStyle = TEXT_TYPE_COLOR[text.type];
+        ctx.font = TEXT_TYPE_FONT[text.type];
+        ctx.textAlign = TEXT_TYPE_ALIGN[text.type];
+        ctx.textBaseline = TEXT_TYPE_BASE_LINE[text.type];
+        ctx.fillText(text.value, text.dx, text.dy);
 
-      let width = ctx.measureText(text.value).width;
-      ctx.beginPath();
-      ctx.strokeStyle = '1px ' + TEXT_TYPE_COLOR[text.type];
-      ctx.moveTo(text.dx, text.dy + 4.5);
-      ctx.lineTo(text.dx + width, text.dy - 4.5);
-      ctx.closePath();
-      ctx.stroke();
+        let width = ctx.measureText(text.value).width;
+        ctx.beginPath();
+        ctx.strokeStyle = '1px ' + TEXT_TYPE_COLOR[text.type];
+        ctx.moveTo(text.dx, text.dy + 4.5);
+        ctx.lineTo(text.dx + width, text.dy - 4.5);
+        ctx.closePath();
+        ctx.stroke();
     }
 
     private loadImage(url: string): Promise<HTMLImageElement> {
@@ -558,19 +637,19 @@ class Segment implements ISegmentPlace {
     }
 
     private getProductUnderCursor(x: number, y: number): ProductPositionModel {
-      if (this.isLoaded) {
-        for (var i = this.productPositions.length - 1; i >= 0; i--) {
-          let product = this.productPositions[i];
-            if (x >= this.x + product.dx
-                && x <= this.x + product.dx + product.w
-                && y >= product.dy
-                && y <= product.dy + product.h) {
-                return product;
+        if (this.isLoaded) {
+            for (let i = this.productPositions.length - 1; i >= 0; i--) {
+                let product = this.productPositions[i];
+                if (x >= this.x + product.dx
+                    && x <= this.x + product.dx + product.w
+                    && y >= product.dy
+                    && y <= product.dy + product.h) {
+                    return product;
+                }
             }
         }
-      }
 
-      return null;
+        return null;
     }
 }
 

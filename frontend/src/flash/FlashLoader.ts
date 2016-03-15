@@ -29,6 +29,10 @@ class FlashLoader {
       return true;
     }
 
+    public checkIfEmpty(): boolean {
+      return this.segments.length === 0;
+    }
+
     public flash(): void {
         for (let segment of this.segments) {
             this.makeFlash(segment.id);

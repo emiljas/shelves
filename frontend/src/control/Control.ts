@@ -1,6 +1,7 @@
 import setTimedInterval = require('../utils/setTimedInterval');
 import ViewPort = require('../ViewPort');
 import Events = require('../events/Events');
+import loadImage = require('../utils/loadImage');
 
 const BASE_IMG_URL = '/DesktopModules/RossmannV4Modules/Shelves2/Img/icons/';
 
@@ -21,6 +22,15 @@ const HOVER_PLUS_IMG_URL = BASE_IMG_URL + 'zoom-plus-hover.png';
 
 const MINUS_IMG_URL = BASE_IMG_URL + 'zoom-minus.png';
 const HOVER_MINUS_IMG_URL = BASE_IMG_URL + 'zoom-minus-hover.png';
+
+const CONTROL_ICONS = [
+  TOP_IMG_URL, HOVER_TOP_IMG_URL,
+  LEFT_IMG_URL, HOVER_LEFT_IMG_URL,
+  RIGHT_IMG_URL, HOVER_RIGHT_IMG_URL,
+  BOTTOM_IMG_URL, HOVER_BOTTOM_IMG_URL,
+  PLUS_IMG_URL, HOVER_PLUS_IMG_URL,
+  MINUS_IMG_URL, HOVER_MINUS_IMG_URL
+];
 
 const LEFT_ARROW_KEY_CODE = 37;
 const UP_ARROW_KEY_CODE = 38;
@@ -48,6 +58,7 @@ class Control {
         this.bindControl();
         this.hideTopAndBottomBtns();
         this.refreshZoomIcon();
+        this.showControlAfterIconsLoaded();
     }
 
     public onZoomChange(): void {
@@ -125,29 +136,42 @@ class Control {
         });
 
         this.events.addEventListener(document, 'keydown', (e: KeyboardEvent) => {
+          let nodeName = (<any>e.target).nodeName.toLowerCase();
+          if (nodeName === 'input' || nodeName === 'textarea') {
+            return;
+          }
+
           if (e.keyCode) {
             if (e.keyCode === LEFT_ARROW_KEY_CODE) {
+              e.preventDefault();
               this.viewPort.control_left();
             } else if (e.keyCode === RIGHT_ARROW_KEY_CODE) {
+              e.preventDefault();
               this.viewPort.control_right();
             } else if (e.keyCode === UP_ARROW_KEY_CODE) {
+              e.preventDefault();
               this.viewPort.control_top();
             } else if (e.keyCode === DOWN_ARROW_KEY_CODE) {
+              e.preventDefault();
               this.viewPort.control_bottom();
             } else if (e.keyCode === SPACE_KEY_CODE) {
+              e.preventDefault();
               this.handleMiddle();
             }
           }
+
         });
     }
 
     private handleMiddle() {
-      if (this.viewPort.checkIfMagnified()) {
-          this.viewPort.control_unzoom();
-          this.middle.src = HOVER_PLUS_IMG_URL;
-      } else {
-          this.viewPort.control_zoom();
-          this.middle.src = HOVER_MINUS_IMG_URL;
+      if (!this.viewPort.checkIfAnimationsInProgressExists()) {
+        if (this.viewPort.checkIfMagnified()) {
+            this.viewPort.control_unzoom();
+            this.middle.src = HOVER_PLUS_IMG_URL;
+        } else {
+            this.viewPort.control_zoom();
+            this.middle.src = HOVER_MINUS_IMG_URL;
+        }
       }
     }
 
@@ -211,6 +235,17 @@ class Control {
 
     private hideBottomBtn(): void {
         this.bottom.classList.add('disactivated');
+    }
+
+    private showControlAfterIconsLoaded(): void {
+      this.loadIcons().then(() => {
+        this.controlDiv.style.display = 'block';
+      });
+    }
+
+    private loadIcons(): Promise<HTMLImageElement[]> {
+      let promises = _.map(CONTROL_ICONS, (icon) => { return loadImage(icon); })
+      return Promise.all(promises);
     }
 }
 
