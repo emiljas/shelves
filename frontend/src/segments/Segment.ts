@@ -241,19 +241,21 @@ class Segment implements ISegmentPlace {
 
             if (product) {
                 this.isProductTooltipOpen = true;
-                Rossmann.Modules.Shelves2.queueShowingProductTooltip({
-                    planogramProductId: product.ppId,
-                    //x, y relative to page
-                    productId: product.productId,
-                    productName: product.name,
-                    x: this.viewPort.getXMove() + (this.x + product.dx + product.w / 2) * this.viewPort.getScale(),
-                    y: this.viewPort.getY() + this.viewPort.getYMove() + (product.dy + product.h / 2) * this.viewPort.getScale(),
-                    width: product.w,
-                    height: product.h,
-                    photoUrl: product.photoUrl,
-                    photoRatio: product.photoRatio,
-                    minY: this.viewPort.getY()
-                });
+                if (this.viewPort.checkIfProductTooltipEnabled()) {
+                  Rossmann.Modules.Shelves2.queueShowingProductTooltip({
+                      planogramProductId: product.ppId,
+                      //x, y relative to page
+                      productId: product.productId,
+                      productName: product.name,
+                      x: this.viewPort.getXMove() + (this.x + product.dx + product.w / 2) * this.viewPort.getScale(),
+                      y: this.viewPort.getY() + this.viewPort.getYMove() + (product.dy + product.h / 2) * this.viewPort.getScale(),
+                      width: product.w,
+                      height: product.h,
+                      photoUrl: product.photoUrl,
+                      photoRatio: product.photoRatio,
+                      minY: this.viewPort.getY()
+                  });
+                }
 
                 this.hightlightedProductPositions = [product];
 

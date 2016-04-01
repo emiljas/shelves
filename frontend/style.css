@@ -118,6 +118,9 @@ body {
   .shelves2Tooltip.verticalTooltip {
     width: 185px;
     height: 280px; }
+    @media screen and (-ms-high-contrast: active), (-ms-high-contrast: none) {
+      .shelves2Tooltip.verticalTooltip .tooltipImg {
+        display: block !important; } }
     .shelves2Tooltip.verticalTooltip .tooltipImg {
       display: flex;
       justify-content: center;
@@ -143,10 +146,15 @@ body {
         font-size: 11px;
         line-height: 13px; }
       .shelves2Tooltip.verticalTooltip .tooltipBottom .tooltipCart .cart {
-        padding-right: 2px; }
+        position: absolute;
+        bottom: 13px;
+        right: 11px; }
   .shelves2Tooltip.horizontalTooltip {
     width: 250px;
     height: 200px; }
+    @media screen and (-ms-high-contrast: active), (-ms-high-contrast: none) {
+      .shelves2Tooltip.horizontalTooltip .tooltipImg {
+        display: block !important; } }
     .shelves2Tooltip.horizontalTooltip .tooltipImg {
       display: flex;
       justify-content: center;
@@ -172,8 +180,9 @@ body {
         font-size: 11px;
         line-height: 13px; }
       .shelves2Tooltip.horizontalTooltip .tooltipBottom .tooltipCart .cart {
-        padding-right: 2px !important;
-        margin-top: 10px !important; }
+        position: absolute;
+        bottom: 13px;
+        right: 11px; }
   .shelves2Tooltip.arrow:before, .shelves2Tooltip.arrow:after {
     position: absolute;
     width: 0;

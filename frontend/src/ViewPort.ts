@@ -26,8 +26,13 @@ import CartDict = require('./cart/CartDict');
 const Historyjs: Historyjs = <any>History;
 declare var Rossmann: any;
 
-const VERTICAL_SLIDE_RATIO = 0.9;
+const VERTICAL_SLIDE_RATIO = 0.8;
 const SCROLL_LINE_HEIGHT = 20;
+
+const PRODUCT_TOOLTIP_VERTICAL_WIDTH = 185;
+const PRODUCT_TOOLTIP_VERTICAL_HEIGHT = 280;
+const PRODUCT_TOOLTIP_HORIZONTAL_WIDTH = 250;
+const PRODUCT_TOOLTIP_HORIZONTAL_HEIGHT = 200;
 
 let lastSegmentId: number;
 
@@ -61,8 +66,7 @@ class ViewPort implements XMoveHolder {
     private isTopScrollBlock = true;
     private isBottomScrollBlock = true;
     private startPosition: StartPositionResult;
-    private fontSize: number;
-    private resolutionType: ResolutionType;
+    private isProductTooltipEnabled: boolean;
 
     private drawnXMove: number;
     private drawnYMove: number;
@@ -103,11 +107,11 @@ class ViewPort implements XMoveHolder {
     public checkIfMagnified() { return this.isMagnified; }
     public checkIfTopScrollBlock() { return this.isTopScrollBlock; }
     public checkIfBottomScrollBlock() { return this.isBottomScrollBlock; }
-    public getFontSize(): number { return this.fontSize; }
     public getMaxCanvasWidth(): number { return this.maxCanvasWidth; }
     public getMaxCanvasHeight(): number { return this.maxCanvasHeight; }
     public getStartX(): number { return this.startPosition.x; }
     public checkIfAnimationsInProgressExists(): boolean { return this.valueAnimatorController.animationsInProgressExists(); }
+    public checkIfProductTooltipEnabled(): boolean { return this.isProductTooltipEnabled; }
 
     constructor(containerId: string) {
         // (<any>window)['vp'] = this; //DEBUG ONLY
@@ -174,12 +178,11 @@ class ViewPort implements XMoveHolder {
 
         this.setUrlOncePer250ms = _.throttle(() => { this.setUrl(); }, 250);
 
-        this.setResolutionType();
-        this.setFontSize();
-
         CartDict.GetInstance().handleProductQuantityChangedCallback = () => {
           this.segmentController.handleProductQuantityChanged();
         };
+
+        this.setIsProductTooltipEnabled();
         //
         // (<any>window).x = this.control_left.bind(this);
         // (<any>window).y = this.control_right.bind(this);
@@ -320,26 +323,6 @@ class ViewPort implements XMoveHolder {
     private slideLeft() {
         let xMove = this.xMove + this.canvasWidth;
         this.animate({propertyName: 'xMove', endValue: xMove});
-    }
-
-    private setResolutionType(): void {
-        if (this.canvasWidth <= 480) {
-          this.resolutionType = ResolutionType.Phone;
-        } else if (this.canvasWidth <= 768) {
-          this.resolutionType = ResolutionType.Tablet;
-        } else {
-          this.resolutionType = ResolutionType.Desktop;
-        }
-    }
-
-    private setFontSize(): void {
-        if (this.resolutionType === ResolutionType.Phone) {
-          this.fontSize = 60;
-        } else if (this.resolutionType === ResolutionType.Tablet) {
-          this.fontSize = 55;
-        } else {
-          this.fontSize = 40;
-        }
     }
 
     private onAnimationFrame(timestamp: number) {
@@ -508,6 +491,12 @@ class ViewPort implements XMoveHolder {
             this.control.onBottomScrollUnblock();
           }
         }
+    }
+
+    private setIsProductTooltipEnabled(): void {
+      let maxTooltipWidth = Math.max(PRODUCT_TOOLTIP_VERTICAL_WIDTH, PRODUCT_TOOLTIP_HORIZONTAL_WIDTH) * 1.1;
+      let maxTooltipHeight = Math.max(PRODUCT_TOOLTIP_VERTICAL_HEIGHT, PRODUCT_TOOLTIP_HORIZONTAL_HEIGHT) * 1.15;
+      this.isProductTooltipEnabled = this.canvasWidth > maxTooltipWidth && this.canvasHeight > maxTooltipHeight;
     }
 
     private areMovesEqual(move1: number, move2: number) {

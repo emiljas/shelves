@@ -102,11 +102,14 @@
 	var Preloader = __webpack_require__(28);
 	var QueryString = __webpack_require__(29);
 	var StartPosition = __webpack_require__(30);
-	var ResolutionType = __webpack_require__(31);
 	var CartDict = __webpack_require__(18);
 	var Historyjs = History;
 	var VERTICAL_SLIDE_RATIO = 0.9;
 	var SCROLL_LINE_HEIGHT = 20;
+	var PRODUCT_TOOLTIP_VERTICAL_WIDTH = 185;
+	var PRODUCT_TOOLTIP_VERTICAL_HEIGHT = 280;
+	var PRODUCT_TOOLTIP_HORIZONTAL_WIDTH = 250;
+	var PRODUCT_TOOLTIP_HORIZONTAL_HEIGHT = 200;
 	var lastSegmentId;
 	var ViewPort = (function () {
 	    function ViewPort(containerId) {
@@ -173,11 +176,10 @@
 	        var tooltip = document.getElementById('shelves2ProductTooltip');
 	        this.events.addEventListener(tooltip, 'wheel', function (e) { e.preventDefault(); e.stopPropagation(); _this.handleScroll(e); });
 	        this.setUrlOncePer250ms = _.throttle(function () { _this.setUrl(); }, 250);
-	        this.setResolutionType();
-	        this.setFontSize();
 	        CartDict.GetInstance().handleProductQuantityChangedCallback = function () {
 	            _this.segmentController.handleProductQuantityChanged();
 	        };
+	        this.setIsProductTooltipEnabled();
 	        //
 	        // (<any>window).x = this.control_left.bind(this);
 	        // (<any>window).y = this.control_right.bind(this);
@@ -204,11 +206,11 @@
 	    ViewPort.prototype.checkIfMagnified = function () { return this.isMagnified; };
 	    ViewPort.prototype.checkIfTopScrollBlock = function () { return this.isTopScrollBlock; };
 	    ViewPort.prototype.checkIfBottomScrollBlock = function () { return this.isBottomScrollBlock; };
-	    ViewPort.prototype.getFontSize = function () { return this.fontSize; };
 	    ViewPort.prototype.getMaxCanvasWidth = function () { return this.maxCanvasWidth; };
 	    ViewPort.prototype.getMaxCanvasHeight = function () { return this.maxCanvasHeight; };
 	    ViewPort.prototype.getStartX = function () { return this.startPosition.x; };
 	    ViewPort.prototype.checkIfAnimationsInProgressExists = function () { return this.valueAnimatorController.animationsInProgressExists(); };
+	    ViewPort.prototype.checkIfProductTooltipEnabled = function () { return this.isProductTooltipEnabled; };
 	    ViewPort.prototype.start = function () {
 	        window.requestAnimationFrame(this.frameRequestCallback);
 	    };
@@ -326,28 +328,6 @@
 	    ViewPort.prototype.slideLeft = function () {
 	        var xMove = this.xMove + this.canvasWidth;
 	        this.animate({ propertyName: 'xMove', endValue: xMove });
-	    };
-	    ViewPort.prototype.setResolutionType = function () {
-	        if (this.canvasWidth <= 480) {
-	            this.resolutionType = ResolutionType.Phone;
-	        }
-	        else if (this.canvasWidth <= 768) {
-	            this.resolutionType = ResolutionType.Tablet;
-	        }
-	        else {
-	            this.resolutionType = ResolutionType.Desktop;
-	        }
-	    };
-	    ViewPort.prototype.setFontSize = function () {
-	        if (this.resolutionType === ResolutionType.Phone) {
-	            this.fontSize = 60;
-	        }
-	        else if (this.resolutionType === ResolutionType.Tablet) {
-	            this.fontSize = 55;
-	        }
-	        else {
-	            this.fontSize = 40;
-	        }
 	    };
 	    ViewPort.prototype.onAnimationFrame = function (timestamp) {
 	        this.timestamp = timestamp;
@@ -495,6 +475,11 @@
 	                this.control.onBottomScrollUnblock();
 	            }
 	        }
+	    };
+	    ViewPort.prototype.setIsProductTooltipEnabled = function () {
+	        var maxTooltipWidth = Math.max(PRODUCT_TOOLTIP_VERTICAL_WIDTH, PRODUCT_TOOLTIP_HORIZONTAL_WIDTH) * 1.1;
+	        var maxTooltipHeight = Math.max(PRODUCT_TOOLTIP_VERTICAL_HEIGHT, PRODUCT_TOOLTIP_HORIZONTAL_HEIGHT) * 1.15;
+	        this.isProductTooltipEnabled = this.canvasWidth > maxTooltipWidth && this.canvasHeight > maxTooltipHeight;
 	    };
 	    ViewPort.prototype.areMovesEqual = function (move1, move2) {
 	        return Math.abs(move1 - move2) < 1;
@@ -1292,19 +1277,21 @@
 	            var tempHighlightedProductIcon = this.highlightedProductIcon;
 	            if (product) {
 	                this.isProductTooltipOpen = true;
-	                Rossmann.Modules.Shelves2.queueShowingProductTooltip({
-	                    planogramProductId: product.ppId,
-	                    //x, y relative to page
-	                    productId: product.productId,
-	                    productName: product.name,
-	                    x: this.viewPort.getXMove() + (this.x + product.dx + product.w / 2) * this.viewPort.getScale(),
-	                    y: this.viewPort.getY() + this.viewPort.getYMove() + (product.dy + product.h / 2) * this.viewPort.getScale(),
-	                    width: product.w,
-	                    height: product.h,
-	                    photoUrl: product.photoUrl,
-	                    photoRatio: product.photoRatio,
-	                    minY: this.viewPort.getY()
-	                });
+	                if (this.viewPort.checkIfProductTooltipEnabled()) {
+	                    Rossmann.Modules.Shelves2.queueShowingProductTooltip({
+	                        planogramProductId: product.ppId,
+	                        //x, y relative to page
+	                        productId: product.productId,
+	                        productName: product.name,
+	                        x: this.viewPort.getXMove() + (this.x + product.dx + product.w / 2) * this.viewPort.getScale(),
+	                        y: this.viewPort.getY() + this.viewPort.getYMove() + (product.dy + product.h / 2) * this.viewPort.getScale(),
+	                        width: product.w,
+	                        height: product.h,
+	                        photoUrl: product.photoUrl,
+	                        photoRatio: product.photoRatio,
+	                        minY: this.viewPort.getY()
+	                    });
+	                }
 	                this.hightlightedProductPositions = [product];
 	                var price = _.find(this.prices, function (p) { return p.priceId === product.priceId; });
 	                if (!price) {
@@ -2582,19 +2569,6 @@
 	    return StartPosition;
 	})();
 	module.exports = StartPosition;
-
-
-/***/ },
-/* 31 */
-/***/ function(module, exports) {
-
-	var ResolutionType;
-	(function (ResolutionType) {
-	    ResolutionType[ResolutionType["Phone"] = 0] = "Phone";
-	    ResolutionType[ResolutionType["Tablet"] = 1] = "Tablet";
-	    ResolutionType[ResolutionType["Desktop"] = 2] = "Desktop";
-	})(ResolutionType || (ResolutionType = {}));
-	module.exports = ResolutionType;
 
 
 /***/ }

@@ -157,10 +157,15 @@ body {
   z-index: 100;
   cursor: pointer;
 
-
   &.verticalTooltip {
     width: 185px;
     height: 280px;
+
+    @media screen and (-ms-high-contrast: active), (-ms-high-contrast: none) {
+      .tooltipImg {
+        display: block!important;
+      }
+    }
 
     .tooltipImg {
       display: flex;
@@ -194,7 +199,9 @@ body {
       }
 
       .tooltipCart .cart {
-        padding-right: 2px;
+        position: absolute;
+        bottom: 13px;
+        right: 11px;
       }
     }
   }
@@ -203,6 +210,11 @@ body {
     width: 250px;
     height: 200px;
 
+    @media screen and (-ms-high-contrast: active), (-ms-high-contrast: none) {
+      .tooltipImg {
+        display: block!important;
+      }
+    }
     .tooltipImg {
       display: flex;
       justify-content: center;
@@ -235,8 +247,9 @@ body {
       }
 
       .tooltipCart .cart {
-        padding-right: 2px!important;
-        margin-top: 10px!important;
+        position: absolute;
+        bottom: 13px;
+        right: 11px;
       }
     }
   }
