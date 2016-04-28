@@ -104,7 +104,7 @@
 	var StartPosition = __webpack_require__(30);
 	var CartDict = __webpack_require__(18);
 	var Historyjs = History;
-	var VERTICAL_SLIDE_RATIO = 0.9;
+	var VERTICAL_SLIDE_RATIO = 0.8;
 	var SCROLL_LINE_HEIGHT = 20;
 	var PRODUCT_TOOLTIP_VERTICAL_WIDTH = 185;
 	var PRODUCT_TOOLTIP_VERTICAL_HEIGHT = 280;
@@ -796,7 +796,7 @@
 	        this.addImage(ImageType.PriceBackground, 'priceBackground.png');
 	        this.addImage(ImageType.PromoPriceBackground, 'promoPriceBackground.png');
 	        this.addImage(ImageType.NewProduct, 'newProduct.png');
-	        this.addImage(ImageType.SpecialProduct, 'specialProduct.png');
+	        this.addImage(ImageType.SpecialProduct, 'specialProduct3.png');
 	        this.addImage(ImageType.SuperOfferProduct, 'superOfferProduct.png');
 	    }
 	    KnownImages.downloadAll = function () {

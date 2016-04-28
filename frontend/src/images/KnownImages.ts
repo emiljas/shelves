@@ -24,7 +24,7 @@ class KnownImages {
         this.addImage(ImageType.PriceBackground, 'priceBackground.png');
         this.addImage(ImageType.PromoPriceBackground, 'promoPriceBackground.png');
         this.addImage(ImageType.NewProduct, 'newProduct.png');
-        this.addImage(ImageType.SpecialProduct, 'specialProduct.png');
+        this.addImage(ImageType.SpecialProduct, 'specialProduct3.png');
         this.addImage(ImageType.SuperOfferProduct, 'superOfferProduct.png');
     }
 
